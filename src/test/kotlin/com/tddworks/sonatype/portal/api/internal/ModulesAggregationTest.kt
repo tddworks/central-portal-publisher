@@ -1,5 +1,6 @@
-package com.tddworks.sonatype.publish.portal.api.internal
+package com.tddworks.sonatype.portal.api.internal
 
+import com.tddworks.sonatype.publish.portal.api.internal.ModulesAggregation
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.junit.jupiter.api.BeforeEach
