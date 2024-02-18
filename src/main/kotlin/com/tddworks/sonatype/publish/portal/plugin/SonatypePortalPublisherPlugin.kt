@@ -63,32 +63,16 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         val publishAllPublicationsToCentralPortal = project.tasks.register("publishAllPublicationsToCentralPortal")
 
         // Create a task to publish to Sonatype Portal
-
-        if (modules.isEmpty()) {
-            project.allprojects.forEach { pj ->
-                pj.pluginManager.withPlugin("maven-publish") {
-                    DeploymentBundleManager().publishProjectPublications(
-                        project,
-                        authentication,
-                        autoPublish,
-                        publishAllPublicationsToCentralPortal,
-                        project.path,
-                        pj.publishingExtension,
-                    )
-                }
-            }
-        } else {
-            project.allprojects.forEach { pj ->
-                pj.pluginManager.withPlugin("maven-publish") {
-                    DeploymentBundleManager().publishProjectPublications(
-                        pj,
-                        authentication,
-                        autoPublish,
-                        publishAllPublicationsToCentralPortal,
-                        pj.path,
-                        pj.publishingExtension,
-                    )
-                }
+        project.allprojects.forEach { pj ->
+            pj.pluginManager.withPlugin("maven-publish") {
+                DeploymentBundleManager().publishProjectPublications(
+                    pj,
+                    authentication,
+                    autoPublish,
+                    publishAllPublicationsToCentralPortal,
+                    pj.path,
+                    pj.publishingExtension,
+                )
             }
         }
     }
