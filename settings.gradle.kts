@@ -15,5 +15,3 @@ dependencyResolutionManagement {
         google()
     }
 }
-
-include(":example-single-module")

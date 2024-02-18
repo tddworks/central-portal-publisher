@@ -20,6 +20,14 @@ gradlePlugin {
     }
 }
 
+dependencies {
+    implementation("com.squareup.okio:okio:3.8.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    testImplementation(libs.bundles.jvm.test)
+}
+
 group = "com.tddworks"
 version = "0.0.1"
 
