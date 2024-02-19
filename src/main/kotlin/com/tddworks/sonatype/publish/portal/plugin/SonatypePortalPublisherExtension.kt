@@ -2,12 +2,11 @@ package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.AuthenticationBuilder
-import com.tddworks.sonatype.publish.portal.api.internal.ModulesAggregation
+import com.tddworks.sonatype.publish.portal.api.Settings
+import com.tddworks.sonatype.publish.portal.api.SettingsBuilder
 import org.gradle.api.Project
-import org.gradle.api.provider.ListProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.kotlin.dsl.getByType
 
 /**
  * Extension for the Sonatype Portal Publisher plugin.
@@ -19,26 +18,19 @@ import org.gradle.kotlin.dsl.getByType
  * The modules are used to specify the modules to be published.
  * The modules are specified as a list of projects.
  */
-interface SonatypePortalPublisherExtension {
-
-    /**
-     * The auto publish property.
-     * This property is used to publish the modules automatically.
-     * The default value is false.
-     */
-    val autoPublish: Property<Boolean>
-
+open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
     /**
      * The authentication property.
      * This property is used to authenticate the user to the Sonatype Portal.
      */
-    val authenticationProp: Property<Authentication>
+    private val authentication: Property<Authentication> = objects.property(Authentication::class.java)
+
 
     /**
-     * The modules property.
-     * This property is used to specify the modules to be published.
+     * The settings property.
+     * This property is used to configure the settings.
      */
-    val modulesProp: ListProperty<ModulesAggregation>
+    private val settings: Property<Settings> = objects.property(Settings::class.java)
 
     /**
      * Configures the authentication.
@@ -47,19 +39,30 @@ interface SonatypePortalPublisherExtension {
      * @param authentication The authentication configuration.
      */
     fun Project.authentication(authentication: AuthenticationBuilder.() -> Unit) {
-        authenticationProp.setAndFinalize(AuthenticationBuilder().apply(authentication).build())
+        this@SonatypePortalPublisherExtension.authentication.setAndFinalize(
+            AuthenticationBuilder().apply(authentication).build()
+        )
+    }
+
+    fun getAuthentication(): Authentication? {
+        return authentication.orNull
     }
 
     /**
-     * Configures the modules.
-     * This method is used to configure the modules.
-     * The modules are used to specify the modules to be published.
-     * @param modules The modules configuration.
+     * Configures the settings.
+     * This method is used to configure the settings.
+     * The settings are used to configure the Sonatype Portal Publisher plugin.
+     * @param settings The settings configuration.
+     * @see Settings
      */
-    fun Project.modules(modules: List<ModulesAggregation>.() -> Unit) {
-        modulesProp.set(mutableListOf<ModulesAggregation>().apply(modules))
-        modulesProp.finalizeValue()
+    fun Project.settings(settings: SettingsBuilder.() -> Unit) {
+        this@SonatypePortalPublisherExtension.settings.setAndFinalize(SettingsBuilder().apply(settings).build())
     }
+
+    fun getSettings(): Settings? {
+        return settings.orNull
+    }
+
 
     /**
      * Extension for the set and finalize method for the property.
@@ -69,5 +72,3 @@ interface SonatypePortalPublisherExtension {
         this.finalizeValue()
     }
 }
-
-internal val Project.publishingExtension get() = extensions.getByType<PublishingExtension>()
