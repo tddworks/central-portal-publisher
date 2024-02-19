@@ -9,12 +9,32 @@ sonatypePortal {
         username = "your-username"
         password = "your-password"
     }
-    
-    autoPublish = false
+
+    settings {
+        autoPublish = false
+    }
 }
 ```
 
-### Multi-module
+### Multi-modules
+#### With project isolation
+This will publish all the subprojects in its own module.
+```kotlin
+sonatypePortal {
+    authentication {
+        username = "your-username"
+        password = "your-password"
+    }
+    
+    settings {
+        autoPublish = false
+        aggregation = false
+    }
+}
+```
+
+#### With project aggregation
+This will publish all the subprojects in the root project.
 ```kotlin
 sonatypePortal {
     authentication {
@@ -22,16 +42,17 @@ sonatypePortal {
         password = "your-password"
     }
 
-    autoPublish = false
-
-    modules {
-        project(":module1")
-        project(":module2")
+    settings {
+        autoPublish = false
+        aggregation = true
     }
 }
 ```
 
-Maven Repository Layout.
+# Example
+
+
+# Maven Repository Layout.
 ```shell
 $ tree
 .
