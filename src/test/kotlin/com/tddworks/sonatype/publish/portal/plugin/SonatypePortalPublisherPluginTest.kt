@@ -1,8 +1,7 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class SonatypePortalPublisherPluginTest {
@@ -38,7 +37,7 @@ internal class SonatypePortalPublisherPluginTest {
 
 
     @Test
-    fun `should create zip all publication task for with default values`() {
+    fun `should not create zip all publication task for with default values`() {
         val project = ProjectBuilder.builder().build()
 
         val plugin = SonatypePortalPublisherPlugin()
@@ -49,7 +48,7 @@ internal class SonatypePortalPublisherPluginTest {
         // when: "triggering a project.evaluate"
         project.getTasksByName("tasks", false)
 
-        assertNotNull(project.tasks.findByName("zipAllPublications"))
+        assertNull(project.tasks.findByName("zipAllPublications"))
     }
 
 

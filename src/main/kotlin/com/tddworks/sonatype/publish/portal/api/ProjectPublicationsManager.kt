@@ -1,9 +1,9 @@
 package com.tddworks.sonatype.publish.portal.api
 
 import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_PRODUCER
-import com.tddworks.sonatype.publish.portal.plugin.configureAttributes
 import com.tddworks.sonatype.publish.portal.plugin.publishingExtension
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
+import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationConsumer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
@@ -24,11 +24,7 @@ class DefaultProjectPublicationsManager : ProjectPublicationsManager {
     ) {
         project.pluginManager.withPlugin("maven-publish") {
             // create a ZIP_CONFIGURATION_PRODUCER configuration for project
-            project.configurations.create(ZIP_CONFIGURATION_PRODUCER) {
-                isCanBeConsumed = true
-                isCanBeResolved = false
-                configureAttributes(project)
-            }
+            project.createZipConfigurationConsumer
 
             val publishing = project.publishingExtension
             val projectPath = project.path

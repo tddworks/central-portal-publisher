@@ -1,18 +1,37 @@
 package com.tddworks.sonatype.portal.plugin.task
 
 
+import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationConsumer
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.api.provider.Provider
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BundleZipTaskProviderTest {
+
+    @Test
+    fun `should create a zip all task provider`() {
+        val project: Project = ProjectBuilder.builder().build()
+        project.createZipConfigurationConsumer
+
+        val zipTaskProvider = BundleZipTaskProvider.zipAllPublicationsProvider(project)
+
+        val provider = zipTaskProvider.get()
+
+        assertNotNull(zipTaskProvider)
+        assertEquals("zipAllPublications", zipTaskProvider.name)
+
+        assertTrue(provider is Zip)
+
+        assertTrue(provider.destinationDirectory.get().asFile.path.contains("build/sonatype/zip"))
+        assertEquals("publicationsAggregated-bundle.zip", provider.archiveFileName.get())
+    }
 
     @Test
     fun `should create a zip task provider`() {

@@ -1,15 +1,14 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
-import com.tddworks.sonatype.publish.portal.api.DefaultProjectPublicationsManager
 import com.tddworks.sonatype.publish.portal.api.DeploymentBundleManager
 import com.tddworks.sonatype.publish.portal.api.Settings
+import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 
@@ -27,11 +26,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = with(project) {
         extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
 
-        zipConfiguration = project.configurations.create(ZIP_CONFIGURATION_CONSUMER) {
-            isCanBeResolved = true
-            isCanBeConsumed = false
-            configureAttributes(project)
-        }
+        zipConfiguration = project.createZipConfigurationConsumer
 
         // Configure the extension after the project has been evaluated
         afterEvaluate {
@@ -42,28 +37,6 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 //        if (zipConfiguration != null) {
 //            configureAggregation(project)
 //        }
-
-        configureAggregation(project)
-    }
-
-    private fun Project.configureAggregation(project: Project) {
-        logger.quiet("Sonatype Portal Publisher plugin applied to project: $path")
-        project.pluginManager.withPlugin("maven-publish") {
-            project.tasks.register("zipAggregationPublication", Zip::class.java) {
-                from(zipConfiguration?.elements?.map { bundle ->
-                    logger.quiet("Sonatype Portal Publisher plugin found publish bundle: $bundle")
-                    check(bundle.isNotEmpty()) {
-                        "No bundle found for project: $path"
-                    }
-                    bundle.map {
-                        project.zipTree(it)
-                    }
-                })
-
-                destinationDirectory.set(project.layout.buildDirectory.dir("sonatype/zip"))
-                archiveFileName.set("publicationAggregated.zip")
-            }
-        }
     }
 
     private fun Project.configurePublisher() {
@@ -91,11 +64,11 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         )
 
         // Create a task to publish all publications to Sonatype Portal
-
-        val zipAllPublications = project.tasks.register("zipAllPublications")
         val publishAllPublicationsToSonatypePortalRepository =
             project.tasks.register("publishAllPublicationsToSonatypePortalRepository")
 
+
+        enableZipAllPublicationsIfNecessary(extension.getSettings()?.aggregation)
 
         // Create a task to publish to Sonatype Portal
         project.allprojects.forEach { pj ->
@@ -109,6 +82,13 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
                 publishAllPublicationsToSonatypePortalRepository,
             )
         }
+
+    }
+
+    private fun Project.enableZipAllPublicationsIfNecessary(aggregation: Boolean?) {
+        if (aggregation == true) {
+            BundleZipTaskProvider.zipAllPublicationsProvider(this)
+        }
     }
 
     private fun registerProjectPublications(
@@ -121,11 +101,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
             // should move to the zip register task
             // create a ZIP_CONFIGURATION_PRODUCER configuration for each project
-            pj.configurations.create(ZIP_CONFIGURATION_PRODUCER) {
-                isCanBeConsumed = true
-                isCanBeResolved = false
-                configureAttributes(pj)
-            }
+            pj.createZipConfigurationProducer
 //
 //            DefaultProjectPublicationsManager().addPublication(
 //                pj,

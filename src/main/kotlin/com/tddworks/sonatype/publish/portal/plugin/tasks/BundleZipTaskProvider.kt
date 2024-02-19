@@ -1,5 +1,6 @@
 package com.tddworks.sonatype.publish.portal.plugin.tasks
 
+import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_CONSUMER
 import com.tddworks.sonatype.publish.portal.plugin.layoutBuildDirectory
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -26,4 +27,23 @@ object BundleZipTaskProvider {
         }
 
     private fun taskName(capitalized: String) = "zip${capitalized}Publication"
+
+
+    fun zipAllPublicationsProvider(
+        project: Project,
+    ): TaskProvider<Zip> =
+        project.tasks.register("zipAllPublications", Zip::class.java) {
+            from(project.configurations.getByName(ZIP_CONFIGURATION_CONSUMER).elements?.map { bundle ->
+                logger.quiet("Sonatype Portal Publisher plugin found publish bundle: $bundle")
+                check(bundle.isNotEmpty()) {
+                    "No bundle found for project: $path"
+                }
+                bundle.map {
+                    project.zipTree(it)
+                }
+            })
+
+            destinationDirectory.set(project.layout.buildDirectory.dir(SONATYPE_ZIP_DIR))
+            archiveFileName.set("publicationsAggregated$BUNDLE_ZIP_SUFFIX")
+        }
 }
