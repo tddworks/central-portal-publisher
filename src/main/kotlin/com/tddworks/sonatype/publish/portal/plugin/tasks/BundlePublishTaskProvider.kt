@@ -16,7 +16,7 @@ object BundlePublishTaskProvider {
         project: Project,
         capitalized: String,
         zipTaskProvider: TaskProvider<Zip>,
-        authentication: Authentication,
+        authentication: Authentication?,
         autoPublish: Boolean?,
     ): TaskProvider<PublishTask> =
         project.tasks.register(
@@ -24,8 +24,8 @@ object BundlePublishTaskProvider {
             PublishTask::class.java
         ) {
             inputFile.set(zipTaskProvider.flatMap { it.archiveFile })
-            username.set(authentication.username)
-            password.set(authentication.password)
+            username.set(authentication?.username)
+            password.set(authentication?.password)
             publicationType.set(
                 if (autoPublish == true) {
                     PublicationType.AUTOMATIC

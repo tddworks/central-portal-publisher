@@ -1,5 +1,6 @@
 package com.tddworks.sonatype.publish.portal.api
 
+import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_PRODUCER
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Project
@@ -9,11 +10,27 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.configurationcache.extensions.capitalized
 
+/**
+ * 1. build all subprojects
+ * 2. publish all publications -  project.rootProject.artifacts.add("zipline", zipTaskProvider)
+ * 3. aggregate all publications from ziplineConfiguration artifacts
+ *    project.tasks.register("zipAggregationPublication", Zip::class.java) {
+ *                 from(ziplineConfiguration.artifacts.map {
+ *                     println("ziplineConfiguration.artifacts: $it")
+ *                     project.zipTree(it.file)
+ *                 })
+ *
+ *                 println("Sonatype Portal Publisher plugin found project path: $path")
+ *
+ *                 destinationDirectory.set(project.layout.buildDirectory.dir("sonatype/zip"))
+ *                 archiveFileName.set("publicationAggregated.zip")
+ *             }
+ */
 class DeploymentBundleManager {
 
     fun publishProjectPublications(
         project: Project,
-        authentication: Authentication,
+        authentication: Authentication?,
         autoPublish: Boolean?,
         publishAllPublicationsToSonatypePortal: TaskProvider<Task>,
         projectPath: String,
@@ -27,6 +44,8 @@ class DeploymentBundleManager {
             // This kotlinMultiplatform publication includes metadata artifacts and references the other publications as its variants.
 
             val sonatypeDestinationPath = project.layout.buildDirectory.dir("sonatype/${name}-bundle")
+
+            println("Sonatype Portal Publisher plugin found project path: $projectPath")
 
             val capitalized = name.capitalized()
 
@@ -94,7 +113,7 @@ class DeploymentBundleManager {
                 dependsOn((publishTaskProvider))
             }
 
-            project.artifacts.add(Dependency.ARCHIVES_CONFIGURATION, zipTaskProvider)
+            project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
         }
     }
 }

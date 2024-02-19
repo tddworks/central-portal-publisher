@@ -10,7 +10,10 @@ sonatypePortalPublisher {
         username = "some-username"
         password = "some-password"
     }
-    autoPublish = true
+    settings {
+        autoPublish = true
+        aggregation = true
+    }
 }
 
 kotlin {

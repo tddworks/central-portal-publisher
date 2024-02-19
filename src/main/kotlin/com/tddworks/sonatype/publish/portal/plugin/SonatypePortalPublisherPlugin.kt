@@ -1,9 +1,15 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
-import com.tddworks.sonatype.publish.portal.api.AuthenticationBuilder
+import com.tddworks.sonatype.publish.portal.api.Authentication
+import com.tddworks.sonatype.publish.portal.api.DefaultProjectPublicationsManager
 import com.tddworks.sonatype.publish.portal.api.DeploymentBundleManager
+import com.tddworks.sonatype.publish.portal.api.Settings
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 
@@ -16,64 +22,125 @@ import org.gradle.kotlin.dsl.getByType
  * 2. create a task to publish all publications to Sonatype Portal
  */
 class SonatypePortalPublisherPlugin : Plugin<Project> {
+    private var zipConfiguration: Configuration? = null
+
     override fun apply(project: Project): Unit = with(project) {
+        extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
 
-        val extension = extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
-
-        // Set default values for the extension
-        extension.autoPublish.convention(false)
-        extension.authenticationProp.convention(AuthenticationBuilder().build())
-        extension.modulesProp.convention(emptyList())
+        zipConfiguration = project.configurations.create(ZIP_CONFIGURATION_CONSUMER) {
+            isCanBeResolved = true
+            isCanBeConsumed = false
+            configureAttributes(project)
+        }
 
         // Configure the extension after the project has been evaluated
         afterEvaluate {
             configurePublisher()
         }
+
+
+//        if (zipConfiguration != null) {
+//            configureAggregation(project)
+//        }
+
+        configureAggregation(project)
+    }
+
+    private fun Project.configureAggregation(project: Project) {
+        logger.quiet("Sonatype Portal Publisher plugin applied to project: $path")
+        project.pluginManager.withPlugin("maven-publish") {
+            project.tasks.register("zipAggregationPublication", Zip::class.java) {
+                from(zipConfiguration?.elements?.map { bundle ->
+                    logger.quiet("Sonatype Portal Publisher plugin found publish bundle: $bundle")
+                    check(bundle.isNotEmpty()) {
+                        "No bundle found for project: $path"
+                    }
+                    bundle.map {
+                        project.zipTree(it)
+                    }
+                })
+
+                destinationDirectory.set(project.layout.buildDirectory.dir("sonatype/zip"))
+                archiveFileName.set("publicationAggregated.zip")
+            }
+        }
     }
 
     private fun Project.configurePublisher() {
+        logger.quiet("Configuring Sonatype Portal Publisher plugin for project: $path")
         val extension = extensions.getByType<SonatypePortalPublisherExtension>()
 
         // Early-out with a warning if user hasn't added required config yet, to ensure project still syncs
-        val authentication = extension.authenticationProp.get()
+        val authentication = extension.getAuthentication()
 
-        val autoPublish = extension.autoPublish.get()
+        val settings = extension.getSettings()
 
-        if (extension.autoPublish.get() && (authentication.password.isNullOrBlank() || authentication.username.isNullOrBlank())) {
+        if (settings?.autoPublish == true && (authentication?.password.isNullOrBlank() || authentication?.username.isNullOrBlank())) {
             logger.info("Sonatype Portal Publisher plugin applied to project: $path and autoPublish is enabled, but no authentication found. Skipping publishing.")
             return
         }
 
-        val modules = extension.modulesProp.get()
-        if (modules.isEmpty()) {
-            logger.info("Sonatype Portal Publisher plugin applied to project: ${path}. modules configuration is empty. Will only publish the root module.")
-        }
-
-        logger.info(
+        logger.quiet(
             """
-            Sonatype Portal Publisher plugin applied to project: ${path}
+            Sonatype Portal Publisher plugin applied to project: $path
             Extension name: ${extension::class.simpleName}
-            module: ${extension.modulesProp.get()}
-            autoPublish: ${extension.autoPublish.get()}
-            authentication: ${extension.authenticationProp.get()}
+            autoPublish: ${settings?.autoPublish}
+            aggregation: ${settings?.aggregation}
+            authentication: ${extension.getAuthentication()}
         """.trimIndent()
         )
 
         // Create a task to publish all publications to Sonatype Portal
-        val publishAllPublicationsToCentralPortal = project.tasks.register("publishAllPublicationsToCentralPortal")
+
+        val zipAllPublications = project.tasks.register("zipAllPublications")
+        val publishAllPublicationsToSonatypePortalRepository =
+            project.tasks.register("publishAllPublicationsToSonatypePortalRepository")
+
 
         // Create a task to publish to Sonatype Portal
         project.allprojects.forEach { pj ->
-            pj.pluginManager.withPlugin("maven-publish") {
-                DeploymentBundleManager().publishProjectPublications(
-                    pj,
-                    authentication,
-                    autoPublish,
-                    publishAllPublicationsToCentralPortal,
-                    pj.path,
-                    pj.publishingExtension,
-                )
+            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER configuration
+            project.dependencies.add(ZIP_CONFIGURATION_CONSUMER, project.dependencies.project(mapOf("path" to pj.path)))
+
+            registerProjectPublications(
+                pj,
+                authentication,
+                settings,
+                publishAllPublicationsToSonatypePortalRepository,
+            )
+        }
+    }
+
+    private fun registerProjectPublications(
+        pj: Project,
+        authentication: Authentication?,
+        settings: Settings?,
+        publishAllPublicationsToSonatypePortalRepository: TaskProvider<Task>,
+    ) {
+        pj.pluginManager.withPlugin("maven-publish") {
+
+            // should move to the zip register task
+            // create a ZIP_CONFIGURATION_PRODUCER configuration for each project
+            pj.configurations.create(ZIP_CONFIGURATION_PRODUCER) {
+                isCanBeConsumed = true
+                isCanBeResolved = false
+                configureAttributes(pj)
             }
+//
+//            DefaultProjectPublicationsManager().addPublication(
+//                pj,
+//                publishAllPublicationsToSonatypePortalRepository,
+//                zipAllPublications
+//            )
+
+            DeploymentBundleManager().publishProjectPublications(
+                pj,
+                authentication,
+                settings?.autoPublish,
+                publishAllPublicationsToSonatypePortalRepository,
+                pj.path,
+                pj.publishingExtension,
+            )
         }
     }
 }
