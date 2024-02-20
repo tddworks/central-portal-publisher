@@ -6,6 +6,54 @@ import org.junit.jupiter.api.Test
 
 internal class SonatypePortalPublisherPluginTest {
 
+
+    @Test
+    fun `should create zip all publications task with default values`() {
+        val project = ProjectBuilder.builder().build()
+
+        val plugin = SonatypePortalPublisherPlugin()
+
+        plugin.apply(project)
+
+        // internally it calls project.evaluate()
+        // when: "triggering a project.evaluate"
+        project.getTasksByName("tasks", false)
+
+        assertNotNull(project.tasks.findByName("zipAllPublications"))
+    }
+
+    @Test
+    fun `publish all publications task should depends on zipAllPublications with default values`() {
+        val project = ProjectBuilder.builder().build()
+
+        val plugin = SonatypePortalPublisherPlugin()
+
+        plugin.apply(project)
+
+        // internally it calls project.evaluate()
+        // when: "triggering a project.evaluate"
+        project.getTasksByName("tasks", false)
+
+        val task = project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository")
+        assertTrue(task?.taskDependencies?.getDependencies(task)?.find { it.name == "zipAllPublications" } != null)
+    }
+
+    @Test
+    fun `should create publish all publications task with default values`() {
+        val project = ProjectBuilder.builder().build()
+
+        val plugin = SonatypePortalPublisherPlugin()
+
+        plugin.apply(project)
+
+        // internally it calls project.evaluate()
+        // when: "triggering a project.evaluate"
+        project.getTasksByName("tasks", false)
+
+        val task = project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository")
+        assertNotNull(task)
+    }
+
     @Test
     fun `should add project as dependency project to configuration when aggregation is true`() {
         val project = ProjectBuilder.builder().build()
@@ -27,7 +75,7 @@ internal class SonatypePortalPublisherPluginTest {
 
 
     @Test
-    fun `should create publish all publications task when aggregation is true`() {
+    fun `should create publish aggregation publications task when aggregation is true`() {
         val project = ProjectBuilder.builder().build()
 
         val plugin = SonatypePortalPublisherPlugin()

@@ -23,6 +23,13 @@ import org.gradle.kotlin.dsl.getByType
 class SonatypePortalPublisherPlugin : Plugin<Project> {
     private var zipConfiguration: Configuration? = null
 
+    companion object {
+        const val PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY =
+            "publishAllPublicationsToSonatypePortalRepository"
+
+        const val ZIP_ALL_PUBLICATIONS = "zipAllPublications"
+    }
+
     override fun apply(project: Project): Unit = with(project) {
         logger.quiet("Applying Sonatype Portal Publisher plugin to project: $path")
         extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
@@ -64,10 +71,20 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         """.trimIndent()
         )
 
-        enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+
+        // Create a task to zip all publications
+        val zipAllPublications = project.tasks.register(ZIP_ALL_PUBLICATIONS)
 
         // Create a task to publish all publications to Sonatype Portal
-        val publishAllPublicationsToSonatypePortalRepository =
+        project.tasks.register(PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY) {
+            // publish all publications depends on zipAllPublications
+            dependsOn(zipAllPublications)
+        }
+
+        enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+
+
+        val publishAggregationPublicationsToSonatypePortalRepository =
             enablePublishAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
         // Create a task to publish to Sonatype Portal
@@ -77,7 +94,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
                 pj,
                 authentication,
                 settings,
-                publishAllPublicationsToSonatypePortalRepository,
+                publishAggregationPublicationsToSonatypePortalRepository,
             )
         }
 
