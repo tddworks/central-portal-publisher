@@ -24,6 +24,7 @@ object BundlePublishTaskProvider {
             taskName(publicationName),
             PublishTask::class.java
         ) {
+            group = "publishing"
             inputFile.set(zipTaskProvider.flatMap { it.archiveFile })
             username.set(authentication?.username)
             password.set(authentication?.password)

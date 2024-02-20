@@ -1,13 +1,12 @@
 package com.tddworks.sonatype.publish.portal.api
 
+import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin.Companion.PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY
+import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin.Companion.ZIP_ALL_PUBLICATIONS
 import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_PRODUCER
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.configurationcache.extensions.capitalized
 
 /**
@@ -32,7 +31,6 @@ class DeploymentBundleManager {
         project: Project,
         authentication: Authentication?,
         autoPublish: Boolean?,
-        publishAllPublicationsToSonatypePortal: TaskProvider<Task>?,
         projectPath: String,
         publishing: PublishingExtension,
     ) {
@@ -47,32 +45,28 @@ class DeploymentBundleManager {
 
             println("Sonatype Portal Publisher plugin found project path: $projectPath")
 
+            // Capitalize the publication name
+            // e.g. maven -> Maven
+            // e.g. kotlinMultiplatform -> KotlinMultiplatform
             val capitalized = name.capitalized()
 
-            val publishingRepoName = "sonatype$capitalized"
-
             // Add the Sonatype repository to the publishing block
-            // for issue -  Task with name 'publishMavenPublicationToSonatypeMavenRepository' not found in project ':example-single-module'.
             // each publication has a task to publish it to a repository
+
+            // This step will create publishMavenPublicationToMavenRepository task
             publishing.apply {
                 repositories.apply {
+                    // default task name will be - publishMavenPublicationToMavenRepository
+                    // because the publication name could be different, e.g. maven, kotlinMultiplatform, etc.
+                    // so we need rename the task to ${capitalized}
+                    // here we use maven as the repository type and save it to the build folder
+                    // save to example-multi-modules/module-b/build/sonatype/maven-bundle/
                     maven {
-                        name = publishingRepoName
+                        name = capitalized
                         url = project.uri(sonatypeDestinationPath)
                     }
                 }
             }
-
-            project.logger.quiet(
-                """
-                            Sonatype Portal Publisher plugin found project path: $projectPath
-                            Sonatype Portal Publisher plugin found publication name: $name
-                            Sonatype Portal Publisher plugin found capitalized publication name: $capitalized
-                            Sonatype Portal Publisher plugin found sonatypeDestinationPath: ${sonatypeDestinationPath.get().asFile.path}
-                            Sonatype Portal Publisher plugin found repoName: $publishingRepoName
-                            Sonatype Portal Publisher plugin found maven url: ${project.uri(sonatypeDestinationPath)}
-                        """.trimIndent()
-            )
 
             val publication = publishing.publications.findByName(name)
 
@@ -81,10 +75,11 @@ class DeploymentBundleManager {
                 error("Sonatype Portal Publisher plugin cannot find publication '$name'. Candidates are: '${candidates.joinToString()}'")
             }
 
-            val publishToSonatypeTaskProvider =
-                project.tasks.named("publish${capitalized}PublicationTo${publishingRepoName.capitalized()}Repository")
+            // reuse the task to publish the publication to the repository
+            val publishToTask = project.tasks.named("publish${capitalized}PublicationToMavenRepository")
 
-            publishToSonatypeTaskProvider.configure {
+            // remove the destination path before publishing
+            publishToTask.configure {
                 doFirst {
                     sonatypeDestinationPath.get().asFile.apply {
                         deleteRecursively()
@@ -93,12 +88,20 @@ class DeploymentBundleManager {
                 }
             }
 
+
             val zipTaskProvider = BundleZipTaskProvider.zipTaskProvider(
                 project,
                 name,
-                publishToSonatypeTaskProvider,
+                publishToTask,
                 sonatypeDestinationPath
             )
+
+            // Add the zip task to the zipAllPublications task
+            // zipAllPublications will execute all the zip tasks
+            // e.g zipMavenPublication, zipKotlinMultiplatformPublication, etc.
+            project.rootProject.tasks.named(ZIP_ALL_PUBLICATIONS).configure {
+                dependsOn(zipTaskProvider)
+            }
 
             val publishTaskProvider = BundlePublishTaskProvider.publishTaskProvider(
                 project,
@@ -108,10 +111,12 @@ class DeploymentBundleManager {
                 autoPublish
             )
 
-            // Add the publishing task to the publishAllPublicationsToCentralPortal task
-            publishAllPublicationsToSonatypePortal?.configure {
-                dependsOn((publishTaskProvider))
+            // Add the publishing task to the publishAggregationPublicationsToSonatypePortalRepository task
+            project.rootProject.tasks.named(PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY).configure {
+                group = "publishing"
+                dependsOn(publishTaskProvider)
             }
+
 
             project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
         }

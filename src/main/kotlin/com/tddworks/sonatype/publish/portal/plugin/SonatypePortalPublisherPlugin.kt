@@ -27,6 +27,9 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         const val PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY =
             "publishAllPublicationsToSonatypePortalRepository"
 
+        const val PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY =
+            "publishAggregationPublicationsToSonatypePortalRepository"
+
         const val ZIP_ALL_PUBLICATIONS = "zipAllPublications"
     }
 
@@ -77,6 +80,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
         // Create a task to publish all publications to Sonatype Portal
         project.tasks.register(PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY) {
+            group = "publishing"
             // publish all publications depends on zipAllPublications
             dependsOn(zipAllPublications)
         }
@@ -84,28 +88,41 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
 
-        val publishAggregationPublicationsToSonatypePortalRepository =
-            enablePublishAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+        enablePublishAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
         // Create a task to publish to Sonatype Portal
         project.allprojects.forEach { pj ->
             addProjectAsRootProjectDependencyIfNecessary(extension.getSettings()?.aggregation, pj)
-            registerProjectPublications(
-                pj,
-                authentication,
-                settings,
-                publishAggregationPublicationsToSonatypePortalRepository,
-            )
+
+
+            pj.pluginManager.withPlugin("maven-publish") {
+
+                // should move to the zip register task
+                // create a ZIP_CONFIGURATION_PRODUCER configuration for each project
+                pj.createZipConfigurationProducer
+//
+//            DefaultProjectPublicationsManager().addPublication(
+//                pj,
+//                publishAllPublicationsToSonatypePortalRepository,
+//                zipAllPublications
+//            )
+
+                DeploymentBundleManager().publishProjectPublications(
+                    pj,
+                    authentication,
+                    settings?.autoPublish,
+                    pj.path,
+                    pj.publishingExtension,
+                )
+            }
         }
 
     }
 
-    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(isAggregation: Boolean?): TaskProvider<Task>? {
-        return if (isAggregation == true) {
+    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(isAggregation: Boolean?) {
+        if (isAggregation == true) {
             logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
-            project.tasks.register("publishAggregationPublicationsToSonatypePortalRepository")
-        } else {
-            null
+            project.tasks.register(PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY)
         }
     }
 
@@ -121,35 +138,6 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
     private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?) {
         if (aggregation == true) {
             BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
-        }
-    }
-
-    private fun registerProjectPublications(
-        pj: Project,
-        authentication: Authentication?,
-        settings: Settings?,
-        publishAllPublicationsToSonatypePortalRepository: TaskProvider<Task>?,
-    ) {
-        pj.pluginManager.withPlugin("maven-publish") {
-
-            // should move to the zip register task
-            // create a ZIP_CONFIGURATION_PRODUCER configuration for each project
-            pj.createZipConfigurationProducer
-//
-//            DefaultProjectPublicationsManager().addPublication(
-//                pj,
-//                publishAllPublicationsToSonatypePortalRepository,
-//                zipAllPublications
-//            )
-
-            DeploymentBundleManager().publishProjectPublications(
-                pj,
-                authentication,
-                settings?.autoPublish,
-                publishAllPublicationsToSonatypePortalRepository,
-                pj.path,
-                pj.publishingExtension,
-            )
         }
     }
 }
