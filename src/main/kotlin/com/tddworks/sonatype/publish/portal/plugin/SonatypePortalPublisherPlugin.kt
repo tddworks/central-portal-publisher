@@ -64,11 +64,11 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         """.trimIndent()
         )
 
+        enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+
         // Create a task to publish all publications to Sonatype Portal
         val publishAllPublicationsToSonatypePortalRepository =
-            enablePublishAllPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
-
-        enableZipAllPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+            enablePublishAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
         // Create a task to publish to Sonatype Portal
         project.allprojects.forEach { pj ->
@@ -83,10 +83,10 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
     }
 
-    private fun Project.enablePublishAllPublicationsTaskIfNecessary(isAggregation: Boolean?): TaskProvider<Task>? {
+    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(isAggregation: Boolean?): TaskProvider<Task>? {
         return if (isAggregation == true) {
-            logger.quiet("Enabling publishAllPublicationsToSonatypePortalRepository task for project: $path")
-            project.tasks.register("publishAllPublicationsToSonatypePortalRepository")
+            logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
+            project.tasks.register("publishAggregationPublicationsToSonatypePortalRepository")
         } else {
             null
         }
@@ -101,9 +101,9 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.enableZipAllPublicationsTaskIfNecessary(aggregation: Boolean?) {
+    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?) {
         if (aggregation == true) {
-            BundleZipTaskProvider.zipAllPublicationsProvider(this)
+            BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
         }
     }
 

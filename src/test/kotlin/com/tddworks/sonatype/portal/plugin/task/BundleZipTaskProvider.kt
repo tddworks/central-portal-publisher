@@ -16,16 +16,16 @@ import org.junit.jupiter.api.Test
 class BundleZipTaskProviderTest {
 
     @Test
-    fun `should create a zip all task provider`() {
+    fun `should create a zip aggregation task provider`() {
         val project: Project = ProjectBuilder.builder().build()
         project.createZipConfigurationConsumer
 
-        val zipTaskProvider = BundleZipTaskProvider.zipAllPublicationsProvider(project)
+        val zipTaskProvider = BundleZipTaskProvider.zipAggregationPublicationsProvider(project)
 
         val provider = zipTaskProvider.get()
 
         assertNotNull(zipTaskProvider)
-        assertEquals("zipAllPublications", zipTaskProvider.name)
+        assertEquals("zipAggregationPublications", zipTaskProvider.name)
 
         assertTrue(provider is Zip)
 

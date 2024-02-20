@@ -44,7 +44,7 @@ internal class SonatypePortalPublisherPluginTest {
         // when: "triggering a project.evaluate"
         project.getTasksByName("tasks", false)
 
-        assertNotNull(project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository"))
+        assertNotNull(project.tasks.findByName("publishAggregationPublicationsToSonatypePortalRepository"))
     }
 
     @Test
@@ -59,12 +59,12 @@ internal class SonatypePortalPublisherPluginTest {
         // when: "triggering a project.evaluate"
         project.getTasksByName("tasks", false)
 
-        assertNull(project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository"))
+        assertNull(project.tasks.findByName("publishAggregationPublicationsToSonatypePortalRepository"))
     }
 
 
     @Test
-    fun `should not create zip all publication task with default values`() {
+    fun `should not create zip aggregation publication task with default values`() {
         val project = ProjectBuilder.builder().build()
 
         project.plugins.apply(SonatypePortalPublisherPlugin::class.java)
@@ -73,12 +73,12 @@ internal class SonatypePortalPublisherPluginTest {
         // when: "triggering a project.evaluate"
         project.getTasksByName("tasks", false)
 
-        assertNull(project.tasks.findByName("zipAllPublications"))
+        assertNull(project.tasks.findByName("zipAggregationPublications"))
     }
 
 
     @Test
-    fun `should create zip all publication task when aggregation is true`() {
+    fun `should create zip aggregation publication task when aggregation is true`() {
         val project = ProjectBuilder.builder().build()
 
         val extension = SonatypePortalPublisherPlugin()
@@ -95,7 +95,7 @@ internal class SonatypePortalPublisherPluginTest {
         // when: "triggering a project.evaluate"
         project.getTasksByName("tasks", false)
 
-        assertNotNull(project.tasks.findByName("zipAllPublications"))
+        assertNotNull(project.tasks.findByName("zipAggregationPublications"))
     }
 
 

@@ -30,10 +30,10 @@ object BundleZipTaskProvider {
     private fun taskName(capitalized: String) = "zip${capitalized}Publication"
 
 
-    fun zipAllPublicationsProvider(
+    fun zipAggregationPublicationsProvider(
         project: Project,
     ): TaskProvider<Zip> =
-        project.tasks.register("zipAllPublications", Zip::class.java) {
+        project.tasks.register("zipAggregationPublications", Zip::class.java) {
             from(project.configurations.getByName(ZIP_CONFIGURATION_CONSUMER).elements?.map { bundle ->
                 logger.quiet("Sonatype Portal Publisher plugin found publish bundle: $bundle")
                 check(bundle.isNotEmpty()) {
