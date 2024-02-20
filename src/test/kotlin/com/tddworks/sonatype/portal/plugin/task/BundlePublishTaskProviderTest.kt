@@ -26,7 +26,7 @@ class BundlePublishTaskProviderTest {
         )
 
         assertNotNull(taskProvider)
-        assertEquals("publishTestPublicationToSonatypePortal", taskProvider.name)
+        assertEquals("publishTestPublicationToSonatypePortalRepository", taskProvider.name)
         assertEquals(PublicationType.USER_MANAGED, taskProvider.get().publicationType.get())
     }
 
@@ -45,7 +45,7 @@ class BundlePublishTaskProviderTest {
         )
 
         assertNotNull(taskProvider)
-        assertEquals("publishTestPublicationToSonatypePortal", taskProvider.name)
+        assertEquals("publishTestPublicationToSonatypePortalRepository", taskProvider.name)
         assertEquals(false, taskProvider.get().inputFile.isPresent)
         assertEquals(authentication.username, taskProvider.get().username.get())
         assertEquals(authentication.password, taskProvider.get().password.get())

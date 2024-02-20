@@ -5,6 +5,7 @@ import com.tddworks.sonatype.publish.portal.api.PublicationType
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.configurationcache.extensions.capitalized
 
 /**
  * Provides a task to publish a bundle to the Sonatype Portal.
@@ -14,13 +15,13 @@ import org.gradle.api.tasks.bundling.Zip
 object BundlePublishTaskProvider {
     fun publishTaskProvider(
         project: Project,
-        capitalized: String,
+        publicationName: String,
         zipTaskProvider: TaskProvider<Zip>,
         authentication: Authentication?,
         autoPublish: Boolean?,
     ): TaskProvider<PublishTask> =
         project.tasks.register(
-            taskName(capitalized),
+            taskName(publicationName),
             PublishTask::class.java
         ) {
             inputFile.set(zipTaskProvider.flatMap { it.archiveFile })
@@ -35,5 +36,6 @@ object BundlePublishTaskProvider {
             )
         }
 
-    private fun taskName(capitalized: String) = "publish${capitalized}PublicationToSonatypePortal"
+    private fun taskName(publicationName: String) =
+        "publish${publicationName.capitalized()}PublicationToSonatypePortalRepository"
 }

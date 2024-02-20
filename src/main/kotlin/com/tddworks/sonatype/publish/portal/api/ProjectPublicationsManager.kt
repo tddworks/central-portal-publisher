@@ -80,7 +80,7 @@ class DefaultProjectPublicationsManager : ProjectPublicationsManager {
 
                 val zipTaskProvider = BundleZipTaskProvider.zipTaskProvider(
                     project,
-                    capitalized,
+                    name,
                     publishToSonatypeTaskProvider,
                     sonatypeDestinationPath
                 )

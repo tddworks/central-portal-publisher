@@ -8,22 +8,23 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.configurationcache.extensions.capitalized
 
 
 object BundleZipTaskProvider {
     private const val SONATYPE_ZIP_DIR = "sonatype/zip"
-    private const val BUNDLE_ZIP_SUFFIX = "-bundle.zip"
+    private const val BUNDLE_ZIP_SUFFIX = "-deployment-bundle.zip"
     fun zipTaskProvider(
         project: Project,
-        capitalized: String,
+        publicationName: String,
         dependsOnTask: TaskProvider<Task>,
         sonatypeDestinationPath: Provider<Directory>,
     ): TaskProvider<Zip> =
-        project.tasks.register(taskName(capitalized), Zip::class.java) {
+        project.tasks.register(taskName(publicationName.capitalized()), Zip::class.java) {
             dependsOn(dependsOnTask)
             from(sonatypeDestinationPath)
             destinationDirectory.set(project.layoutBuildDirectory.dir(SONATYPE_ZIP_DIR))
-            archiveFileName.set("$capitalized$BUNDLE_ZIP_SUFFIX")
+            archiveFileName.set("$publicationName$BUNDLE_ZIP_SUFFIX")
         }
 
     private fun taskName(capitalized: String) = "zip${capitalized}Publication"
@@ -44,6 +45,6 @@ object BundleZipTaskProvider {
             })
 
             destinationDirectory.set(project.layout.buildDirectory.dir(SONATYPE_ZIP_DIR))
-            archiveFileName.set("publicationsAggregated$BUNDLE_ZIP_SUFFIX")
+            archiveFileName.set("aggregated$BUNDLE_ZIP_SUFFIX")
         }
 }

@@ -32,7 +32,7 @@ class DeploymentBundleManager {
         project: Project,
         authentication: Authentication?,
         autoPublish: Boolean?,
-        publishAllPublicationsToSonatypePortal: TaskProvider<Task>,
+        publishAllPublicationsToSonatypePortal: TaskProvider<Task>?,
         projectPath: String,
         publishing: PublishingExtension,
     ) {
@@ -95,21 +95,21 @@ class DeploymentBundleManager {
 
             val zipTaskProvider = BundleZipTaskProvider.zipTaskProvider(
                 project,
-                capitalized,
+                name,
                 publishToSonatypeTaskProvider,
                 sonatypeDestinationPath
             )
 
             val publishTaskProvider = BundlePublishTaskProvider.publishTaskProvider(
                 project,
-                capitalized,
+                name,
                 zipTaskProvider,
                 authentication,
                 autoPublish
             )
 
             // Add the publishing task to the publishAllPublicationsToCentralPortal task
-            publishAllPublicationsToSonatypePortal.configure {
+            publishAllPublicationsToSonatypePortal?.configure {
                 dependsOn((publishTaskProvider))
             }
 

@@ -30,7 +30,7 @@ class BundleZipTaskProviderTest {
         assertTrue(provider is Zip)
 
         assertTrue(provider.destinationDirectory.get().asFile.path.contains("build/sonatype/zip"))
-        assertEquals("publicationsAggregated-bundle.zip", provider.archiveFileName.get())
+        assertEquals("aggregated-deployment-bundle.zip", provider.archiveFileName.get())
     }
 
     @Test

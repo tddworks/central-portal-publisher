@@ -24,6 +24,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
     private var zipConfiguration: Configuration? = null
 
     override fun apply(project: Project): Unit = with(project) {
+        logger.quiet("Applying Sonatype Portal Publisher plugin to project: $path")
         extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
 
         zipConfiguration = project.createZipConfigurationConsumer
@@ -65,16 +66,13 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
         // Create a task to publish all publications to Sonatype Portal
         val publishAllPublicationsToSonatypePortalRepository =
-            project.tasks.register("publishAllPublicationsToSonatypePortalRepository")
+            enablePublishAllPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
-
-        enableZipAllPublicationsIfNecessary(extension.getSettings()?.aggregation)
+        enableZipAllPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
         // Create a task to publish to Sonatype Portal
         project.allprojects.forEach { pj ->
-            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER configuration
-            project.dependencies.add(ZIP_CONFIGURATION_CONSUMER, project.dependencies.project(mapOf("path" to pj.path)))
-
+            addProjectAsRootProjectDependencyIfNecessary(extension.getSettings()?.aggregation, pj)
             registerProjectPublications(
                 pj,
                 authentication,
@@ -85,7 +83,25 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
     }
 
-    private fun Project.enableZipAllPublicationsIfNecessary(aggregation: Boolean?) {
+    private fun Project.enablePublishAllPublicationsTaskIfNecessary(isAggregation: Boolean?): TaskProvider<Task>? {
+        return if (isAggregation == true) {
+            logger.quiet("Enabling publishAllPublicationsToSonatypePortalRepository task for project: $path")
+            project.tasks.register("publishAllPublicationsToSonatypePortalRepository")
+        } else {
+            null
+        }
+    }
+
+
+    private fun Project.addProjectAsRootProjectDependencyIfNecessary(isAggregation: Boolean?, pj: Project) {
+        if (isAggregation == true) {
+            logger.quiet("Adding project: ${pj.path} as a dependency to the root project: $path")
+            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER configuration
+            project.dependencies.add(ZIP_CONFIGURATION_CONSUMER, project.dependencies.project(mapOf("path" to pj.path)))
+        }
+    }
+
+    private fun Project.enableZipAllPublicationsTaskIfNecessary(aggregation: Boolean?) {
         if (aggregation == true) {
             BundleZipTaskProvider.zipAllPublicationsProvider(this)
         }
@@ -95,7 +111,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         pj: Project,
         authentication: Authentication?,
         settings: Settings?,
-        publishAllPublicationsToSonatypePortalRepository: TaskProvider<Task>,
+        publishAllPublicationsToSonatypePortalRepository: TaskProvider<Task>?,
     ) {
         pj.pluginManager.withPlugin("maven-publish") {
 
