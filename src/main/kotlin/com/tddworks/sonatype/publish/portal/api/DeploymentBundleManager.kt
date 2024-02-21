@@ -6,8 +6,15 @@ import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_PRODUCER
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Project
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.configurationcache.extensions.capitalized
+import org.gradle.kotlin.dsl.*
+
+import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.provideDelegate
 
 /**
  * 1. build all subprojects
@@ -34,6 +41,29 @@ class DeploymentBundleManager {
         projectPath: String,
         publishing: PublishingExtension,
     ) {
+
+        project.plugins.withId("org.jetbrains.kotlin.jvm") {
+            val javadocJar by project.tasks.registering(Jar::class) {
+                archiveClassifier.set("javadoc")
+                duplicatesStrategy = DuplicatesStrategy.WARN
+                // contents are deliberately left empty
+            }
+
+
+            publishing.publications.register<MavenPublication>("maven") {
+                from(project.components["java"])
+                configurePom()
+            }
+//         // Add an executable artifact if exists
+            publishing.publications.withType<MavenPublication>().configureEach {
+                artifact(javadocJar)
+                // val execJar = tasks.findByName("buildExecutable") as? ReallyExecJar
+                // if (execJar != null) {
+                //   artifact(execJar.execJarFile)
+                // }
+            }
+        }
+
         // Configure each publication
         publishing.publications.configureEach {
             // publications are the different artifacts that can be published
@@ -62,9 +92,19 @@ class DeploymentBundleManager {
                     // here we use maven as the repository type and save it to the build folder
                     // save to example-multi-modules/module-b/build/sonatype/maven-bundle/
                     maven {
+                        // avoid central.sonatype.com - pom not found issue
+                        // Bundle has content that does NOT have a .pom file
+//                        metadataSources {
+//                            mavenPom()
+//                            artifact()
+//                            // Indicates that this repository may not contain metadata files,
+//                            ignoreGradleMetadataRedirection()
+//                        }
                         name = capitalized
                         url = project.uri(sonatypeDestinationPath)
+
                     }
+
                 }
             }
 
@@ -119,6 +159,39 @@ class DeploymentBundleManager {
 
 
             project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
+        }
+    }
+}
+
+fun MavenPublication.configurePom() {
+    val githubRepo = "github.com/tddworks/openai-kotlin"
+    pom {
+        name = "test"
+//        description = provider { project.description }
+        description = "OpenAI API KMP Client"
+        inceptionYear = "2023"
+        url = "https://github.com/tddworks/openai-kotlin"
+
+        developers {
+            developer {
+                name = "tddworks"
+                email = "itshan@tddworks.com"
+                organization = "tddworks team"
+                organizationUrl = "www.tddworks.com"
+            }
+        }
+
+        licenses {
+            license {
+                name = "The Apache Software License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
+
+        scm {
+            url = githubRepo
+            connection = "scm:git:$githubRepo.git"
+            developerConnection = "scm:git:$githubRepo.git"
         }
     }
 }

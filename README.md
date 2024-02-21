@@ -3,20 +3,6 @@
 ## Usage
 
 ### Single module
-Supported Features:
-- [ ] publish different publications (maven, kotlinMultiplatform, etc.)
-  - [x] publishMavenPublicationToSonatypeRepository
-  - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
-  - [ ] publishAllPublicationsToSonatypeRepository
-- [ ] publish aggregation publications
-  - [ ] publishAggregationPublicationToSonatypeRepository
-
-- [ ] zip different publications
-  - [x] zipMavenPublication
-  - [ ] zipKotlinMultiplatformPublication
-  - [ ] zipAllPublications
-- [ ] zip aggregation
-    - [ ] zipAggregationPublication
 
 ```kotlin
 sonatypePortal {
@@ -32,19 +18,22 @@ sonatypePortal {
 ```
 
 ### Multi-modules
+
 Supported Features:
 - [ ] publish different publications (maven, kotlinMultiplatform, etc.)
-    - [x] publishMavenPublicationToSonatypeRepository
-    - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
+  - [x] publishMavenPublicationToSonatypeRepository
+    - [ ] publish by specific username and password
+    - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
+  - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
 - [ ] publish aggregation publications
-    - [ ] publishAggregationPublicationToSonatypeRepository
+  - [ ] publishAggregationPublicationToSonatypeRepository
 
 - [ ] zip different publications
-    - [x] zipMavenPublication
-    - [ ] zipKotlinMultiplatformPublication
-    - [ ] zipAllPublications
-- [ ] zip aggregation
-    - [x] zipAggregationPublication
+  - [x] zipMavenPublication
+  - [ ] zipKotlinMultiplatformPublication
+  - [ ] zipAllPublications
+- [x] zip aggregation
+  - [x] zipAggregationPublication
 
 #### With project isolation
 This will publish all the subprojects in its own module.
