@@ -7,6 +7,7 @@ import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvid
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
@@ -15,6 +16,7 @@ import org.gradle.kotlin.dsl.*
 
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.provideDelegate
+import org.gradle.plugins.signing.SigningExtension
 
 /**
  * 1. build all subprojects
@@ -41,6 +43,14 @@ class DeploymentBundleManager {
         projectPath: String,
         publishing: PublishingExtension,
     ) {
+
+        // central.sonatype.com - Sources must be provided but not found in entries
+        project.extensions.getByType<JavaPluginExtension>().apply {
+            withSourcesJar()
+        }
+
+        // central.sonatype.com - Missing signature for file:
+        configureSigning(project)
 
         project.plugins.withId("org.jetbrains.kotlin.jvm") {
             val javadocJar by project.tasks.registering(Jar::class) {
@@ -159,6 +169,16 @@ class DeploymentBundleManager {
 
 
             project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
+        }
+    }
+
+    private fun configureSigning(project: Project) {
+        project.plugins.apply("signing")
+        project.plugins.withId("signing") {
+            project.configure<SigningExtension> {
+                val publishing = project.extensions.getByName("publishing") as PublishingExtension
+                sign(publishing.publications)
+            }
         }
     }
 }

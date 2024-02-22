@@ -1,7 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin)
-    `maven-publish`
-    signing
     id("com.tddworks.sonatype-portal-publisher") version "0.0.1"
 }
 
@@ -14,10 +11,6 @@ sonatypePortalPublisher {
         autoPublish = false
         aggregation = true
     }
-}
-
-kotlin {
-
 }
 
 version = "0.0.1"

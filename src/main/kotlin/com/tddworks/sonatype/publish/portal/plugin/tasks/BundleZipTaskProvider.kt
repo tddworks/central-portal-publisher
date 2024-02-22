@@ -23,13 +23,13 @@ object BundleZipTaskProvider {
         project.tasks.register(taskName(publicationName.capitalized()), Zip::class.java) {
             dependsOn(dependsOnTask)
             from(sonatypeDestinationPath)
-//            eachFile {
-//                // Exclude maven-metadata files or the bundle is not recognized
-//                // See https://slack-chats.kotlinlang.org/t/16407246/anyone-tried-the-https-central-sonatype-org-publish-publish-#c8738fe5-8051-4f64-809f-ca67a645216e
-//                if (name.startsWith("maven-metadata")) {
-//                    exclude()
-//                }
-//            }
+            eachFile {
+                // central.sonatype.com - Bundle has content that does NOT have a .pom file
+                // Exclude maven-metadata files
+                if (name.startsWith("maven-metadata")) {
+                    exclude()
+                }
+            }
             destinationDirectory.set(project.layoutBuildDirectory.dir(SONATYPE_ZIP_DIR))
             archiveFileName.set("$publicationName$BUNDLE_ZIP_SUFFIX")
         }

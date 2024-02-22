@@ -1,6 +1,13 @@
 # Sonatype Portal Gradle Plugin
 
 ## Usage
+add gradle.properties file in the root project with the following content:
+refer to [Signing Plugin](https://docs.gradle.org/current/userguide/signing_plugin.html) for more information.
+```properties
+signing.keyId=[your-key-id]
+signing.password=[your-key-password]
+signing.secretKeyRingFile=[your-key-file]
+```
 
 ### Single module
 
@@ -21,7 +28,7 @@ sonatypePortal {
 
 Supported Features:
 - [ ] publish different publications (maven, kotlinMultiplatform, etc.)
-  - [x] publishMavenPublicationToSonatypeRepository
+  - [x] publishMavenPublicationToSonatypePortalRepository
     - [ ] publish by specific username and password
     - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
   - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
