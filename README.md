@@ -36,8 +36,9 @@ Supported Features:
       - [ ] publish by specific username and password
       - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
   - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
-- [ ] publish aggregation publications
-  - [ ] publishAggregationPublicationToSonatypeRepository
+- [x] publish aggregation publications
+  - [x] publish by signing from gradle.properties
+    - [x] publishAggregationPublicationsToSonatypePortalRepository
 
 - [ ] zip different publications
   - [x] zipMavenPublication

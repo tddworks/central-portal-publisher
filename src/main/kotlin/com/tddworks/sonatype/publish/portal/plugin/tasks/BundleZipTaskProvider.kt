@@ -1,5 +1,6 @@
 package com.tddworks.sonatype.publish.portal.plugin.tasks
 
+import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin.Companion.ZIP_AGGREGATION_PUBLICATIONS
 import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_CONSUMER
 import com.tddworks.sonatype.publish.portal.plugin.layoutBuildDirectory
 import org.gradle.api.Project
@@ -40,7 +41,7 @@ object BundleZipTaskProvider {
     fun zipAggregationPublicationsProvider(
         project: Project,
     ): TaskProvider<Zip> =
-        project.tasks.register("zipAggregationPublications", Zip::class.java) {
+        project.tasks.register(ZIP_AGGREGATION_PUBLICATIONS, Zip::class.java) {
             from(project.configurations.getByName(ZIP_CONFIGURATION_CONSUMER).elements?.map { bundle ->
                 logger.quiet("Sonatype Portal Publisher plugin found publish bundle: $bundle")
                 check(bundle.isNotEmpty()) {

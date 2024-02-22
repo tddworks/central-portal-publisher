@@ -3,12 +3,14 @@ package com.tddworks.sonatype.publish.portal.plugin
 import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.DeploymentBundleManager
 import com.tddworks.sonatype.publish.portal.api.Settings
+import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 
@@ -29,6 +31,9 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
         const val PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY =
             "publishAggregationPublicationsToSonatypePortalRepository"
+
+
+        const val ZIP_AGGREGATION_PUBLICATIONS = "zipAggregationPublications"
 
         const val ZIP_ALL_PUBLICATIONS = "zipAllPublications"
     }
@@ -85,10 +90,15 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
             dependsOn(zipAllPublications)
         }
 
-        enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+        val zipProvider = enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
 
 
-        enablePublishAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
+        enablePublishAggregationPublicationsTaskIfNecessary(
+            extension.getSettings()?.aggregation,
+            zipProvider,
+            authentication,
+            settings?.autoPublish
+        )
 
         // Create a task to publish to Sonatype Portal
         project.allprojects.forEach { pj ->
@@ -119,10 +129,21 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
     }
 
-    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(isAggregation: Boolean?) {
+    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(
+        isAggregation: Boolean?,
+        zipProvider: TaskProvider<Zip>?,
+        authentication: Authentication? = null,
+        autoPublish: Boolean? = null,
+    ) {
         if (isAggregation == true) {
             logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
-            project.tasks.register(PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY)
+
+            BundlePublishTaskProvider.publishAggTaskProvider(
+                project,
+                zipProvider!!,
+                authentication,
+                autoPublish
+            )
         }
     }
 
@@ -135,10 +156,11 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?) {
+    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?): TaskProvider<Zip>? {
         if (aggregation == true) {
             createZipConfigurationProducer
-            BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
+            return BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
         }
+        return null
     }
 }

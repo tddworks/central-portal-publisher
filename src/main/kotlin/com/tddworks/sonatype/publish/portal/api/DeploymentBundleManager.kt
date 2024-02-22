@@ -162,10 +162,10 @@ class DeploymentBundleManager {
             )
 
             // Add the publishing task to the publishAggregationPublicationsToSonatypePortalRepository task
-            project.rootProject.tasks.named(PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY).configure {
-                group = "publishing"
-                dependsOn(publishTaskProvider)
-            }
+//            project.rootProject.tasks.named(PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY).configure {
+//                group = "publishing"
+//                dependsOn(publishTaskProvider)
+//            }
 
 
             project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
