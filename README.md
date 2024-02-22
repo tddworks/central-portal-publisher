@@ -28,9 +28,13 @@ sonatypePortal {
 
 Supported Features:
 - [ ] publish different publications (maven, kotlinMultiplatform, etc.)
-  - [x] publishMavenPublicationToSonatypePortalRepository
-    - [ ] publish by specific username and password
-    - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
+  - [ ] publishMavenPublicationToSonatypePortalRepository
+    - [x] publish by signing from gradle.properties
+      - [x] publish by specific username and password
+      - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
+    - [ ] publish by custom signing
+      - [ ] publish by specific username and password
+      - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
   - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
 - [ ] publish aggregation publications
   - [ ] publishAggregationPublicationToSonatypeRepository
@@ -40,7 +44,7 @@ Supported Features:
   - [ ] zipKotlinMultiplatformPublication
   - [ ] zipAllPublications
 - [x] zip aggregation
-  - [x] zipAggregationPublication
+  - [x] zipAggregationPublications
 
 #### With project isolation
 This will publish all the subprojects in its own module.

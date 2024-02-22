@@ -137,6 +137,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
     private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?) {
         if (aggregation == true) {
+            createZipConfigurationProducer
             BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
         }
     }
