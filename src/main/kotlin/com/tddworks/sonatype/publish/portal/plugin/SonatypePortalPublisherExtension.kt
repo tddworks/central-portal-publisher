@@ -2,8 +2,8 @@ package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.AuthenticationBuilder
-import com.tddworks.sonatype.publish.portal.api.Settings
-import com.tddworks.sonatype.publish.portal.api.SettingsBuilder
+import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
+import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettingsBuilder
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -30,7 +30,7 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
      * The settings property.
      * This property is used to configure the settings.
      */
-    private val settings: Property<Settings> = objects.property(Settings::class.java)
+    private val sonatypePublisherSettings: Property<SonatypePublisherSettings> = objects.property(SonatypePublisherSettings::class.java)
 
     /**
      * Configures the authentication.
@@ -53,14 +53,14 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
      * This method is used to configure the settings.
      * The settings are used to configure the Sonatype Portal Publisher plugin.
      * @param settings The settings configuration.
-     * @see Settings
+     * @see SonatypePublisherSettings
      */
-    fun Project.settings(settings: SettingsBuilder.() -> Unit) {
-        this@SonatypePortalPublisherExtension.settings.setAndFinalize(SettingsBuilder().apply(settings).build())
+    fun Project.settings(settings: SonatypePublisherSettingsBuilder.() -> Unit) {
+        this@SonatypePortalPublisherExtension.sonatypePublisherSettings.setAndFinalize(SonatypePublisherSettingsBuilder().apply(settings).build())
     }
 
-    fun getSettings(): Settings? {
-        return settings.orNull
+    fun getSettings(): SonatypePublisherSettings? {
+        return sonatypePublisherSettings.orNull
     }
 
 

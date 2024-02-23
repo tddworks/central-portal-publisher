@@ -5,20 +5,20 @@ package com.tddworks.sonatype.publish.portal.api
  * @param autoPublish Publish the module to the Sonatype Portal and Automatically publish to Central Repository
  * @param aggregation Aggregate the module with other modules
  */
-data class Settings(
+data class SonatypePublisherSettings(
     val autoPublish: Boolean? = false,
     val aggregation: Boolean? = false,
 )
 
 /**
  * Builder for the Settings
- * @see Settings
+ * @see SonatypePublisherSettings
  */
-class SettingsBuilder {
+class SonatypePublisherSettingsBuilder {
     var autoPublish: Boolean? = false
     var aggregation: Boolean? = false
 
-    fun build(): Settings {
-        return Settings(autoPublish, aggregation)
+    fun build(): SonatypePublisherSettings {
+        return SonatypePublisherSettings(autoPublish, aggregation)
     }
 }
