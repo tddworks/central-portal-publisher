@@ -60,14 +60,15 @@ class SonatypePortalPublishingTaskManager(
         project: Project,
     ) {
 
-        val publishing = project.publishingExtension
 
         // register the zip configuration producer
         project.createZipConfigurationProducer
 
         // need config this before loop through all publications
-        preparePublications(project, publishing)
+        preparePublications(project)
 
+
+        val publishing = project.publishingExtension
         // Configure each publication
         // find all publications
         publishing.publications.configureEach {
@@ -78,25 +79,8 @@ class SonatypePortalPublishingTaskManager(
         }
     }
 
-    private fun preparePublications(project: Project, publishing: PublishingExtension) {
-        project.plugins.withId("org.jetbrains.kotlin.jvm") {
-            val javadocJar by project.tasks.registering(Jar::class) {
-                archiveClassifier.set("javadoc")
-                duplicatesStrategy = DuplicatesStrategy.WARN
-                // contents are deliberately left empty
-            }
-
-
-            publishing.publications.register<MavenPublication>("maven") {
-                from(project.components["java"])
-                configurePom()
-            }
-
-            // add javadocJar to the maven publication
-            publishing.publications.withType<MavenPublication>().configureEach {
-                artifact(javadocJar)
-            }
-        }
+    private fun preparePublications(project: Project) {
+        JvmPublicationProvider().preparePublication(project)
     }
 
     private fun registerTasks(
