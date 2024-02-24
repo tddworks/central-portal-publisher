@@ -1,7 +1,6 @@
 package com.tddworks.sonatype.publish.portal.plugin.provider
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
-import com.tddworks.sonatype.publish.portal.api.configurePom
 import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin
 import com.tddworks.sonatype.publish.portal.plugin.ZipPublicationTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationProducer
@@ -9,11 +8,6 @@ import com.tddworks.sonatype.publish.portal.plugin.publishingExtension
 import com.tddworks.sonatype.publish.portal.plugin.tasks.DevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Project
-import org.gradle.api.file.DuplicatesStrategy
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.bundling.Jar
-import org.gradle.kotlin.dsl.*
 
 interface PublishingTaskManager {
     /**
@@ -32,13 +26,13 @@ class SonatypePortalPublishingTaskManager(
     private val publishPublicationToMavenRepositoryTaskFactory: PublishPublicationToMavenRepositoryTaskFactory,
     private val zipPublicationTaskFactory: ZipPublicationTaskFactory,
     private val developmentBundlePublishTaskFactory: DevelopmentBundlePublishTaskFactory,
+    private val publicationProvider: PublicationProvider,
 ) : PublishingTaskManager {
 
     var authentication: Authentication? = null
-    var autoPublish: Boolean? = false
+    var autoPublish: Boolean? = null
 
     override fun registerPublishingTasks(project: Project) {
-
         // Create a task to zip all publications
         val zipAllPublications = project.tasks.register(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS)
 
@@ -56,34 +50,27 @@ class SonatypePortalPublishingTaskManager(
         }
     }
 
-    private fun registerPublications(
-        project: Project,
-    ) {
-
-
+    fun registerPublications(project: Project) {
         // register the zip configuration producer
         project.createZipConfigurationProducer
 
         // need config this before loop through all publications
         preparePublications(project)
 
-
         val publishing = project.publishingExtension
+
         // Configure each publication
-        // find all publications
         publishing.publications.configureEach {
-
             project.logger.quiet("Found publication: $name")
-
-            registerTasks(project, name)
+            registerTasksForPublication(project, name)
         }
     }
 
     private fun preparePublications(project: Project) {
-        JvmPublicationProvider().preparePublication(project)
+        publicationProvider.preparePublication(project)
     }
 
-    private fun registerTasks(
+    fun registerTasksForPublication(
         project: Project,
         publicationName: String,
     ) {
@@ -97,7 +84,9 @@ class SonatypePortalPublishingTaskManager(
 
         // create a task to zip the publication
         val zipTask = zipPublicationTaskFactory.createZipTask(
-            project, publicationName, publishToTask
+            project,
+            publicationName,
+            publishToTask
         )
 
         // create a task to publish the publication to Sonatype Portal

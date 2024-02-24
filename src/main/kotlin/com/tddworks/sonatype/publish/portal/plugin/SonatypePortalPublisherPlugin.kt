@@ -2,6 +2,7 @@ package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
+import com.tddworks.sonatype.publish.portal.plugin.provider.JvmPublicationProvider
 import com.tddworks.sonatype.publish.portal.plugin.provider.SonatypePortalPublishingTaskManager
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
@@ -44,7 +45,8 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
                     publishingBuildRepositoryManager = SonatypePortalPublishingBuildRepositoryManager()
                 ),
                 zipPublicationTaskFactory = SonatypeZipPublicationTaskFactory(),
-                developmentBundlePublishTaskFactory = SonatypeDevelopmentBundlePublishTaskFactory()
+                developmentBundlePublishTaskFactory = SonatypeDevelopmentBundlePublishTaskFactory(),
+                publicationProvider = JvmPublicationProvider()
             )
 
             afterEvaluate {
@@ -65,6 +67,11 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         if (settings?.autoPublish == true && (authentication?.password.isNullOrBlank() || authentication?.username.isNullOrBlank())) {
             logger.info("Sonatype Portal Publisher plugin applied to project: $path and autoPublish is enabled, but no authentication found. Skipping publishing.")
             return
+        }
+
+        sonatypePortalPublishingTaskManager.apply {
+            this.autoPublish = settings?.autoPublish
+            this.authentication = authentication
         }
 
         loggingExtensionInfo(extension, settings)
