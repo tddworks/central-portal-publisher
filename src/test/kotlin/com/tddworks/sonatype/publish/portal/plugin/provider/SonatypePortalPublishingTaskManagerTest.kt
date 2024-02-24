@@ -1,7 +1,9 @@
 package com.tddworks.sonatype.publish.portal.plugin.provider
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
+import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
 import com.tddworks.sonatype.publish.portal.plugin.ZipPublicationTaskFactory
+import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationConsumer
 import com.tddworks.sonatype.publish.portal.plugin.tasks.DevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Task
@@ -45,6 +47,19 @@ class SonatypePortalPublishingTaskManagerTest {
     }
 
     @Test
+    fun `should enable aggregation tasks`() {
+        target.settings = SonatypePublisherSettings(aggregation = true)
+        // Create a task to zip all publications for testing
+        project.createZipConfigurationConsumer
+
+        target.registerPublishingTasks(project)
+
+        val zipConfigurationProducer = project.configurations.findByName("zipConfigurationProducer")
+
+        assertNotNull(zipConfigurationProducer)
+    }
+
+    @Test
     fun `should register tasks for maven publication`() {
         // Create a task to zip all publications for testing
         project.tasks.register("zipAllPublications")
@@ -57,7 +72,6 @@ class SonatypePortalPublishingTaskManagerTest {
 
         target.apply {
             autoPublish = true
-
             authentication = auth
         }
 

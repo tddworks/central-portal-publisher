@@ -13,14 +13,14 @@ internal val Project.publishingExtension get() = extensions.getByType<Publishing
 internal val Project.sonatypePortalPublisherExtension get() = extensions.getByType<SonatypePortalPublisherExtension>()
 
 internal val Project.createZipConfigurationConsumer
-    get() = configurations.create(ZIP_CONFIGURATION_CONSUMER) {
+    get() = configurations.maybeCreate(ZIP_CONFIGURATION_CONSUMER).apply {
         isCanBeResolved = true
         isCanBeConsumed = false
         configureAttributes(project)
     }
 
 internal val Project.createZipConfigurationProducer
-    get() = configurations.create(ZIP_CONFIGURATION_PRODUCER) {
+    get() = configurations.maybeCreate(ZIP_CONFIGURATION_PRODUCER).apply {
         isCanBeConsumed = true
         isCanBeResolved = false
         configureAttributes(project)

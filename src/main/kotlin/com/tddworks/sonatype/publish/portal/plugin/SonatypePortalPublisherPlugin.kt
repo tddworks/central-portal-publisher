@@ -72,46 +72,13 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         sonatypePortalPublishingTaskManager.apply {
             this.autoPublish = settings?.autoPublish
             this.authentication = authentication
+            this.settings = settings
         }
 
         loggingExtensionInfo(extension, settings)
 
 
         sonatypePortalPublishingTaskManager.registerPublishingTasks(this)
-    }
-
-    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(
-        isAggregation: Boolean?,
-        zipProvider: TaskProvider<Zip>?,
-        authentication: Authentication? = null,
-        autoPublish: Boolean? = null,
-    ) {
-        if (isAggregation == true) {
-            logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
-
-            BundlePublishTaskProvider.publishAggTaskProvider(
-                project,
-                zipProvider!!,
-                authentication,
-                autoPublish
-            )
-        }
-    }
-
-    private fun Project.addProjectAsRootProjectDependencyIfNecessary(isAggregation: Boolean?, pj: Project) {
-        if (isAggregation == true) {
-            logger.quiet("Adding project: ${pj.path} as a dependency to the root project: $path")
-            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER configuration
-            project.dependencies.add(ZIP_CONFIGURATION_CONSUMER, project.dependencies.project(mapOf("path" to pj.path)))
-        }
-    }
-
-    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?): TaskProvider<Zip>? {
-        if (aggregation == true) {
-            createZipConfigurationProducer
-            return BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
-        }
-        return null
     }
 
     private fun Project.loggingExtensionInfo(

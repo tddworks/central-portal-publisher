@@ -1,13 +1,19 @@
 package com.tddworks.sonatype.publish.portal.plugin.provider
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
-import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin
-import com.tddworks.sonatype.publish.portal.plugin.ZipPublicationTaskFactory
+import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
+import com.tddworks.sonatype.publish.portal.plugin.*
+import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_CONSUMER
 import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationProducer
 import com.tddworks.sonatype.publish.portal.plugin.publishingExtension
+import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
+import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.DevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Project
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Zip
+import org.gradle.kotlin.dsl.get
 
 interface PublishingTaskManager {
     /**
@@ -31,6 +37,7 @@ class SonatypePortalPublishingTaskManager(
 
     var authentication: Authentication? = null
     var autoPublish: Boolean? = null
+    var settings: SonatypePublisherSettings? = null
 
     override fun registerPublishingTasks(project: Project) {
         // Create a task to zip all publications
@@ -43,7 +50,13 @@ class SonatypePortalPublishingTaskManager(
             dependsOn(zipAllPublications)
         }
 
+        settings?.aggregation?.let {
+            registerAggregationPublications(project)
+        }
+
         project.allprojects.forEach { pj ->
+            project.addProjectAsRootProjectDependencyIfNecessary(settings?.aggregation, pj)
+
             pj.pluginManager.withPlugin("maven-publish") {
                 registerPublications(pj)
             }
@@ -68,6 +81,16 @@ class SonatypePortalPublishingTaskManager(
 
     private fun preparePublications(project: Project) {
         publicationProvider.preparePublication(project)
+    }
+
+    fun registerAggregationPublications(project: Project) {
+        val zipProvider = project.enableZipAggregationPublicationsTaskIfNecessary(settings?.aggregation)
+        project.enablePublishAggregationPublicationsTaskIfNecessary(
+            settings?.aggregation,
+            zipProvider,
+            authentication,
+            autoPublish
+        )
     }
 
     fun registerTasksForPublication(
@@ -104,5 +127,41 @@ class SonatypePortalPublishingTaskManager(
         project.rootProject.tasks.named(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS).configure {
             dependsOn(zipTask)
         }
+    }
+
+    private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(
+        isAggregation: Boolean?,
+        zipProvider: TaskProvider<Zip>?,
+        authentication: Authentication? = null,
+        autoPublish: Boolean? = null,
+    ) {
+        if (isAggregation == true) {
+            logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
+
+            //TODO unit test for this
+            BundlePublishTaskProvider.publishAggTaskProvider(
+                project,
+                zipProvider!!,
+                authentication,
+                autoPublish
+            )
+        }
+    }
+
+    private fun Project.addProjectAsRootProjectDependencyIfNecessary(isAggregation: Boolean?, pj: Project) {
+        if (isAggregation == true) {
+            logger.quiet("Adding project: ${pj.path} as a dependency to the root project: $path")
+            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER configuration
+            dependencies.add(ZIP_CONFIGURATION_CONSUMER, project.dependencies.project(mapOf("path" to pj.path)))
+        }
+    }
+
+    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?): TaskProvider<Zip>? {
+        if (aggregation == true) {
+            createZipConfigurationProducer
+            //TODO refactor unit test for this
+            return BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
+        }
+        return null
     }
 }
