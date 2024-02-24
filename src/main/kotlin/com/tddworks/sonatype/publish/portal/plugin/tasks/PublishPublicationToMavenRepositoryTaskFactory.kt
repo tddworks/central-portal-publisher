@@ -5,23 +5,26 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.configurationcache.extensions.capitalized
-import java.io.File
+import org.gradle.kotlin.dsl.extra
 
 interface PublishPublicationToMavenRepositoryTaskFactory {
     fun createTask(
         project: Project,
         publicationName: String,
-        sonatypeBuildRepositoryDirectory: File,
     ): TaskProvider<Task>
 }
 
 class SonatypePublishPublicationToMavenRepositoryTaskFactory(
     private val publishingBuildRepositoryManager: PublishingBuildRepositoryManager,
 ) : PublishPublicationToMavenRepositoryTaskFactory {
+
+    companion object {
+        const val SONATYPE_BUILD_REPOSITORY_DIRECTORY = "sonatypeBuildRepositoryDirectory"
+    }
+
     override fun createTask(
         project: Project,
         publicationName: String,
-        sonatypeBuildRepositoryDirectory: File,
     ): TaskProvider<Task> {
 
         // create a directory to store the build repository
@@ -40,7 +43,10 @@ class SonatypePublishPublicationToMavenRepositoryTaskFactory(
                     mkdirs()
                 }
             }
+            extra.set(SONATYPE_BUILD_REPOSITORY_DIRECTORY, sonatypeBuildRepositoryDirectory)
         }
+
+
         return publishToTask
     }
 

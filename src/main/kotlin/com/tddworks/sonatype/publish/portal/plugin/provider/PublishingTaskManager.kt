@@ -2,17 +2,17 @@ package com.tddworks.sonatype.publish.portal.plugin.provider
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.configurePom
-import com.tddworks.sonatype.publish.portal.plugin.*
+import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin
+import com.tddworks.sonatype.publish.portal.plugin.ZipPublicationTaskFactory
+import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationProducer
+import com.tddworks.sonatype.publish.portal.plugin.publishingExtension
 import com.tddworks.sonatype.publish.portal.plugin.tasks.DevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Project
-import org.gradle.api.file.Directory
 import org.gradle.api.file.DuplicatesStrategy
-import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
-import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.kotlin.dsl.*
 
 interface PublishingTaskManager {
@@ -29,7 +29,6 @@ interface PublishingTaskManager {
 internal const val PUBLISHING_GROUP = "publishing"
 
 class SonatypePortalPublishingTaskManager(
-    private val publishingBuildRepositoryManager: PublishingBuildRepositoryManager,
     private val publishPublicationToMavenRepositoryTaskFactory: PublishPublicationToMavenRepositoryTaskFactory,
     private val zipPublicationTaskFactory: ZipPublicationTaskFactory,
     private val developmentBundlePublishTaskFactory: DevelopmentBundlePublishTaskFactory,
@@ -105,27 +104,23 @@ class SonatypePortalPublishingTaskManager(
         publicationName: String,
     ) {
 
-        // create a directory to store the build repository
-        // e.g will create publishMavenPublicationToMavenRepository task and save the publication to the destination path
-        val sonatypeBuildRepositoryDirectory =
-            publishingBuildRepositoryManager.createBuildRepository(publicationName, project)
-
-        //
+        // create a task to publish the publication to the repository
+        // e.g create publishMavenPublicationToMavenRepository
         val publishToTask = publishPublicationToMavenRepositoryTaskFactory.createTask(
             project,
-            publicationName,
-            sonatypeBuildRepositoryDirectory
+            publicationName
         )
 
+        // create a task to zip the publication
         val zipTask = zipPublicationTaskFactory.createZipTask(
-            project, publicationName, publishToTask, sonatypeBuildRepositoryDirectory
+            project, publicationName, publishToTask
         )
 
+        // create a task to publish the publication to Sonatype Portal
         developmentBundlePublishTaskFactory.createTask(
             project,
             publicationName,
             zipTask,
-            sonatypeBuildRepositoryDirectory,
             authentication,
             autoPublish
         )
@@ -136,6 +131,5 @@ class SonatypePortalPublishingTaskManager(
         project.rootProject.tasks.named(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS).configure {
             dependsOn(zipTask)
         }
-
     }
 }

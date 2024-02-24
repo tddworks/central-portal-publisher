@@ -40,8 +40,9 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
             extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
 
             sonatypePortalPublishingTaskManager = SonatypePortalPublishingTaskManager(
-                publishingBuildRepositoryManager = SonatypePortalPublishingBuildRepositoryManager(),
-                publishPublicationToMavenRepositoryTaskFactory = SonatypePublishPublicationToMavenRepositoryTaskFactory(),
+                publishPublicationToMavenRepositoryTaskFactory = SonatypePublishPublicationToMavenRepositoryTaskFactory(
+                    publishingBuildRepositoryManager = SonatypePortalPublishingBuildRepositoryManager()
+                ),
                 zipPublicationTaskFactory = SonatypeZipPublicationTaskFactory(),
                 developmentBundlePublishTaskFactory = SonatypeDevelopmentBundlePublishTaskFactory()
             )

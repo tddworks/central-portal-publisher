@@ -6,14 +6,12 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.configurationcache.extensions.capitalized
-import java.io.File
 
 interface DevelopmentBundlePublishTaskFactory {
     fun createTask(
         project: Project,
         publicationName: String,
         dependsOnTask: TaskProvider<Zip>,
-        sonatypeBuildRepositoryDirectory: File,
         authentication: Authentication?,
         autoPublish: Boolean?,
     )
@@ -24,7 +22,6 @@ class SonatypeDevelopmentBundlePublishTaskFactory : DevelopmentBundlePublishTask
         project: Project,
         publicationName: String,
         dependsOnTask: TaskProvider<Zip>,
-        sonatypeBuildRepositoryDirectory: File,
         authentication: Authentication?,
         autoPublish: Boolean?,
     ) {
