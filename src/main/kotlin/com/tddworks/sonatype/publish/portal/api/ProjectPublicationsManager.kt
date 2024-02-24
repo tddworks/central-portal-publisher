@@ -37,7 +37,7 @@ class DefaultProjectPublicationsManager : ProjectPublicationsManager {
 
                 val sonatypeDestinationPath = project.layout.buildDirectory.dir("sonatype/${name}-bundle")
 
-                println("Sonatype Portal Publisher plugin found project path: $projectPath")
+                project.logger.quiet("Sonatype Portal Publisher plugin found project path: $projectPath")
 
                 val capitalized = name.capitalized()
 
@@ -49,7 +49,7 @@ class DefaultProjectPublicationsManager : ProjectPublicationsManager {
                 createRepository(publishing, publishingRepoName, project, sonatypeDestinationPath)
 
                 project.logger.quiet(
-                    """
+                    """     ==============================================
                             Sonatype Portal Publisher plugin found project path: $projectPath
                             Sonatype Portal Publisher plugin found publication name: $name
                             Sonatype Portal Publisher plugin found capitalized publication name: $capitalized
@@ -78,12 +78,12 @@ class DefaultProjectPublicationsManager : ProjectPublicationsManager {
                     }
                 }
 
-                val zipTaskProvider = BundleZipTaskProvider.zipTaskProvider(
-                    project,
-                    name,
-                    publishToSonatypeTaskProvider,
-                    sonatypeDestinationPath
-                )
+//                val zipTaskProvider = BundleZipTaskProvider.zipTaskProvider(
+//                    project,
+//                    name,
+//                    publishToSonatypeTaskProvider,
+//                    sonatypeDestinationPath
+//                )
 
 //                val publishTaskProvider = BundlePublishTaskProvider.publishTaskProvider(
 //                    project,
@@ -98,7 +98,7 @@ class DefaultProjectPublicationsManager : ProjectPublicationsManager {
 //                    dependsOn((publishTaskProvider))
 //                }
 
-                project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
+//                project.artifacts.add(ZIP_CONFIGURATION_PRODUCER, zipTaskProvider)
             }
         }
     }

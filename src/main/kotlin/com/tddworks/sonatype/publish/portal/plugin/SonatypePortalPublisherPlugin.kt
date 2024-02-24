@@ -1,15 +1,14 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.api.Authentication
-import com.tddworks.sonatype.publish.portal.api.DeploymentBundleManager
 import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
+import com.tddworks.sonatype.publish.portal.plugin.provider.SonatypePortalPublishingTaskManager
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
+import com.tddworks.sonatype.publish.portal.plugin.tasks.SonatypeDevelopmentBundlePublishTaskFactory
+import com.tddworks.sonatype.publish.portal.plugin.tasks.SonatypePublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.*
@@ -23,6 +22,9 @@ import org.gradle.kotlin.dsl.*
  * 2. create a task to publish all publications to Sonatype Portal
  */
 class SonatypePortalPublisherPlugin : Plugin<Project> {
+
+    lateinit var sonatypePortalPublishingTaskManager: SonatypePortalPublishingTaskManager
+
     companion object {
         const val PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY =
             "publishAllPublicationsToSonatypePortalRepository"
@@ -36,6 +38,13 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         with(project) {
             logger.quiet("Applying Sonatype Portal Publisher plugin to project: $path")
             extensions.create<SonatypePortalPublisherExtension>(EXTENSION_NAME)
+
+            sonatypePortalPublishingTaskManager = SonatypePortalPublishingTaskManager(
+                publishingBuildRepositoryManager = SonatypePortalPublishingBuildRepositoryManager(),
+                publishPublicationToMavenRepositoryTaskFactory = SonatypePublishPublicationToMavenRepositoryTaskFactory(),
+                zipPublicationTaskFactory = SonatypeZipPublicationTaskFactory(),
+                developmentBundlePublishTaskFactory = SonatypeDevelopmentBundlePublishTaskFactory()
+            )
 
             afterEvaluate {
                 configurePublisher()
@@ -60,75 +69,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
         loggingExtensionInfo(extension, settings)
 
 
-        // Create a task to zip all publications
-        val zipAllPublications = project.tasks.register(ZIP_ALL_PUBLICATIONS)
-
-        // Create a task to publish all publications to Sonatype Portal
-        project.tasks.register(PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY) {
-            group = "publishing"
-            // publish all publications depends on zipAllPublications
-            dependsOn(zipAllPublications)
-        }
-
-        val zipProvider = enableZipAggregationPublicationsTaskIfNecessary(extension.getSettings()?.aggregation)
-
-
-        enablePublishAggregationPublicationsTaskIfNecessary(
-            extension.getSettings()?.aggregation,
-            zipProvider,
-            authentication,
-            settings?.autoPublish
-        )
-
-//        val clearTempRepoDir by tasks.registering {
-//            val dir = project.layout.buildDirectory.dir("sonatype/${name}-bundle").get().asFile
-//            doFirst {
-//                dir.deleteRecursively()
-//            }
-//        }
-
-        // Create a task to publish to Sonatype Portal
-        project.allprojects.forEach { pj ->
-            addProjectAsRootProjectDependencyIfNecessary(extension.getSettings()?.aggregation, pj)
-
-
-
-            pj.pluginManager.withPlugin("maven-publish") {
-
-//                configure<PublishingExtension> {
-//                    repositories {
-//                        maven {
-//                            name = ""
-//                            url = uri("")
-//                        }
-//                    }
-//                }
-//
-//                tasks.withType<PublishToMavenRepository>().configureEach {
-//                    if (name.endsWith("To${tempRepoName.capitalized()}Repository")) {
-//                        dependsOn(clearTempRepoDir)
-//                    }
-//                }
-
-                // should move to the zip register task
-                // create a ZIP_CONFIGURATION_PRODUCER configuration for each project
-                pj.createZipConfigurationProducer
-//
-//            DefaultProjectPublicationsManager().addPublication(
-//                pj,
-//                publishAllPublicationsToSonatypePortalRepository,
-//                zipAllPublications
-//            )
-
-                DeploymentBundleManager().publishProjectPublications(
-                    pj,
-                    authentication,
-                    settings?.autoPublish,
-                    pj.path,
-                    pj.publishingExtension
-                )
-            }
-        }
+        sonatypePortalPublishingTaskManager.registerPublishingTasks(this)
     }
 
     private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(

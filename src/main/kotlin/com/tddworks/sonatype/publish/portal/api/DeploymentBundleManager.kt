@@ -143,7 +143,7 @@ class DeploymentBundleManager {
                 project,
                 name,
                 publishToTask,
-                sonatypeDestinationPath
+                sonatypeDestinationPath.get().asFile
             )
 
             // Add the zip task to the zipAllPublications task

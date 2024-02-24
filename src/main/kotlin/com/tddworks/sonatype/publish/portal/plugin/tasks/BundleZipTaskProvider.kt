@@ -2,6 +2,7 @@ package com.tddworks.sonatype.publish.portal.plugin.tasks
 
 import com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin.Companion.ZIP_AGGREGATION_PUBLICATIONS
 import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_CONSUMER
+import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_PRODUCER
 import com.tddworks.sonatype.publish.portal.plugin.layoutBuildDirectory
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -10,7 +11,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.configurationcache.extensions.capitalized
-
+import java.io.File
 
 object BundleZipTaskProvider {
     private const val SONATYPE_ZIP_DIR = "sonatype/zip"
@@ -19,7 +20,7 @@ object BundleZipTaskProvider {
         project: Project,
         publicationName: String,
         dependsOnTask: TaskProvider<Task>,
-        sonatypeDestinationPath: Provider<Directory>,
+        sonatypeDestinationPath: File,
     ): TaskProvider<Zip> =
         project.tasks.register(taskName(publicationName.capitalized()), Zip::class.java) {
             dependsOn(dependsOnTask)
