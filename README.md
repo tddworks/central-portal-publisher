@@ -36,14 +36,20 @@ Supported Features:
       - [ ] publish by specific username and password
       - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
   - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
+    - [x] publishMacosX64PublicationToSonatypePortalRepository
+    
 - [x] publish aggregation publications
   - [x] publish by signing from gradle.properties
     - [x] publishAggregationPublicationsToSonatypePortalRepository
+      - kmp not supported
 
-- [ ] zip different publications
+- [x] zip different publications
   - [x] zipMavenPublication
-  - [ ] zipKotlinMultiplatformPublication
-  - [ ] zipAllPublications
+  - [x] zipKotlinMultiplatformPublication
+  - [x] zipAllPublications
+    - Generated zip files:
+      - [x] jvm-deployment-bundle.zip
+      - [x] kotlinMultiplatform-deployment-bundle.zip
 - [x] zip aggregation
   - [x] zipAggregationPublications
 
@@ -121,4 +127,5 @@ $ tree .
                    ├── example_java_project-0.1.0.pom.asc
                    ├── example_java_project-0.1.0.pom.md5
                    └── example_java_project-0.1.0.pom.sha1
+
 ```

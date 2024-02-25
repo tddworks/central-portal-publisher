@@ -6,13 +6,13 @@ import java.io.File
 
 interface PublishingBuildRepositoryManager {
     fun createBuildRepository(
-        publicationName: String,
+        repoName: String,
         project: Project,
     ): File
 }
 
 class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepositoryManager {
-    override fun createBuildRepository(publicationName: String, project: Project): File {
+    override fun createBuildRepository(repoName: String, project: Project): File {
 
         val publishing = project.publishingExtension
 
@@ -20,16 +20,9 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
         // e.g. maven, kotlinMultiplatform, etc.
         // https://kotlinlang.org/docs/multiplatform-publish-lib.html#host-requirements
         // This kotlinMultiplatform publication includes metadata artifacts and references the other publications as its variants.
-        val sonatypeDestinationPath = project.layout.buildDirectory.dir("sonatype/${publicationName}-bundle")
+        val sonatypeDestinationPath = project.layout.buildDirectory.dir("sonatype/${repoName}-bundle")
 
-        println("Creating sonatype build repository $sonatypeDestinationPath for publication: $publicationName")
-
-        // Capitalize the publication name
-        // e.g. maven -> Maven
-        // e.g. kotlinMultiplatform -> KotlinMultiplatform
-        val capitalized = publicationName.capitalized()
-
-        println("capitalized: $capitalized")
+        println("Creating sonatype build repository $sonatypeDestinationPath for repoName: $repoName")
 
 
         println("task count before:  ${project.tasks.filter { it.name.startsWith("publish") }.size}")
@@ -53,7 +46,7 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
                 // here we use maven as the repository type and save it to the build folder
                 // save to example-multi-modules/module-b/build/sonatype/maven-bundle/
                 maven {
-                    name = capitalized
+                    name = repoName
                     url = project.uri(sonatypeDestinationPath)
                 }
             }

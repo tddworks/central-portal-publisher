@@ -27,10 +27,16 @@ class SonatypePublishPublicationToMavenRepositoryTaskFactory(
         publicationName: String,
     ): TaskProvider<Task> {
 
+
+        // Capitalize the publication name
+        // e.g. maven -> Maven
+        // e.g. kotlinMultiplatform -> KotlinMultiplatform
+        val repoName = "Build${publicationName.capitalized()}"
+
         // create a directory to store the build repository
         // e.g will create publishMavenPublicationToMavenRepository task and save the publication to the destination path
         val sonatypeBuildRepositoryDirectory =
-            publishingBuildRepositoryManager.createBuildRepository(publicationName, project)
+            publishingBuildRepositoryManager.createBuildRepository(repoName, project)
 
         // reuse the task to publish the publication to the repository
         val publishToTask = project.tasks.named(taskName(publicationName))
@@ -53,6 +59,6 @@ class SonatypePublishPublicationToMavenRepositoryTaskFactory(
     private fun taskName(publicationName: String): String {
         //publicationName would be like
         // maven, kotlinMultiplatform, jvm,  etc.
-        return "publish${publicationName.capitalized()}PublicationTo${publicationName.capitalized()}Repository"
+        return "publish${publicationName.capitalized()}PublicationToBuild${publicationName.capitalized()}Repository"
     }
 }
