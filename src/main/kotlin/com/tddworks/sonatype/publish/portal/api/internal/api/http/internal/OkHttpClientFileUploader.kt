@@ -1,7 +1,7 @@
-package com.tddworks.sonatype.publish.portal.api.http.internal
+package com.tddworks.sonatype.publish.portal.api.internal.api.http.internal
 
-import com.tddworks.sonatype.publish.portal.api.http.FileUploader
-import com.tddworks.sonatype.publish.portal.api.http.HttpRequestBuilder
+import com.tddworks.sonatype.publish.portal.api.internal.api.FileUploader
+import com.tddworks.sonatype.publish.portal.api.internal.api.HttpRequestBuilder
 import okhttp3.Headers.Companion.toHeaders
 import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType

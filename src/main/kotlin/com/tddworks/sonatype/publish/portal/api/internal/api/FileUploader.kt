@@ -1,4 +1,4 @@
-package com.tddworks.sonatype.publish.portal.api.http
+package com.tddworks.sonatype.publish.portal.api.internal.api
 
 import okio.Buffer
 import java.io.File
