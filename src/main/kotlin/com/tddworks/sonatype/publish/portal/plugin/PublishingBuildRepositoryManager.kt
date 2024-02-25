@@ -29,6 +29,17 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
         // e.g. kotlinMultiplatform -> KotlinMultiplatform
         val capitalized = publicationName.capitalized()
 
+        println("capitalized: $capitalized")
+
+
+        println("task count before:  ${project.tasks.filter { it.name.startsWith("publish") }.size}")
+
+        project.tasks.filter {
+            it.name.startsWith("publish")
+        }.forEach {
+            println("task before: ${it.name}")
+        }
+
         // Add the Sonatype repository to the publishing block
         // each publication has a task to publish it to a repository
 
@@ -47,6 +58,16 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
                 }
             }
         }
+
+        project.tasks.filter {
+            it.name.startsWith("publish")
+        }.forEach {
+            println("task after: ${it.name}")
+        }
+
+        println("task count after: ${project.tasks.filter { it.name.startsWith("publish") }.size}")
+
+
         return sonatypeDestinationPath.get().asFile
     }
 

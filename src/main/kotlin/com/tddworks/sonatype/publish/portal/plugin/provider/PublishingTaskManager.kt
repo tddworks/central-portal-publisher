@@ -110,7 +110,7 @@ class SonatypePortalPublishingTaskManager(
 
         // create a task to publish the publication to the repository
         // e.g create publishMavenPublicationToMavenRepository
-        val publishToTask = publishPublicationToMavenRepositoryTaskFactory.createTask(
+        val publishPublicationToTask = publishPublicationToMavenRepositoryTaskFactory.createTask(
             project,
             publicationName
         )
@@ -119,7 +119,7 @@ class SonatypePortalPublishingTaskManager(
         val zipTask = zipPublicationTaskFactory.createZipTask(
             project,
             publicationName,
-            publishToTask
+            publishPublicationToTask
         )
 
         // create a task to publish the publication to Sonatype Portal

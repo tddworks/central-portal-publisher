@@ -16,6 +16,27 @@ interface PublicationProvider {
     fun preparePublication(project: Project)
 }
 
+class KotlinMultiplatformPublicationProvider : PublicationProvider {
+    override fun preparePublication(project: Project) {
+        // Kotlin Multiplatform
+        project.plugins.withId("org.jetbrains.kotlin.multiplatform") {
+            val javadocJar by
+            project.tasks.registering(Jar::class) {
+                archiveClassifier = "javadoc"
+                duplicatesStrategy = DuplicatesStrategy.WARN
+                // contents are deliberately left empty
+            }
+
+            val publishing = project.publishingExtension
+
+            publishing.publications.withType<MavenPublication>().configureEach {
+                artifact(javadocJar)
+                configurePom()
+            }
+        }
+    }
+}
+
 class JvmPublicationProvider : PublicationProvider {
     override fun preparePublication(project: Project) {
 

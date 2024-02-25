@@ -50,6 +50,9 @@ class SonatypePublishPublicationToMavenRepositoryTaskFactory(
         return publishToTask
     }
 
-    private fun taskName(publicationName: String) =
-        "publish${publicationName.capitalized()}PublicationToMavenRepository"
+    private fun taskName(publicationName: String): String {
+        //publicationName would be like
+        // maven, kotlinMultiplatform, jvm,  etc.
+        return "publish${publicationName.capitalized()}PublicationTo${publicationName.capitalized()}Repository"
+    }
 }

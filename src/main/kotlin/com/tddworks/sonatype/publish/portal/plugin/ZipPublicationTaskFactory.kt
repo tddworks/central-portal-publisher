@@ -34,6 +34,8 @@ class SonatypeZipPublicationTaskFactory : ZipPublicationTaskFactory {
         val sonatypeBuildRepositoryDirectory =
             dependsOnTask.get().extra.get(SonatypePublishPublicationToMavenRepositoryTaskFactory.SONATYPE_BUILD_REPOSITORY_DIRECTORY) as File
 
+        println("creating zip task for project ${project.name} with publicationName: $publicationName")
+
         val zipTaskProvider = project.tasks.register(taskName(publicationName.capitalized()), Zip::class.java) {
             dependsOn(dependsOnTask)
             from(sonatypeBuildRepositoryDirectory)
