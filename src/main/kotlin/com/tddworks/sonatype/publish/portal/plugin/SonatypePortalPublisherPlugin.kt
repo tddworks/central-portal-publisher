@@ -1,17 +1,12 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
-import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
 import com.tddworks.sonatype.publish.portal.plugin.provider.JvmPublicationProvider
 import com.tddworks.sonatype.publish.portal.plugin.provider.SonatypePortalPublishingTaskManager
-import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
-import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.SonatypeDevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.SonatypePublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.*
 
 /**

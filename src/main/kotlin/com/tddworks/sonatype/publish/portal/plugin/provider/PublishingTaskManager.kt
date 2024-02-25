@@ -3,17 +3,14 @@ package com.tddworks.sonatype.publish.portal.plugin.provider
 import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.SonatypePublisherSettings
 import com.tddworks.sonatype.publish.portal.plugin.*
-import com.tddworks.sonatype.publish.portal.plugin.ZIP_CONFIGURATION_CONSUMER
-import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationProducer
-import com.tddworks.sonatype.publish.portal.plugin.publishingExtension
-import com.tddworks.sonatype.publish.portal.plugin.tasks.BundlePublishTaskProvider
-import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
 import com.tddworks.sonatype.publish.portal.plugin.tasks.DevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.configure
+import org.gradle.plugins.signing.SigningExtension
 
 interface PublishingTaskManager {
     /**
@@ -67,6 +64,9 @@ class SonatypePortalPublishingTaskManager(
         // register the zip configuration producer
         project.createZipConfigurationProducer
 
+        // central.sonatype.com - Missing signature for file:
+        configureSigning(project)
+
         // need config this before loop through all publications
         preparePublications(project)
 
@@ -83,7 +83,17 @@ class SonatypePortalPublishingTaskManager(
         publicationProvider.preparePublication(project)
     }
 
-    fun registerAggregationPublications(project: Project) {
+    private fun configureSigning(project: Project) {
+        project.plugins.apply("signing")
+        project.plugins.withId("signing") {
+            project.configure<SigningExtension> {
+                val publishing = project.extensions.getByName("publishing") as PublishingExtension
+                sign(publishing.publications)
+            }
+        }
+    }
+
+    private fun registerAggregationPublications(project: Project) {
         val zipProvider = project.enableZipAggregationPublicationsTaskIfNecessary(settings?.aggregation)
         project.enablePublishAggregationPublicationsTaskIfNecessary(
             settings?.aggregation,
@@ -139,7 +149,7 @@ class SonatypePortalPublishingTaskManager(
             logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
 
             //TODO unit test for this
-            BundlePublishTaskProvider.publishAggTaskProvider(
+            developmentBundlePublishTaskFactory.createAggregationTask(
                 project,
                 zipProvider!!,
                 authentication,
@@ -160,7 +170,7 @@ class SonatypePortalPublishingTaskManager(
         if (aggregation == true) {
             createZipConfigurationProducer
             //TODO refactor unit test for this
-            return BundleZipTaskProvider.zipAggregationPublicationsProvider(this)
+            return zipPublicationTaskFactory.createZipAggregationPublicationsTask(this)
         }
         return null
     }

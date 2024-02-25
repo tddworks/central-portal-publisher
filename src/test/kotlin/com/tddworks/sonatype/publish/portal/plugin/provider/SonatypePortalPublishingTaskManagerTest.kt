@@ -52,11 +52,16 @@ class SonatypePortalPublishingTaskManagerTest {
         // Create a task to zip all publications for testing
         project.createZipConfigurationConsumer
 
+        val zipTaskProvider = mock<TaskProvider<Zip>>()
+        whenever(zipPublicationTaskFactory.createZipAggregationPublicationsTask(project)).thenReturn(zipTaskProvider)
+
         target.registerPublishingTasks(project)
 
         val zipConfigurationProducer = project.configurations.findByName("zipConfigurationProducer")
 
         assertNotNull(zipConfigurationProducer)
+
+        verify(developmentBundlePublishTaskFactory).createAggregationTask(project, zipTaskProvider, null, null)
     }
 
     @Test
