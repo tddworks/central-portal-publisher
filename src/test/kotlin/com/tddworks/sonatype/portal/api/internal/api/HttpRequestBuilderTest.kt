@@ -1,6 +1,6 @@
-package com.tddworks.sonatype.portal.api.http
+package com.tddworks.sonatype.portal.api.internal.api
 
-import com.tddworks.sonatype.publish.portal.api.http.HttpRequestBuilder
+import com.tddworks.sonatype.publish.portal.api.internal.api.HttpRequestBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

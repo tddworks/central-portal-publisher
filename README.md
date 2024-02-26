@@ -36,16 +36,30 @@ Supported Features:
       - [ ] publish by specific username and password
       - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
   - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
+    - [x] publishMacosX64PublicationToSonatypePortalRepository
+    
 - [x] publish aggregation publications
   - [x] publish by signing from gradle.properties
     - [x] publishAggregationPublicationsToSonatypePortalRepository
+      - kmp not supported
 
-- [ ] zip different publications
+- [x] zip different publications
   - [x] zipMavenPublication
-  - [ ] zipKotlinMultiplatformPublication
-  - [ ] zipAllPublications
+  - [x] zipKotlinMultiplatformPublication
+  - [x] zipAllPublications
+    - Generated zip files:
+      - [x] jvm-deployment-bundle.zip
+      - [x] kotlinMultiplatform-deployment-bundle.zip
 - [x] zip aggregation
   - [x] zipAggregationPublications
+
+- [ ] scm settings
+  - Developers information is missing
+  - License information is missing
+  - Project URL is not defined
+  - Project description is missing
+  - SCM URL is not defined
+
 
 #### With project isolation
 This will publish all the subprojects in its own module.
@@ -95,6 +109,11 @@ You can run the following command to generate the zip file:
 gradle clean zipAggregationPublication
 ```
 
+# Publish to Sonatype Portal
+## kmp deployment info
+[<img src="./docs/images/kmp-deployment-Info.png">](https://central.sonatype.com/publishing/deployments)
+
+
 # Maven Repository Layout
 
 ```shell
@@ -121,4 +140,5 @@ $ tree .
                    ├── example_java_project-0.1.0.pom.asc
                    ├── example_java_project-0.1.0.pom.md5
                    └── example_java_project-0.1.0.pom.sha1
+
 ```

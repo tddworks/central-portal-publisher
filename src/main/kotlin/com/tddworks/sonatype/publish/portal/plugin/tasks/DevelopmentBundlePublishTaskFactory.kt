@@ -8,49 +8,37 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.configurationcache.extensions.capitalized
 
-/**
- * Provides a task to publish a bundle to the Sonatype Portal.
- * The reason for this class is to provide an easy way for testing purposes.
- * It would be changed in the future.
- */
-object BundlePublishTaskProvider {
-
-    fun publishAggTaskProvider(
-        project: Project,
-        zipTaskProvider: TaskProvider<Zip>,
-        authentication: Authentication?,
-        autoPublish: Boolean?,
-    ): TaskProvider<PublishTask> =
-        project.tasks.register(
-            SonatypePortalPublisherPlugin.PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY,
-            PublishTask::class.java
-        ) {
-            group = "publishing"
-            inputFile.set(zipTaskProvider.flatMap { it.archiveFile })
-            username.set(authentication?.username)
-            password.set(authentication?.password)
-            publicationType.set(
-                if (autoPublish == true) {
-                    PublicationType.AUTOMATIC
-                } else {
-                    PublicationType.USER_MANAGED
-                }
-            )
-        }
-
-    fun publishTaskProvider(
+interface DevelopmentBundlePublishTaskFactory {
+    fun createTask(
         project: Project,
         publicationName: String,
-        zipTaskProvider: TaskProvider<Zip>,
+        dependsOnTask: TaskProvider<Zip>,
         authentication: Authentication?,
         autoPublish: Boolean?,
-    ): TaskProvider<PublishTask> =
+    )
+
+    fun createAggregationTask(
+        project: Project,
+        dependsOnTask: TaskProvider<Zip>,
+        authentication: Authentication?,
+        autoPublish: Boolean?,
+    )
+}
+
+class SonatypeDevelopmentBundlePublishTaskFactory : DevelopmentBundlePublishTaskFactory {
+    override fun createTask(
+        project: Project,
+        publicationName: String,
+        dependsOnTask: TaskProvider<Zip>,
+        authentication: Authentication?,
+        autoPublish: Boolean?,
+    ) {
         project.tasks.register(
             taskName(publicationName),
             PublishTask::class.java
         ) {
             group = "publishing"
-            inputFile.set(zipTaskProvider.flatMap { it.archiveFile })
+            inputFile.set(dependsOnTask.flatMap { it.archiveFile })
             username.set(authentication?.username)
             password.set(authentication?.password)
             publicationType.set(
@@ -61,6 +49,32 @@ object BundlePublishTaskProvider {
                 }
             )
         }
+    }
+
+    //TODO maybe we can use the same task for aggregation and publication
+    override fun createAggregationTask(
+        project: Project,
+        dependsOnTask: TaskProvider<Zip>,
+        authentication: Authentication?,
+        autoPublish: Boolean?,
+    ) {
+        project.tasks.register(
+            SonatypePortalPublisherPlugin.PUBLISH_AGGREGATION_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY,
+            PublishTask::class.java
+        ) {
+            group = "publishing"
+            inputFile.set(dependsOnTask.flatMap { it.archiveFile })
+            username.set(authentication?.username)
+            password.set(authentication?.password)
+            publicationType.set(
+                if (autoPublish == true) {
+                    PublicationType.AUTOMATIC
+                } else {
+                    PublicationType.USER_MANAGED
+                }
+            )
+        }
+    }
 
     private fun taskName(publicationName: String) =
         "publish${publicationName.capitalized()}PublicationToSonatypePortalRepository"

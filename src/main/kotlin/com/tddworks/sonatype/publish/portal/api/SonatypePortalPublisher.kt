@@ -1,7 +1,7 @@
 package com.tddworks.sonatype.publish.portal.api
 
-import com.tddworks.sonatype.publish.portal.api.http.FileUploader
-import com.tddworks.sonatype.publish.portal.api.http.internal.okHttpClient
+import com.tddworks.sonatype.publish.portal.api.internal.api.FileUploader
+import com.tddworks.sonatype.publish.portal.api.internal.api.http.internal.okHttpClient
 
 class SonatypePortalPublisher(
     private val uploader: FileUploader = FileUploader.okHttpClient(),

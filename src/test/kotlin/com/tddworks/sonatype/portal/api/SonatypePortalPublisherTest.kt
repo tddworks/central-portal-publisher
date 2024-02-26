@@ -4,8 +4,8 @@ import com.tddworks.sonatype.publish.portal.api.Authentication
 import com.tddworks.sonatype.publish.portal.api.DeploymentBundle
 import com.tddworks.sonatype.publish.portal.api.PublicationType
 import com.tddworks.sonatype.publish.portal.api.SonatypePortalPublisher
-import com.tddworks.sonatype.publish.portal.api.http.FileUploader
-import com.tddworks.sonatype.publish.portal.api.http.HttpRequestBuilder
+import com.tddworks.sonatype.publish.portal.api.internal.api.FileUploader
+import com.tddworks.sonatype.publish.portal.api.internal.api.HttpRequestBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argThat
