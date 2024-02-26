@@ -53,6 +53,14 @@ Supported Features:
 - [x] zip aggregation
   - [x] zipAggregationPublications
 
+- [ ] scm settings
+  - Developers information is missing
+  - License information is missing
+  - Project URL is not defined
+  - Project description is missing
+  - SCM URL is not defined
+
+
 #### With project isolation
 This will publish all the subprojects in its own module.
 
@@ -100,6 +108,11 @@ You can run the following command to generate the zip file:
 ```shell
 gradle clean zipAggregationPublication
 ```
+
+# Publish to Sonatype Portal
+## kmp deployment info
+[<img src="./docs/images/kmp-deployment-Info.png">](https://central.sonatype.com/publishing/deployments)
+
 
 # Maven Repository Layout
 
