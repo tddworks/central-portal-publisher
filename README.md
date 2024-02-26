@@ -27,21 +27,22 @@ sonatypePortal {
 ### Multi-modules
 
 Supported Features:
-- [ ] publish different publications (maven, kotlinMultiplatform, etc.)
-  - [ ] publishMavenPublicationToSonatypePortalRepository
+- [x] publish different publications (maven, kotlinMultiplatform, etc.)
+  - [x] publishMavenPublicationToSonatypePortalRepository
     - [x] publish by signing from gradle.properties
       - [x] publish by specific username and password
       - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
     - [ ] publish by custom signing
       - [ ] publish by specific username and password
       - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
-  - [ ] publishKotlinMultiplatformPublicationToSonatypeRepository
+  - [x] publishKotlinMultiplatformPublicationToSonatypeRepository
     - [x] publishMacosX64PublicationToSonatypePortalRepository
     
 - [x] publish aggregation publications
   - [x] publish by signing from gradle.properties
     - [x] publishAggregationPublicationsToSonatypePortalRepository
-      - kmp not supported
+      - kmp aggregated deployment bundle zip layout
+        <img src="./docs/images/kmp-aggregated-deployment-bundle.png">
 
 - [x] zip different publications
   - [x] zipMavenPublication
