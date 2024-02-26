@@ -20,19 +20,7 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
     override fun preparePublication(project: Project) {
         // Kotlin Multiplatform
         project.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-            val javadocJar by
-            project.tasks.registering(Jar::class) {
-                archiveClassifier = "javadoc"
-                duplicatesStrategy = DuplicatesStrategy.WARN
-                // contents are deliberately left empty
-            }
-
-            val publishing = project.publishingExtension
-
-            publishing.publications.withType<MavenPublication>().configureEach {
-                artifact(javadocJar)
-                configurePom("Kotlin Multiplatform")
-            }
+            project.configureMavenPublication()
         }
     }
 }
@@ -70,11 +58,55 @@ class JvmPublicationProvider : PublicationProvider {
     }
 }
 
+fun Project.configureMavenPublication() {
+    extensions.configure<PublishingExtension> {
+        // Configure all publications
+        publications.withType<MavenPublication> {
+            // Stub javadoc.jar artifact
+            artifact(tasks.register("${name}JavadocJar", Jar::class) {
+                archiveClassifier.set("javadoc")
+                archiveAppendix.set(this@withType.name)
+                duplicatesStrategy = DuplicatesStrategy.WARN
+            })
+
+            // Provide artifacts information required by Maven Central
+            pom {
+                name.set("Kotlin Multiplatform library template")
+                description.set("Dummy library to test deployment to Maven Central")
+                url.set("https://github.com/Kotlin/multiplatform-library-template")
+
+                licenses {
+                    license {
+//                        name.set("MIT")
+                        name = get("LICENSE_NAME", "MIT")
+                        url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "JetBrains"
+                        name.set("JetBrains Team")
+                        organization.set("JetBrains")
+                        organizationUrl.set("https://www.jetbrains.com")
+                    }
+                }
+                scm {
+                    url.set("https://github.com/Kotlin/multiplatform-library-template")
+                }
+            }
+        }
+    }
+}
+
+fun Project.get(name: String, def: String = "$name not found") =
+    properties[name]?.toString() ?: System.getenv(name) ?: def
+
 fun Project.configureMavenPublication(
     groupId: String,
     artifactId: String,
-    name: String
+    name: String,
 ) {
+
     extensions.configure<PublishingExtension> {
         publications {
             all {
