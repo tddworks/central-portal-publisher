@@ -7,9 +7,12 @@ import com.tddworks.sonatype.publish.portal.plugin.tasks.DevelopmentBundlePublis
 import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishPublicationToMavenRepositoryTaskFactory
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
+import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
 
 interface PublishingTaskManager {
@@ -64,11 +67,18 @@ class SonatypePortalPublishingTaskManager(
         // register the zip configuration producer
         project.createZipConfigurationProducer
 
-        // central.sonatype.com - Missing signature for file:
-        configureSigning(project)
 
         // need config this before loop through all publications
         preparePublications(project)
+
+        // central.sonatype.com - Missing signature for file:
+        configureSigning(project)
+
+        // make sure the signing task runs before the publishing task
+        project.tasks.withType<AbstractPublishToMaven>().configureEach {
+            val signingTasks = project.tasks.withType<Sign>()
+            mustRunAfter(signingTasks)
+        }
 
         val publishing = project.publishingExtension
 
@@ -80,6 +90,7 @@ class SonatypePortalPublishingTaskManager(
     }
 
     private fun preparePublications(project: Project) {
+        KotlinMultiplatformPublicationProvider().preparePublication(project)
         publicationProvider.preparePublication(project)
     }
 

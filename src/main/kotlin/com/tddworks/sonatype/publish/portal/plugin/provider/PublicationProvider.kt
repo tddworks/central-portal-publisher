@@ -31,7 +31,7 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
 
             publishing.publications.withType<MavenPublication>().configureEach {
                 artifact(javadocJar)
-                configurePom()
+                configurePom("Kotlin Multiplatform")
             }
         }
     }
@@ -59,7 +59,7 @@ class JvmPublicationProvider : PublicationProvider {
 
             publishing.publications.register<MavenPublication>("maven") {
                 from(project.components["java"])
-                configurePom()
+                configurePom("maven")
             }
 
             // add javadocJar to the maven publication
@@ -139,10 +139,10 @@ fun Project.configureMavenPublication(
     }
 }
 
-fun MavenPublication.configurePom() {
+fun MavenPublication.configurePom(name: String) {
     val githubRepo = "github.com/tddworks/openai-kotlin"
     pom {
-        name = "test"
+        this.name = name
 //        description = provider { project.description }
         description = "OpenAI API KMP Client"
         inceptionYear = "2023"
@@ -150,7 +150,7 @@ fun MavenPublication.configurePom() {
 
         developers {
             developer {
-                name = "tddworks"
+                this.name = "tddworks"
                 email = "itshan@tddworks.com"
                 organization = "tddworks team"
                 organizationUrl = "www.tddworks.com"
@@ -159,7 +159,7 @@ fun MavenPublication.configurePom() {
 
         licenses {
             license {
-                name = "The Apache Software License, Version 2.0"
+                this.name = "The Apache Software License, Version 2.0"
                 url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
             }
         }

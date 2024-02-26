@@ -39,7 +39,8 @@ class SonatypePublishPublicationToMavenRepositoryTaskFactory(
             publishingBuildRepositoryManager.createBuildRepository(repoName, project)
 
         // reuse the task to publish the publication to the repository
-        val publishToTask = project.tasks.named(taskName(publicationName))
+        val tasks = project.tasks
+        val publishToTask = tasks.named(taskName(publicationName))
 
         // remove the destination path before publishing
         publishToTask.configure {
