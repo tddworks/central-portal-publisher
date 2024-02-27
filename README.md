@@ -7,6 +7,25 @@ refer to [Signing Plugin](https://docs.gradle.org/current/userguide/signing_plug
 signing.keyId=[your-key-id]
 signing.password=[your-key-password]
 signing.secretKeyRingFile=[your-key-file]
+
+## Provide artifacts information required by Maven Central
+POM_NAME=openai-kotlin
+POM_DESCRIPTION=OpenAI API KMP Client
+POM_URL=https://github.com/tddworks/openai-kotlin
+POM_SCM_URL=https://github.com/tddworks/openai-kotlin
+POM_SCM_CONNECTION=scm:git:git://github.com/tddworks/openai-kotlin.git
+POM_SCM_DEV_CONNECTION=scm:git:ssh://github.com/tddworks/openai-kotlin.git
+POM_LICENCE_NAME=MIT License
+POM_LICENCE_URL=https://github.com/tddworks/openai-kotlin/blob/main/LICENSE
+
+POM_LICENCE_DIST=repo
+POM_DEVELOPER_ID=tddworks
+POM_DEVELOPER_NAME=itshan
+POM_DEVELOPER_EMAIL=itshan@ttdworks.com
+POM_DEVELOPER_ORGANIZATION=tddworks
+POM_DEVELOPER_ORGANIZATION_URL=https://tddworks.com
+POM_ISSUE_SYSTEM=github
+POM_ISSUE_URL=https://github.com/tddworks/openai-kotlin/issues
 ```
 
 ### Single module
