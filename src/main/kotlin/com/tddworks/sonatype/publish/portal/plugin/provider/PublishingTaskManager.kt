@@ -100,6 +100,13 @@ class SonatypePortalPublishingTaskManager(
             project.configure<SigningExtension> {
                 val publishing = project.extensions.getByName("publishing") as PublishingExtension
                 sign(publishing.publications)
+                // use the in-memory PGP keys if available
+                if (project.get("SIGNING_KEY") != "SIGNING_KEY not found") {
+                    useInMemoryPgpKeys(
+                        project.get("SIGNING_KEY"),
+                        project.get("SIGNING_PASSWORD")
+                    )
+                }
             }
         }
     }

@@ -4,6 +4,7 @@
 add gradle.properties file in the root project with the following content:
 refer to [Signing Plugin](https://docs.gradle.org/current/userguide/signing_plugin.html) for more information.
 ```properties
+## Provide signing information required by Maven Central
 signing.keyId=[your-key-id]
 signing.password=[your-key-password]
 signing.secretKeyRingFile=[your-key-file]
@@ -32,12 +33,45 @@ SONATYPE_USERNAME=[your-sonatype-username]
 SONATYPE_PASSWORD=[your-sonatype-password]
 ```
 
-Or you can provide the credentials in the system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`.
+Or you can provide the credentials in the system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD` and `SIGNING_KEY` and `SIGNING_PASSWORD` for the signing key.
 
 ```shell
 export SONATYPE_USERNAME=your-sonatype-username
 export SONATYPE_PASSWORD=your-sonatype-password
+
+export SIGNING_KEY=your-key
+export SIGNING_PASSWORD=your-key-password
 ```
+SIGING_KEY can be get from 
+```shell
+gpg --armor --export-secret-keys foobar@example.com \
+    | awk 'NR == 1 { print "SIGNING_KEY=" } 1' ORS='\\n' \
+    >> gradle.properties
+```
+
+## About signing
+The plugin will use the signing information from the gradle.properties file first, and then the system environment. If you don't provide the signing information, the plugin will use the default signing configuration.
+### example
+```properties
+## Provide signing information required by Maven Central - default  - order(3)
+signing.keyId=[your-key-id]
+signing.password=[your-key-password]
+signing.secretKeyRingFile=[your-key-file]
+
+
+## Provide signing information required by Maven Central - order(1)
+SIGNING_KEY=\n-----BEGIN PGP PRIVATE KEY BLOCK-----END PGP PRIVATE KEY BLOCK-----\n
+SIGNING_PASSWORD=your-key-password
+````
+
+###
+```shell
+## Provide signing information required by Maven Central - order(2)
+export SIGNING_KEY=your-key
+export SIGNING_PASSWORD=your-key-password
+```
+
+
 For those two configurations, the plugin will use the credentials from the gradle.properties file first, and then the system environment. and configure the plugin in the build.gradle file as follows:
 
 ```kotlin
@@ -72,9 +106,9 @@ Supported Features:
     - [x] publish by signing from gradle.properties
       - [x] publish by specific username and password
       - [x] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
-    - [ ] publish by custom signing
-      - [ ] publish by specific username and password
-      - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
+    - [x] publish by custom signing
+      - [x] publish by specific signing.keyId, signing.password and signing.secretKeyRingFile
+      - [x] publish by system environment, e.g. `SIGNING_KEY` and `SIGNING_PASSWORD`
   - [x] publishKotlinMultiplatformPublicationToSonatypeRepository
     - [x] publishMacosX64PublicationToSonatypePortalRepository
     
