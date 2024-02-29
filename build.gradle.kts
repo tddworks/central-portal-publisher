@@ -2,20 +2,22 @@ plugins {
     `kotlin-dsl`
     alias(libs.plugins.kotlin)
     id("java-gradle-plugin")
+    id("com.gradle.plugin-publish") version "1.2.1"
     id("maven-publish")
-    id("signing")
-
 }
 
 val pluginDescription = "Plugin that helps you publish to the Central Portal (https://central.sonatype.org/)"
 
 gradlePlugin {
+    website = "https://github.com/tddworks/sonatype-portal-publisher"
+    vcsUrl = "https://github.com/tddworks/sonatype-portal-publisher"
     plugins {
         create("sonatype-portal-publisher") {
             id = "com.tddworks.sonatype-portal-publisher"
-            implementationClass = "com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin"
-            this.description = pluginDescription
             this.displayName = "sonatype-portal-publisher"
+            this.description = pluginDescription
+            tags = listOf("sonatype", "publish", "portal", "maven-central", "kmp")
+            implementationClass = "com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin"
         }
     }
 }
