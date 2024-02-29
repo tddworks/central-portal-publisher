@@ -26,7 +26,28 @@ POM_DEVELOPER_ORGANIZATION=tddworks
 POM_DEVELOPER_ORGANIZATION_URL=https://tddworks.com
 POM_ISSUE_SYSTEM=github
 POM_ISSUE_URL=https://github.com/tddworks/openai-kotlin/issues
+
+## Provide Sonatype Portal credentials
+SONATYPE_USERNAME=[your-sonatype-username]
+SONATYPE_PASSWORD=[your-sonatype-password]
 ```
+
+Or you can provide the credentials in the system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`.
+
+```shell
+export SONATYPE_USERNAME=your-sonatype-username
+export SONATYPE_PASSWORD=your-sonatype-password
+```
+For those two configurations, the plugin will use the credentials from the gradle.properties file first, and then the system environment. and configure the plugin in the build.gradle file as follows:
+
+```kotlin
+sonatypePortal {
+    settings {
+        autoPublish = false
+    }
+}
+```
+
 
 ### Single module
 
@@ -50,7 +71,7 @@ Supported Features:
   - [x] publishMavenPublicationToSonatypePortalRepository
     - [x] publish by signing from gradle.properties
       - [x] publish by specific username and password
-      - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
+      - [x] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
     - [ ] publish by custom signing
       - [ ] publish by specific username and password
       - [ ] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
@@ -73,12 +94,12 @@ Supported Features:
 - [x] zip aggregation
   - [x] zipAggregationPublications
 
-- [ ] scm settings
-  - Developers information is missing
-  - License information is missing
-  - Project URL is not defined
-  - Project description is missing
-  - SCM URL is not defined
+- [x] SCM settings
+  - [x] Developers information
+  - [x] License information
+  - [x] Project URL
+  - [x] Project description
+  - [x] SCM URL
 
 
 #### With project isolation
@@ -162,3 +183,18 @@ $ tree .
                    └── example_java_project-0.1.0.pom.sha1
 
 ```
+### Q&A
+[Does the Portal support SNAPSHOT releases?](https://central.sonatype.org/faq/snapshot-releases/#releasing-to-central)
+Does the Portal support SNAPSHOT releases?⚓︎
+Question⚓︎
+Does the Central Portal support -SNAPSHOT releases?
+
+Answer⚓︎
+Historically, users have been able to publish -SNAPSHOT releases to OSSRH (but not to Maven Central). The intention of this was to allow users to verify their own releases prior to publishing to Maven Central, but it has the side effect of users being able to make their pre-release versions available to their communities during ongoing development.
+
+The Central Publisher Portal does not support -SNAPSHOT releases, and deployments of -SNAPSHOT releases will have a version cannot be a SNAPSHOT error in their validation results. Versions should only be published to the Portal if they are intended to reach Maven Central.
+
+The Portal supports a more limited feature that is intended to fill the original need for publishers to be able to perform manual verification of their builds. Publishers will be able to point their build configurations to either specific deployments or any VALIDATED deployment that they published in order to use the component before publishing. This will be particularly useful for publishers who publish via CI pipelines, but want to verify locally.
+
+Alternative Options⚓︎
+If you are looking for a solution that is able to handle -SNAPSHOT releases for your project, consider Sonatype Nexus Repository which supports maven-snapshots as a repository out of the box.

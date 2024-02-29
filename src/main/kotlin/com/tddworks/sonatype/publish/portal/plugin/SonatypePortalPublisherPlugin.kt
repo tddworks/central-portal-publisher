@@ -56,7 +56,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
         logger.quiet("Configuring Sonatype Portal Publisher plugin for project: $path")
         val extension = extensions.getByType<SonatypePortalPublisherExtension>()
-        val authentication = extension.getAuthentication()
+        val authentication = extension.getAuthentication(this)
         val settings = extension.getSettings()
 
         if (settings?.autoPublish == true && (authentication?.password.isNullOrBlank() || authentication?.username.isNullOrBlank())) {
@@ -86,7 +86,7 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
             Extension name: ${extension::class.simpleName}
             autoPublish: ${settings?.autoPublish}
             aggregation: ${settings?.aggregation}
-            authentication: ${extension.getAuthentication()}
+            authentication: ${extension.getAuthentication(this)}
         """.trimIndent()
         )
     }

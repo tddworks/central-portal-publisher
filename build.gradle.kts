@@ -26,6 +26,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     testImplementation(libs.bundles.jvm.test)
+    testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
 }
 
 group = "com.tddworks"

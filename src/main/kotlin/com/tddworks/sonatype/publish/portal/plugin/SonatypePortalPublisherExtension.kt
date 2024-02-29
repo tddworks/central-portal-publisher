@@ -30,7 +30,8 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
      * The settings property.
      * This property is used to configure the settings.
      */
-    private val sonatypePublisherSettings: Property<SonatypePublisherSettings> = objects.property(SonatypePublisherSettings::class.java)
+    private val sonatypePublisherSettings: Property<SonatypePublisherSettings> =
+        objects.property(SonatypePublisherSettings::class.java)
 
     /**
      * Configures the authentication.
@@ -44,8 +45,11 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
         )
     }
 
-    fun getAuthentication(): Authentication? {
-        return authentication.orNull
+    fun getAuthentication(project: Project): Authentication? {
+        return return authentication.orNull ?: AuthenticationBuilder().apply {
+            username = project.get("SONATYPE_USERNAME")
+            password = project.get("SONATYPE_PASSWORD")
+        }.build()
     }
 
     /**
@@ -56,7 +60,11 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
      * @see SonatypePublisherSettings
      */
     fun Project.settings(settings: SonatypePublisherSettingsBuilder.() -> Unit) {
-        this@SonatypePortalPublisherExtension.sonatypePublisherSettings.setAndFinalize(SonatypePublisherSettingsBuilder().apply(settings).build())
+        this@SonatypePortalPublisherExtension.sonatypePublisherSettings.setAndFinalize(
+            SonatypePublisherSettingsBuilder().apply(
+                settings
+            ).build()
+        )
     }
 
     fun getSettings(): SonatypePublisherSettings? {
