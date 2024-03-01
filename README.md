@@ -229,6 +229,10 @@ jobs:
         run: ./gradlew build publishAggregationPublicationsToSonatypePortalRepository
 ```
 
+## Build and publish a release to Central Sonatype
+[<img src="./docs/images/github-action-workflow.png">](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
+
+
 # Maven Repository Layout
 
 ```shell
