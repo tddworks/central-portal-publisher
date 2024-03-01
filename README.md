@@ -1,6 +1,14 @@
 # Sonatype Portal Gradle Plugin
 
 ## Usage
+
+### Using the plugins DSL:
+```kotlin
+plugins {
+  id("com.tddworks.sonatype-portal-publisher") version "0.0.1"
+}
+```
+
 add gradle.properties file in the root project with the following content:
 refer to [Signing Plugin](https://docs.gradle.org/current/userguide/signing_plugin.html) for more information.
 ```properties
