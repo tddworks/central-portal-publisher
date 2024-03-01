@@ -197,6 +197,38 @@ gradle clean zipAggregationPublication
 [<img src="./docs/images/kmp-deployment-Info.png">](https://central.sonatype.com/publishing/deployments)
 
 
+# CI Pipeline on Github Actions
+## Config the secrets first
+[<img src="./docs/images/github-action-secrets.png">](https://docs.github.com/en/actions/reference/encrypted-secrets)
+
+```yaml
+name: build and publish a release to Central Sonatype
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macOS-latest
+    env:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+      - name: Release to Central Sonatype with Gradle
+        run: ./gradlew build publishAggregationPublicationsToSonatypePortalRepository
+```
+
 # Maven Repository Layout
 
 ```shell
