@@ -4,6 +4,7 @@ plugins {
     id("java-gradle-plugin")
     id("com.gradle.plugin-publish") version "1.2.1"
     id("maven-publish")
+    alias(libs.plugins.kover)
 }
 
 val pluginDescription = "Plugin that helps you publish to the Central Portal (https://central.sonatype.org/)"
