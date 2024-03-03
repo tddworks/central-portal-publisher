@@ -2,10 +2,14 @@
 
 ## Usage
 
-### Using the plugins DSL:
+### Minimal configuration
+#### build.gradle.kts
 ```kotlin
 plugins {
   id("com.tddworks.sonatype-portal-publisher") version "0.0.1"
+}
+
+sonatypePortal {
 }
 ```
 
