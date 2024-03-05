@@ -9,8 +9,7 @@ plugins {
   id("com.tddworks.sonatype-portal-publisher") version "0.0.1"
 }
 
-sonatypePortal {
-}
+sonatypePortal {}
 ```
 
 add gradle.properties file in the root project with the following content:
