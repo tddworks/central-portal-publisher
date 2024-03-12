@@ -1,5 +1,8 @@
 # Sonatype Portal Gradle Plugin
 
+![CI](https://github.com/tddworks/sonatype-portal-publisher/actions/workflows/main.yml/badge.svg)
+[![codecov](https://codecov.io/gh/tddworks/sonatype-portal-publisher/graph/badge.svg?token=izDBfMwLY0)](https://codecov.io/gh/tddworks/sonatype-portal-publisher)
+
 ## Usage
 
 ### Minimal configuration
@@ -278,4 +281,4 @@ The Central Publisher Portal does not support -SNAPSHOT releases, and deployment
 The Portal supports a more limited feature that is intended to fill the original need for publishers to be able to perform manual verification of their builds. Publishers will be able to point their build configurations to either specific deployments or any VALIDATED deployment that they published in order to use the component before publishing. This will be particularly useful for publishers who publish via CI pipelines, but want to verify locally.
 
 Alternative Options⚓︎
-If you are looking for a solution that is able to handle -SNAPSHOT releases for your project, consider Sonatype Nexus Repository which supports maven-snapshots as a repository out of the box.
+If you are looking for a solution that is able to handle -SNAPSHOT releases for your project, consider Sonatype Nexus Repository which supports maven-snapshots as a repository out of the box
