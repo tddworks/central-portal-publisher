@@ -23,6 +23,10 @@ gradlePlugin {
     }
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 dependencies {
     implementation("com.squareup.okio:okio:3.8.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
