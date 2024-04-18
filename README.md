@@ -1,7 +1,8 @@
-# Sonatype Portal Gradle Plugin
+# Central Portal Gradle Plugin 
+## https://central.sonatype.com/
 
-![CI](https://github.com/tddworks/sonatype-portal-publisher/actions/workflows/main.yml/badge.svg)
-[![codecov](https://codecov.io/gh/tddworks/sonatype-portal-publisher/graph/badge.svg?token=izDBfMwLY0)](https://codecov.io/gh/tddworks/sonatype-portal-publisher)
+![CI](https://github.com/tddworks/central-portal-publisher/actions/workflows/main.yml/badge.svg)
+[![codecov](https://codecov.io/gh/tddworks/central-portal-publisher/graph/badge.svg?token=izDBfMwLY0)](https://codecov.io/gh/tddworks/central-portal-publisher)
 
 ## Usage
 
@@ -9,7 +10,7 @@
 #### build.gradle.kts
 ```kotlin
 plugins {
-  id("com.tddworks.sonatype-portal-publisher") version "0.0.1"
+  id("com.tddworks.central-portal-publisher") version "0.0.2"
 }
 
 sonatypePortal {}
