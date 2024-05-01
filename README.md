@@ -10,7 +10,7 @@
 #### build.gradle.kts
 ```kotlin
 plugins {
-  id("com.tddworks.central-portal-publisher") version "0.0.2"
+  id("com.tddworks.central-portal-publisher") version "0.0.4"
 }
 
 sonatypePortal {}
