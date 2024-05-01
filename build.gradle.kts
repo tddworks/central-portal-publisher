@@ -24,7 +24,7 @@ gradlePlugin {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(11)
 }
 
 dependencies {
@@ -37,7 +37,7 @@ dependencies {
 }
 
 group = "com.tddworks"
-version = "0.0.2"
+version = "0.0.4"
 repositories {
     mavenCentral()
 }
