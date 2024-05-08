@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin)
-    id("com.tddworks.central-portal-publisher") version "0.0.2"
+    id("com.tddworks.central-portal-publisher") version "0.0.5"
     `maven-publish`
     signing
 }

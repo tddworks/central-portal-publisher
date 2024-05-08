@@ -1,4 +1,4 @@
-# Central Portal Gradle Plugin 
+# Central Portal Gradle Plugin
 ## https://central.sonatype.com/
 
 ![CI](https://github.com/tddworks/central-portal-publisher/actions/workflows/main.yml/badge.svg)
@@ -10,10 +10,10 @@
 #### build.gradle.kts
 ```kotlin
 plugins {
-  id("com.tddworks.central-portal-publisher") version "0.0.4"
+  id("com.tddworks.central-portal-publisher") version "0.0.5"
 }
 
-sonatypePortal {}
+sonatypePortalPublisher {}
 ```
 
 add gradle.properties file in the root project with the following content:
@@ -57,7 +57,7 @@ export SONATYPE_PASSWORD=your-sonatype-password
 export SIGNING_KEY=your-key
 export SIGNING_PASSWORD=your-key-password
 ```
-SIGING_KEY can be get from 
+SIGING_KEY can be get from
 ```shell
 gpg --armor --export-secret-keys foobar@example.com \
     | awk 'NR == 1 { print "SIGNING_KEY=" } 1' ORS='\\n' \
@@ -90,7 +90,7 @@ export SIGNING_PASSWORD=your-key-password
 For those two configurations, the plugin will use the credentials from the gradle.properties file first, and then the system environment. and configure the plugin in the build.gradle file as follows:
 
 ```kotlin
-sonatypePortal {
+sonatypePortalPublisher {
     settings {
         autoPublish = false
     }
@@ -101,7 +101,7 @@ sonatypePortal {
 ### Single module
 
 ```kotlin
-sonatypePortal {
+sonatypePortalPublisher {
     authentication {
         username = "your-username"
         password = "your-password"
@@ -117,38 +117,38 @@ sonatypePortal {
 
 Supported Features:
 - [x] publish different publications (maven, kotlinMultiplatform, etc.)
-  - [x] publishMavenPublicationToSonatypePortalRepository
-    - [x] publish by signing from gradle.properties
-      - [x] publish by specific username and password
-      - [x] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
-    - [x] publish by custom signing
-      - [x] publish by specific signing.keyId, signing.password and signing.secretKeyRingFile
-      - [x] publish by system environment, e.g. `SIGNING_KEY` and `SIGNING_PASSWORD`
-  - [x] publishKotlinMultiplatformPublicationToSonatypeRepository
-    - [x] publishMacosX64PublicationToSonatypePortalRepository
-    
+    - [x] publishMavenPublicationToSonatypePortalRepository
+        - [x] publish by signing from gradle.properties
+            - [x] publish by specific username and password
+            - [x] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
+        - [x] publish by custom signing
+            - [x] publish by specific signing.keyId, signing.password and signing.secretKeyRingFile
+            - [x] publish by system environment, e.g. `SIGNING_KEY` and `SIGNING_PASSWORD`
+    - [x] publishKotlinMultiplatformPublicationToSonatypeRepository
+        - [x] publishMacosX64PublicationToSonatypePortalRepository
+
 - [x] publish aggregation publications
-  - [x] publish by signing from gradle.properties
-    - [x] publishAggregationPublicationsToSonatypePortalRepository
-      - kmp aggregated deployment bundle zip layout
-        <img src="./docs/images/kmp-aggregated-deployment-bundle.png">
+    - [x] publish by signing from gradle.properties
+        - [x] publishAggregationPublicationsToSonatypePortalRepository
+            - kmp aggregated deployment bundle zip layout
+              <img src="./docs/images/kmp-aggregated-deployment-bundle.png">
 
 - [x] zip different publications
-  - [x] zipMavenPublication
-  - [x] zipKotlinMultiplatformPublication
-  - [x] zipAllPublications
-    - Generated zip files:
-      - [x] jvm-deployment-bundle.zip
-      - [x] kotlinMultiplatform-deployment-bundle.zip
+    - [x] zipMavenPublication
+    - [x] zipKotlinMultiplatformPublication
+    - [x] zipAllPublications
+        - Generated zip files:
+            - [x] jvm-deployment-bundle.zip
+            - [x] kotlinMultiplatform-deployment-bundle.zip
 - [x] zip aggregation
-  - [x] zipAggregationPublications
+    - [x] zipAggregationPublications
 
 - [x] SCM settings
-  - [x] Developers information
-  - [x] License information
-  - [x] Project URL
-  - [x] Project description
-  - [x] SCM URL
+    - [x] Developers information
+    - [x] License information
+    - [x] Project URL
+    - [x] Project description
+    - [x] SCM URL
 
 
 #### With project isolation
