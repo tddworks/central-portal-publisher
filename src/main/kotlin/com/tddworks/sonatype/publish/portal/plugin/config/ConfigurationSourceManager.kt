@@ -1,5 +1,6 @@
 package com.tddworks.sonatype.publish.portal.plugin.config
 
+import com.tddworks.sonatype.publish.portal.plugin.defaults.SmartDefaultManager
 import org.gradle.api.Project
 import java.io.File
 import java.util.Properties
@@ -64,7 +65,7 @@ class ConfigurationSourceManager(
     )
 
     /**
-     * Loads configuration with proper precedence: DSL > Properties > Environment > Auto-Detected > Defaults
+     * Loads configuration with proper precedence: DSL > Properties > Environment > Auto-Detected > Smart-Defaults > Defaults
      */
     fun loadConfigurationWithPrecedence(
         dslConfig: CentralPublisherConfig? = null,
@@ -85,6 +86,15 @@ class ConfigurationSourceManager(
                 usedSources.add(ConfigurationSource.AUTO_DETECTED)
                 sourceDiagnostics.recordSource(ConfigurationSource.AUTO_DETECTED)
             }
+        }
+
+        // Apply smart defaults 
+        val smartDefaultManager = SmartDefaultManager(project)
+        val smartDefaults = smartDefaultManager.applySmartDefaults(project, config)
+        if (smartDefaults != config) { // Only record if smart defaults actually changed something
+            config = smartDefaults
+            usedSources.add(ConfigurationSource.SMART_DEFAULTS)
+            sourceDiagnostics.recordSource(ConfigurationSource.SMART_DEFAULTS)
         }
 
         // Apply environment variables

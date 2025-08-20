@@ -246,6 +246,7 @@ enum class ConfigurationSource {
     PROPERTIES,
     ENVIRONMENT,
     AUTO_DETECTED,
+    SMART_DEFAULTS,
     DEFAULTS
 }
 
