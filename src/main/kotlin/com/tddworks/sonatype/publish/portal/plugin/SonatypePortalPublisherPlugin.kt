@@ -5,6 +5,7 @@ import com.tddworks.sonatype.publish.portal.plugin.provider.JvmPublicationProvid
 import com.tddworks.sonatype.publish.portal.plugin.provider.SonatypePortalPublishingTaskManager
 import com.tddworks.sonatype.publish.portal.plugin.tasks.SonatypeDevelopmentBundlePublishTaskFactory
 import com.tddworks.sonatype.publish.portal.plugin.tasks.SonatypePublishPublicationToMavenRepositoryTaskFactory
+import com.tddworks.sonatype.publish.portal.plugin.tasks.SimplifiedTaskRegistry
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.*
@@ -74,6 +75,9 @@ class SonatypePortalPublisherPlugin : Plugin<Project> {
 
 
         sonatypePortalPublishingTaskManager.registerPublishingTasks(this)
+        
+        // Register simplified task names for better UX
+        SimplifiedTaskRegistry().registerSimplifiedTasks(this)
     }
 
     private fun Project.loggingExtensionInfo(
