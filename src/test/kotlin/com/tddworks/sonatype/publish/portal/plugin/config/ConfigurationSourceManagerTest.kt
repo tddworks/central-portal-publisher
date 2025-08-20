@@ -30,6 +30,8 @@ class ConfigurationSourceManagerTest {
         // Clean up environment variables set during tests
         System.clearProperty("SONATYPE_USERNAME")
         System.clearProperty("SONATYPE_PASSWORD")
+        System.clearProperty("SIGNING_KEY")
+        System.clearProperty("SIGNING_PASSWORD")
     }
 
     @Test
