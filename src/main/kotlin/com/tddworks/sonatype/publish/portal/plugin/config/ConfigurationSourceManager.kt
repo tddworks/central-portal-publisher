@@ -223,13 +223,22 @@ class ConfigurationSourceManager(
     }
 
     /**
-     * Loads auto-detected configuration (placeholder for now)
+     * Loads auto-detected configuration using available detectors
      */
     private fun loadAutoDetected(): CentralPublisherConfig {
-        // This will be implemented when we build the auto-detection framework
-        return CentralPublisherConfigBuilder()
-            .withSource(ConfigurationSource.AUTO_DETECTED)
-            .build()
+        val detectors = listOf(
+            com.tddworks.sonatype.publish.portal.plugin.autodetection.GitInfoDetector(),
+            com.tddworks.sonatype.publish.portal.plugin.autodetection.ProjectInfoDetector()
+        )
+        
+        val manager = com.tddworks.sonatype.publish.portal.plugin.autodetection.AutoDetectionManager(detectors)
+        val summary = manager.detectConfiguration(project)
+        
+        return summary.config.copy(
+            metadata = summary.config.metadata.copy(
+                sources = setOf(ConfigurationSource.AUTO_DETECTED)
+            )
+        )
     }
 
     /**
