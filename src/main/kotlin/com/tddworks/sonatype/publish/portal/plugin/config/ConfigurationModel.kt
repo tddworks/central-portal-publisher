@@ -296,6 +296,11 @@ class CentralPublisherConfigBuilder {
         return this
     }
     
+    fun withSources(sourceList: List<ConfigurationSource>): CentralPublisherConfigBuilder {
+        sources.addAll(sourceList)
+        return this
+    }
+    
     fun build(): CentralPublisherConfig {
         return CentralPublisherConfig(
             credentials = credentials,
