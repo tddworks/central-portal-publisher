@@ -14,10 +14,20 @@ gradlePlugin {
     website = "https://github.com/tddworks/central-portal-publisher"
     vcsUrl = "https://github.com/tddworks/central-portal-publisher"
     plugins {
+        // New modern plugin with simplified DSL
+        create("central-publisher") {
+            id = "com.tddworks.central-publisher"
+            this.displayName = "Central Publisher"
+            this.description = "Modern Maven Central publishing with type-safe DSL and auto-detection"
+            tags = listOf("sonatype", "publish", "maven-central", "dsl", "auto-detection")
+            implementationClass = "com.tddworks.sonatype.publish.portal.plugin.CentralPublisherPlugin"
+        }
+        
+        // Legacy plugin for backward compatibility
         create("central-portal-publisher") {
             id = "com.tddworks.central-portal-publisher"
-            this.displayName = "central-portal-publisher"
-            this.description = pluginDescription
+            this.displayName = "central-portal-publisher (legacy)"
+            this.description = "$pluginDescription [LEGACY - Consider migrating to com.tddworks.central-publisher]"
             tags = listOf("sonatype", "publish", "portal", "maven-central", "kmp")
             implementationClass = "com.tddworks.sonatype.publish.portal.plugin.SonatypePortalPublisherPlugin"
         }

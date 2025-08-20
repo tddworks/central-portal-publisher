@@ -2,6 +2,7 @@ package com.tddworks.sonatype.publish.portal.plugin.dsl
 
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfigBuilder
+import com.tddworks.sonatype.publish.portal.plugin.config.ConfigurationSourceManager
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 
@@ -113,10 +114,19 @@ open class CentralPublisherExtension(private val project: Project) {
     }
     
     /**
-     * Builds the final configuration
+     * Builds the final configuration with auto-detection integration
      */
     fun build(): CentralPublisherConfig {
-        return configBuilder.build()
+        // First, build the DSL configuration
+        val dslConfig = configBuilder.build()
+        
+        // Then use ConfigurationSourceManager to merge with auto-detection and other sources
+        val sourceManager = ConfigurationSourceManager(project)
+        
+        return sourceManager.loadConfigurationWithPrecedence(
+            dslConfig = dslConfig,
+            enableAutoDetection = true
+        )
     }
 }
 
