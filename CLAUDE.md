@@ -72,10 +72,12 @@ The plugin uses configuration in this order:
 
 ## Testing Approach
 
-- Unit tests use JUnit 5 Platform with Mockito for mocking
+- **TDD Methodology**: Always write tests first, then implement to make them pass
+- Unit tests use JUnit 5 Platform with AssertJ for assertions  
 - Test utilities in `src/test/kotlin/` include builders and test fixtures
 - System environment stubbing via `system-stubs-jupiter` for testing environment-based configuration
 - Coverage tracked via Kover plugin with reports uploaded to Codecov
+- **Test Structure**: Organize tests by feature/component, use descriptive test names
 
 ## Dependencies
 
@@ -83,3 +85,59 @@ The plugin uses configuration in this order:
 - **File I/O**: Okio 3.9.0 for efficient file operations
 - **Testing**: JUnit 5, Mockito, AssertJ
 - **Build**: Kotlin 1.9.23, Gradle Kotlin DSL
+
+## Development Practices
+
+### TDD Process
+1. **Red**: Write a failing test that describes the desired functionality
+2. **Green**: Write minimal code to make the test pass
+3. **Refactor**: Improve code quality while keeping tests green
+4. Always run tests before committing changes
+
+### Task Management
+- **Always** update task status in `docs/refactoring/implementation-tasks.md` when completing work
+- Use the TodoWrite tool to track progress within Claude Code sessions
+- Mark tasks as `in_progress` when starting, `completed` when finished
+- Update time tracking with actual vs. estimated hours
+
+### Code Quality
+- Write descriptive, meaningful test names using backticks: `` `should validate empty configuration and return errors` ``
+- Use AssertJ assertions for readable test failures
+- Follow existing naming conventions and code style
+- Add KDoc/JavaDoc for public APIs and DSL components
+
+## Current Refactoring Status
+
+**Project is undergoing major refactoring** - see `docs/refactoring/implementation-tasks.md` for details.
+
+**Completed Components:**
+- ✅ Configuration Model with builders and validation
+- ✅ Configuration Source Manager with multi-source loading
+- ✅ Auto-Detection Framework (GitInfoDetector, ProjectInfoDetector)
+- ✅ Validation Engine with structured error reporting
+- ✅ Type-Safe DSL Structure with comprehensive test coverage
+- ✅ Task Simplification and error messaging improvements
+
+**Current Status:** Phase 1 (Configuration Layer) complete, Phase 2 (DSL) in progress
+
+### New Architecture (Post-Refactoring)
+
+1. **Configuration Layer** (`src/main/kotlin/.../config/`)
+   - `CentralPublisherConfig` - Immutable configuration model with serialization
+   - `CentralPublisherConfigBuilder` - Builder pattern for configuration construction
+   - `ConfigurationSourceManager` - Multi-source configuration loading with precedence
+
+2. **Auto-Detection** (`src/main/kotlin/.../autodetection/`)
+   - `AutoDetector` interface - Contract for auto-detection components
+   - `GitInfoDetector` - Automatically detects git repository information
+   - `ProjectInfoDetector` - Detects project names and descriptions
+
+3. **Validation** (`src/main/kotlin/.../validation/`)
+   - `ValidationEngine` - Orchestrates validation rules
+   - `ValidationViolation` - Structured validation errors with suggestions
+   - Extensible validator system with severity levels (ERROR/WARNING/INFO)
+
+4. **DSL** (`src/main/kotlin/.../dsl/`)
+   - `CentralPublisherExtension` - Main Gradle extension for type-safe DSL
+   - Type-safe builder classes for each configuration section
+   - Compile-time validation and IDE auto-completion support
