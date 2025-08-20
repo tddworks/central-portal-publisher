@@ -95,10 +95,10 @@ The plugin uses configuration in this order:
 4. Always run tests before committing changes
 
 ### Task Management
-- **Always** update task status in `docs/refactoring/implementation-tasks.md` when completing work
 - Use the TodoWrite tool to track progress within Claude Code sessions
 - Mark tasks as `in_progress` when starting, `completed` when finished
 - Update time tracking with actual vs. estimated hours
+- **Always** update task status in `docs/refactoring/implementation-tasks.md` when completing work
 
 ### Code Quality
 - Write descriptive, meaningful test names using backticks: `` `should validate empty configuration and return errors` ``
