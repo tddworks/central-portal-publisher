@@ -36,7 +36,7 @@ class CentralPublisherPluginIntegrationTest {
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure via DSL
-        val config = project.extensions.configure(CentralPublisherExtension::class.java) {
+        project.extensions.configure(CentralPublisherExtension::class.java) {
             credentials {
                 username = "test-user"
                 password = "test-token"
