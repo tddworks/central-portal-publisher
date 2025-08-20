@@ -1,6 +1,5 @@
 package com.tddworks.sonatype.publish.portal.plugin.dsl
 
-import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder

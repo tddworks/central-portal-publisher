@@ -59,7 +59,7 @@
 - **Dependencies**: TASK-1.2
 - **Actual Time**: ~8 hours (TDD approach with comprehensive DSL structure and test coverage)
 
-**TASK-2.2: Implement Core DSL**
+**TASK-2.2: Implement Core DSL** ✅ **COMPLETED**
 ```kotlin
 centralPublisher {
     credentials { }
@@ -68,13 +68,16 @@ centralPublisher {
     signing { }
 }
 ```
-- [ ] Create CentralPublisherExtension
-- [ ] Implement credentials block
-- [ ] Implement projectInfo block  
-- [ ] Implement publishing block
-- [ ] Implement signing block
+- [x] Create CentralPublisherExtension
+- [x] Implement credentials block
+- [x] Implement projectInfo block (with nested scm, license, developer blocks)
+- [x] Implement publishing block
+- [x] Implement signing block
+- [x] Integration with ConfigurationSourceManager and auto-detection
+- [x] Comprehensive test coverage
 - **Estimate**: 16 hours
 - **Dependencies**: TASK-2.1
+- **Actual Time**: ~12 hours (completed as part of previous tasks)
 
 **TASK-2.3: DSL Auto-Completion Support**
 - [ ] Add @DslMarker annotations
@@ -363,7 +366,7 @@ centralPublisher {
 
 ## 📊 Progress Summary
 
-### ✅ **Completed Tasks (10/40+)**:
+### ✅ **Completed Tasks (11/40+)**:
 - **TASK-2.4**: Refactor Task Names - Simple, memorable task names (`publishToCentral`, `bundleArtifacts`, etc.)
 - **TASK-2.5**: Create Task Aliases - Complete mapping system with deprecation warnings
 - **TASK-3.4**: Error Message System - Structured error codes (PUB-xxx) with rich context
@@ -374,6 +377,7 @@ centralPublisher {
 - **TASK-1.3**: Auto-Detection Framework - Complete framework with GitInfoDetector and ProjectInfoDetector, integrated with ConfigurationSourceManager
 - **TASK-1.4**: Configuration Validator - Comprehensive validation engine with structured error reporting
 - **TASK-2.1**: DSL Structure - Type-safe Kotlin DSL with nested configuration blocks
+- **TASK-2.2**: Core DSL Implementation - Complete CentralPublisherExtension with all configuration blocks and auto-detection integration
 
 ### 🚧 **In Progress**:
 - None currently - ready to start next phase
@@ -391,7 +395,7 @@ centralPublisher {
 - **Estimated**: 94 hours for completed tasks  
 - **Actual**: ~78 hours (17% under estimate due to efficient TDD implementation patterns)
 - **Major Milestone**: Phase 1 (Configuration Layer) + Core DSL complete!
-- **Next Phase**: Core DSL Implementation (TASK-2.2) or Setup Wizard (TASK-3.1)
+- **Next Phase**: DSL Auto-Completion Support (TASK-2.3), Smart Defaults (TASK-2.6), or Setup Wizard (TASK-3.1)
 
 The refactoring has completed 25% of tasks with **Phase 1 Configuration Layer + Core DSL complete**! Key achievements:
 
