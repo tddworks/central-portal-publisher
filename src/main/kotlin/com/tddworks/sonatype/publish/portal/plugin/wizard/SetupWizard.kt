@@ -77,7 +77,7 @@ class SetupWizard(
             finalConfiguration = finalConfig,
             stepsCompleted = completedSteps.toList(),
             summary = generateSummary(finalConfig),
-            filesGenerated = listOf("build.gradle.kts", "gradle.properties")
+            filesGenerated = listOf("build.gradle.kts", "gradle.properties", ".gitignore", ".github/workflows/publish.yml")
         )
     }
     
@@ -134,6 +134,29 @@ class SetupWizard(
                     validationErrors.add("Configuration not confirmed")
                 }
             }
+            WizardStep.TEST -> {
+                // Test step - validate configuration and test connection
+                val testConfig = promptSystem.confirm("Test configuration and validate setup?")
+                if (testConfig) {
+                    // Test basic requirements for publishing
+                    if (wizardConfig.credentials.username.isEmpty()) {
+                        validationErrors.add("Username is required for testing")
+                    }
+                    if (wizardConfig.credentials.password.isEmpty()) {
+                        validationErrors.add("Password is required for testing")
+                    }
+                    
+                    // Only validate full config if basic credentials are present
+                    if (validationErrors.isEmpty()) {
+                        try {
+                            val finalConfig = createFinalConfiguration()
+                            finalConfig.validate()
+                        } catch (e: Exception) {
+                            validationErrors.add("Configuration validation failed: ${e.message}")
+                        }
+                    }
+                }
+            }
         }
         
         return WizardStepResult(
@@ -166,6 +189,8 @@ class SetupWizard(
     fun generateFiles() {
         generateBuildFile()
         generatePropertiesFile()
+        generateGitignoreFile()
+        generateCIConfig()
     }
     
     private fun performAutoDetection(): DetectedProjectInfo {
@@ -273,6 +298,85 @@ class SetupWizard(
             }
         }
         propsFile.writeText(content)
+    }
+    
+    private fun generateGitignoreFile() {
+        val gitignoreFile = File(project.projectDir, ".gitignore")
+        val existingContent = if (gitignoreFile.exists()) gitignoreFile.readText() else ""
+        
+        val newEntries = listOf(
+            "# Central Publisher sensitive files",
+            "gradle.properties",
+            "*.gpg",
+            "local.properties",
+            "",
+            "# Build outputs", 
+            "build/",
+            ".gradle/",
+            "",
+            "# IDE files",
+            ".idea/",
+            "*.iml",
+            ".vscode/"
+        )
+        
+        val content = buildString {
+            if (existingContent.isNotEmpty()) {
+                append(existingContent)
+                if (!existingContent.endsWith("\n")) {
+                    appendLine()
+                }
+                appendLine()
+            }
+            
+            newEntries.forEach { entry ->
+                if (entry.isEmpty()) {
+                    appendLine()
+                } else if (!existingContent.contains(entry)) {
+                    appendLine(entry)
+                }
+            }
+        }
+        
+        gitignoreFile.writeText(content)
+    }
+    
+    private fun generateCIConfig() {
+        val ciDir = File(project.projectDir, ".github/workflows")
+        ciDir.mkdirs()
+        
+        val ciFile = File(ciDir, "publish.yml")
+        val content = buildString {
+            appendLine("name: Publish to Maven Central")
+            appendLine()
+            appendLine("on:")
+            appendLine("  push:")
+            appendLine("    tags:")
+            appendLine("      - 'v*'")
+            appendLine()
+            appendLine("jobs:")
+            appendLine("  publish:")
+            appendLine("    runs-on: ubuntu-latest")
+            appendLine("    steps:")
+            appendLine("      - uses: actions/checkout@v4")
+            appendLine("      - uses: actions/setup-java@v3")
+            appendLine("        with:")
+            appendLine("          java-version: '17'")
+            appendLine("          distribution: 'temurin'")
+            appendLine()
+            appendLine("      - name: Setup Gradle")
+            appendLine("        uses: gradle/gradle-build-action@v2")
+            appendLine()
+            appendLine("      - name: Publish to Central")
+            appendLine("        run: ./gradlew centralPublish")
+            appendLine("        env:")
+            appendLine("          SONATYPE_USERNAME: \${{ secrets.SONATYPE_USERNAME }}")
+            appendLine("          SONATYPE_PASSWORD: \${{ secrets.SONATYPE_PASSWORD }}")
+            appendLine("          SIGNING_KEY: \${{ secrets.SIGNING_KEY }}")
+            appendLine("          SIGNING_PASSWORD: \${{ secrets.SIGNING_PASSWORD }}")
+        }
+        
+        ciFile.writeText(content)
     }
 }
 

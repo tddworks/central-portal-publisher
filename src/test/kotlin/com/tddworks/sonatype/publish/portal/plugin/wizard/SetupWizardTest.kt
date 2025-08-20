@@ -67,6 +67,7 @@ class SetupWizardTest {
         mockPromptSystem.addResponse("12345678") // GPG Key ID
         mockPromptSystem.addResponse("gpg-password") // GPG Password  
         mockPromptSystem.addResponse("y") // Confirm configuration
+        mockPromptSystem.addResponse("y") // Test configuration
         
         // When - Run complete wizard
         val result = setupWizard.runComplete()
@@ -81,7 +82,8 @@ class SetupWizardTest {
             WizardStep.PROJECT_INFO,
             WizardStep.CREDENTIALS,
             WizardStep.SIGNING,
-            WizardStep.REVIEW
+            WizardStep.REVIEW,
+            WizardStep.TEST
         )
     }
     
@@ -169,7 +171,8 @@ class SetupWizardTest {
         mockPromptSystem.addResponse("test-token")
         mockPromptSystem.addResponse("12345678")
         mockPromptSystem.addResponse("gpg-password")
-        mockPromptSystem.addResponse("y") // Generate files
+        mockPromptSystem.addResponse("y") // Confirm configuration
+        mockPromptSystem.addResponse("y") // Test configuration
         
         // When
         val result = setupWizard.runComplete()
@@ -211,7 +214,8 @@ class SetupWizardTest {
         mockPromptSystem.addResponse("test-token")
         mockPromptSystem.addResponse("12345678")
         mockPromptSystem.addResponse("gpg-password")
-        mockPromptSystem.addResponse("y")
+        mockPromptSystem.addResponse("y") // Confirm configuration
+        mockPromptSystem.addResponse("y") // Test configuration
         
         // When
         val result = setupWizard.runComplete()
@@ -222,6 +226,76 @@ class SetupWizardTest {
         assertThat(result.summary).contains("Next steps:")
         assertThat(result.filesGenerated).contains("build.gradle.kts")
         assertThat(result.filesGenerated).contains("gradle.properties")
+    }
+    
+    @Test
+    fun `should test configuration step and validate setup`() {
+        // Given - Complete configuration by processing all steps first
+        mockPromptSystem.addResponse("y") // Confirm auto-detected values  
+        mockPromptSystem.addResponse("test-user") // Username
+        mockPromptSystem.addResponse("test-token") // Password
+        mockPromptSystem.addResponse("12345678") // GPG Key ID
+        mockPromptSystem.addResponse("gpg-password") // GPG Password
+        mockPromptSystem.addResponse("y") // Confirm configuration
+        mockPromptSystem.addResponse("y") // Test configuration
+        
+        // When - Process steps to populate wizard config
+        setupWizard.start()
+        setupWizard.processStep(WizardStep.PROJECT_INFO)
+        setupWizard.processStep(WizardStep.CREDENTIALS) // This populates the credentials
+        setupWizard.processStep(WizardStep.SIGNING)
+        setupWizard.processStep(WizardStep.REVIEW)
+        val result = setupWizard.processStep(WizardStep.TEST)
+        
+        // Then
+        assertThat(result.currentStep).isEqualTo(WizardStep.TEST)
+        assertThat(result.isValid).isTrue()
+        assertThat(result.validationErrors).isEmpty()
+    }
+    
+    @Test
+    fun `should fail test step with missing credentials`() {
+        // Given - Incomplete configuration (no credentials set)
+        mockPromptSystem.addResponse("y") // Test configuration
+        
+        // When
+        setupWizard.start()
+        val result = setupWizard.processStep(WizardStep.TEST)
+        
+        // Then
+        assertThat(result.currentStep).isEqualTo(WizardStep.TEST)
+        assertThat(result.isValid).isFalse()
+        assertThat(result.validationErrors).contains("Username is required for testing")
+        assertThat(result.validationErrors).contains("Password is required for testing")
+    }
+    
+    @Test
+    fun `should generate gitignore file`() {
+        // When
+        setupWizard.generateFiles()
+        
+        // Then
+        val gitignoreFile = File(tempDir, ".gitignore")
+        assertThat(gitignoreFile).exists()
+        
+        val content = gitignoreFile.readText()
+        assertThat(content).contains("gradle.properties")
+        assertThat(content).contains("*.gpg")
+        assertThat(content).contains("local.properties")
+    }
+    
+    @Test
+    fun `should generate basic CI config`() {
+        // When
+        setupWizard.generateFiles()
+        
+        // Then
+        val ciFile = File(tempDir, ".github/workflows/publish.yml")
+        assertThat(ciFile).exists()
+        
+        val content = ciFile.readText()
+        assertThat(content).contains("name: Publish to Maven Central")
+        assertThat(content).contains("centralPublish")
     }
 }
 

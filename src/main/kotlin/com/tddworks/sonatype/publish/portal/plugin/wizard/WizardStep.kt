@@ -8,7 +8,8 @@ enum class WizardStep(val displayName: String) {
     PROJECT_INFO("Project Information"),
     CREDENTIALS("Credentials"),
     SIGNING("Signing Configuration"),
-    REVIEW("Review Configuration");
+    REVIEW("Review Configuration"),
+    TEST("Test Configuration");
     
     /**
      * Get the next step in the wizard flow
@@ -36,5 +37,5 @@ enum class WizardStep(val displayName: String) {
     /**
      * Check if this step allows navigation forward
      */
-    fun canGoForward(): Boolean = this != REVIEW
+    fun canGoForward(): Boolean = this != TEST
 }
