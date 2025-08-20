@@ -136,7 +136,8 @@ class ConfigurationSourceManagerTest {
         assertThat(result.metadata.sources).containsExactlyInAnyOrder(
             ConfigurationSource.DSL,
             ConfigurationSource.PROPERTIES, 
-            ConfigurationSource.ENVIRONMENT
+            ConfigurationSource.ENVIRONMENT,
+            ConfigurationSource.SMART_DEFAULTS
         )
     }
 
@@ -276,12 +277,13 @@ class ConfigurationSourceManagerTest {
         val diagnostics = sourceManager.getSourceDiagnostics()
 
         // Then
-        assertThat(diagnostics.configurationSources).hasSize(2) // DSL + Environment
+        assertThat(diagnostics.configurationSources).hasSize(3) // DSL + Environment + Smart Defaults
         assertThat(diagnostics.precedenceOrder).containsExactly(
             ConfigurationSource.DSL,
             ConfigurationSource.PROPERTIES,
             ConfigurationSource.ENVIRONMENT,
             ConfigurationSource.AUTO_DETECTED,
+            ConfigurationSource.SMART_DEFAULTS,
             ConfigurationSource.DEFAULTS
         )
         assertThat(diagnostics.sourceValues["credentials.username"]).containsExactlyInAnyOrder(

@@ -474,6 +474,7 @@ class ConfigurationSourceDiagnostics {
         ConfigurationSource.PROPERTIES,
         ConfigurationSource.ENVIRONMENT,
         ConfigurationSource.AUTO_DETECTED,
+        ConfigurationSource.SMART_DEFAULTS,
         ConfigurationSource.DEFAULTS
     )
     
