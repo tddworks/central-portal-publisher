@@ -1,6 +1,7 @@
 package com.tddworks.sonatype.publish.portal.plugin.publication
 
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
+import com.tddworks.sonatype.publish.portal.plugin.get
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPluginExtension
@@ -127,19 +128,27 @@ class JvmPublicationProvider : PublicationProvider {
     }
     
     private fun configureSigning(project: Project, config: CentralPublisherConfig) {
-        if (!project.plugins.hasPlugin("signing")) {
-            project.plugins.apply("signing")
-        }
-        
-        project.extensions.configure<SigningExtension> {
-            val publishing = project.extensions.getByType<PublishingExtension>()
-            sign(publishing.publications)
-            
-            // Configure signing key if provided
-            if (config.signing.secretKeyRingFile.isNotBlank()) {
-                // Use file-based signing
-                // Note: In production, this would be configured via gradle.properties
-                // or environment variables for security
+        project.plugins.apply("signing")
+        project.plugins.withId("signing") {
+            project.configure<SigningExtension> {
+                val publishing = project.extensions.getByType<PublishingExtension>()
+                sign(publishing.publications)
+                
+                // Use in-memory PGP keys if available (following original pattern)
+                if (project.get("SIGNING_KEY") != "SIGNING_KEY not found") {
+                    useInMemoryPgpKeys(
+                        project.get("SIGNING_KEY"),
+                        project.get("SIGNING_PASSWORD")
+                    )
+                } else if (config.signing.keyId.isNotBlank()) {
+                    // Fall back to file-based signing if configured
+                    // Note: In production, this would be configured via gradle.properties
+                    // or environment variables for security
+                    project.logger.info("Using file-based signing with keyId: ${config.signing.keyId}")
+                } else {
+                    project.logger.warn("⚠️ No signing configuration found. Artifacts will not be signed.")
+                    project.logger.warn("   Set SIGNING_KEY and SIGNING_PASSWORD environment variables or configure signing in gradle.properties")
+                }
             }
         }
     }
