@@ -58,7 +58,7 @@ class MockPromptSystem : PromptSystem {
         } else {
             ""
         }
-        return response.lowercase() in listOf("y", "yes", "true")
+        return toBooleanResponse(response)
     }
     
     override fun select(message: String, options: List<String>): String {
