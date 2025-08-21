@@ -245,7 +245,8 @@ class ConfigurationSourceManagerTest {
 
         val result1 = sourceManager.loadFromProperties(tempPropertiesFile.absolutePath)
 
-        // When - Update file
+        // When - Update file with delay to ensure timestamp changes
+        Thread.sleep(10) // Small delay to ensure file modification time changes
         properties = Properties().apply {
             setProperty("SONATYPE_USERNAME", "updated-user")
         }

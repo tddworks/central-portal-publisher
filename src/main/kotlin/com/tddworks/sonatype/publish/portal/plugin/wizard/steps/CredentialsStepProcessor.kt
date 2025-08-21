@@ -35,84 +35,55 @@ class CredentialsStepProcessor : WizardStepProcessor {
         
         when {
             hasEnvCredentials -> {
-                promptSystem.prompt("""
+                val useAutoDetected = promptSystem.confirm("""
                     📋 CREDENTIALS SETUP - AUTO-DETECTED!
                     ✅ Found existing environment variables:
                     • SONATYPE_USERNAME: $envUsername
                     • SONATYPE_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
                     
-                    Using these existing credentials (environment variables take precedence).
-                    
-                    Press Enter to continue...
+                    Use these auto-detected credentials?
                 """.trimIndent())
                 
-                updatedContext = context.updateConfig(
-                    context.wizardConfig.copy(
-                        credentials = context.wizardConfig.credentials.copy(
-                            username = envUsername!!,
-                            password = envPassword
+                if (useAutoDetected) {
+                    updatedContext = context.updateConfig(
+                        context.wizardConfig.copy(
+                            credentials = context.wizardConfig.credentials.copy(
+                                username = envUsername!!,
+                                password = envPassword
+                            )
                         )
-                    )
-                ).withAutoDetectedCredentials()
+                    ).withAutoDetectedCredentials()
+                } else {
+                    updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors)
+                }
             }
             
             hasGlobalCredentials -> {
-                promptSystem.prompt("""
+                val useAutoDetected = promptSystem.confirm("""
                     📋 CREDENTIALS SETUP - AUTO-DETECTED!
                     ✅ Found existing global gradle.properties (~/.gradle/gradle.properties):
                     • SONATYPE_USERNAME: $globalUsername
                     • SONATYPE_PASSWORD: ${"*".repeat(globalPassword!!.length.coerceAtMost(8))}
                     
-                    Using these existing credentials from global gradle.properties.
-                    
-                    Press Enter to continue...
+                    Use these auto-detected credentials?
                 """.trimIndent())
                 
-                updatedContext = context.updateConfig(
-                    context.wizardConfig.copy(
-                        credentials = context.wizardConfig.credentials.copy(
-                            username = globalUsername!!,
-                            password = globalPassword
-                        )
-                    )
-                ).withAutoDetectedCredentials()
-            }
-            
-            else -> {
-                // Show configuration options
-                promptSystem.prompt("""
-                    📋 CREDENTIALS SETUP
-                    No environment variables or global gradle.properties credentials detected. Manual configuration needed.
-                    
-                    Configuration options (in order of preference):
-                    1. Environment variables (recommended for CI/CD):
-                       export SONATYPE_USERNAME=your-username
-                       export SONATYPE_PASSWORD=your-password
-                    
-                    2. Global gradle.properties (~/.gradle/gradle.properties):
-                       SONATYPE_USERNAME=your-username
-                       SONATYPE_PASSWORD=your-password
-                    
-                    3. Local gradle.properties (this project only - not recommended):
-                       Will be generated for you but should not be committed to git
-                    
-                    Press Enter to continue...
-                """.trimIndent())
-                
-                val username = promptSystem.prompt("Enter your Sonatype username:")
-                if (username.isEmpty()) {
-                    validationErrors.add("Username is required")
-                } else {
-                    val password = promptSystem.prompt("Enter your Sonatype password/token:")
+                if (useAutoDetected) {
                     updatedContext = context.updateConfig(
                         context.wizardConfig.copy(
                             credentials = context.wizardConfig.credentials.copy(
-                                username = username,
-                                password = password
+                                username = globalUsername!!,
+                                password = globalPassword
                             )
                         )
-                    )
+                    ).withAutoDetectedCredentials()
+                } else {
+                    updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors)
                 }
+            }
+            
+            else -> {
+                updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors)
             }
         }
         
@@ -122,5 +93,47 @@ class CredentialsStepProcessor : WizardStepProcessor {
             validationErrors = validationErrors,
             updatedContext = updatedContext
         )
+    }
+    
+    private fun handleManualCredentialsInput(
+        context: WizardContext,
+        promptSystem: PromptSystem,
+        validationErrors: MutableList<String>
+    ): WizardContext {
+        // Show configuration options
+        promptSystem.prompt("""
+            📋 CREDENTIALS SETUP
+            No auto-detected credentials or user chose manual input. Manual configuration needed.
+            
+            Configuration options (in order of preference):
+            1. Environment variables (recommended for CI/CD):
+               export SONATYPE_USERNAME=your-username
+               export SONATYPE_PASSWORD=your-password
+            
+            2. Global gradle.properties (~/.gradle/gradle.properties):
+               SONATYPE_USERNAME=your-username
+               SONATYPE_PASSWORD=your-password
+            
+            3. Local gradle.properties (this project only - not recommended):
+               Will be generated for you but should not be committed to git
+            
+            Press Enter to continue...
+        """.trimIndent())
+        
+        val username = promptSystem.prompt("Enter your Sonatype username:")
+        if (username.isEmpty()) {
+            validationErrors.add("Username is required")
+            return context
+        } else {
+            val password = promptSystem.prompt("Enter your Sonatype password/token:")
+            return context.updateConfig(
+                context.wizardConfig.copy(
+                    credentials = context.wizardConfig.credentials.copy(
+                        username = username,
+                        password = password
+                    )
+                )
+            )
+        }
     }
 }
