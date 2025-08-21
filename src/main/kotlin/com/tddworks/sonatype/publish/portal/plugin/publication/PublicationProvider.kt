@@ -227,9 +227,20 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
     
     internal fun configureKotlinMultiplatformProject(project: Project, config: CentralPublisherConfig) {
         // KMP plugin automatically creates publications and sources JARs
-        // We just need to configure POM metadata for all publications created by KMP plugin
+        // We need to add javadoc JARs and configure POM metadata for all publications
         val publishing = project.extensions.getByType<PublishingExtension>()
+        
+        // Create a shared empty javadoc JAR for all publications (standard practice for KMP)
+        val javadocJar = project.tasks.register<Jar>("javadocJar") {
+            archiveClassifier.set("javadoc")
+            duplicatesStrategy = DuplicatesStrategy.WARN
+            // Contents are deliberately left empty - standard practice for Kotlin Multiplatform
+        }
+        
         publishing.publications.withType(MavenPublication::class.java).configureEach {
+            // Add javadoc JAR to all publications
+            artifact(javadocJar)
+            // Configure POM metadata
             configurePom(project, config)
         }
     }
