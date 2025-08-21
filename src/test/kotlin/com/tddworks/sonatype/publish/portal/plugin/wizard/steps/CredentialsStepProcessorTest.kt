@@ -18,7 +18,7 @@ import java.io.File
 import java.nio.file.Path
 
 @ExtendWith(SystemStubsExtension::class, MockitoExtension::class)
-class SigningStepProcessorTest {
+class CredentialsStepProcessorTest {
 
     @SystemStub
     private lateinit var environmentVariables: EnvironmentVariables
@@ -29,12 +29,12 @@ class SigningStepProcessorTest {
     @TempDir
     lateinit var tempDir: Path
 
-    private lateinit var processor: SigningStepProcessor
+    private lateinit var processor: CredentialsStepProcessor
     private lateinit var context: WizardContext
 
     @BeforeEach
     fun setup() {
-        processor = SigningStepProcessor()
+        processor = CredentialsStepProcessor()
         
         val project = ProjectBuilder.builder()
             .withProjectDir(tempDir.toFile())
@@ -52,10 +52,10 @@ class SigningStepProcessorTest {
     @Test
     fun `should auto-detect environment variables and ask user if they want to use them`() {
         // Given
-        environmentVariables.set("SIGNING_KEY", "test-signing-key")
-        environmentVariables.set("SIGNING_PASSWORD", "test-signing-password")
+        environmentVariables.set("SONATYPE_USERNAME", "test-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "test-password")
         
-        // Mock user saying yes to auto-detected signing
+        // Mock user saying yes to auto-detected credentials
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
         // When
@@ -63,49 +63,49 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("test-signing-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("test-signing-password")
-        assertThat(result.updatedContext?.hasAutoDetectedSigning).isTrue()
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("test-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("test-password")
+        assertThat(result.updatedContext?.hasAutoDetectedCredentials).isTrue()
     }
 
     @Test
-    fun `should allow user to reject auto-detected signing and input manually`() {
+    fun `should allow user to reject auto-detected credentials and input manually`() {
         // Given
-        environmentVariables.set("SIGNING_KEY", "auto-detected-key")
-        environmentVariables.set("SIGNING_PASSWORD", "auto-detected-password")
+        environmentVariables.set("SONATYPE_USERNAME", "auto-detected-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "auto-detected-password")
         
         // Mock user saying no to auto-detected, then providing manual input
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
-        `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "manual-key", "manual-password")
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "manual-user", "manual-password")
 
         // When
         val result = processor.process(context, mockPromptSystem)
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
-        assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
     }
 
     @Test
     fun `should prompt for manual input when no auto-detection found`() {
         // Given - no environment variables
-        `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "manual-key", "manual-password")
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "manual-user", "manual-password")
 
         // When
         val result = processor.process(context, mockPromptSystem)
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
-        assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
     }
 
     @Test
-    fun `should validate required signing key when manually entering`() {
-        // Given - empty signing key
+    fun `should validate required username when manually entering`() {
+        // Given - empty username
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "")
 
         // When
@@ -113,7 +113,7 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isFalse()
-        assertThat(result.validationErrors).contains("Signing key is required")
+        assertThat(result.validationErrors).contains("Username is required")
     }
 
     @Test
@@ -126,8 +126,8 @@ class SigningStepProcessorTest {
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
         gradleProps.writeText("""
-            SIGNING_KEY=global-key
-            SIGNING_PASSWORD=global-password
+            SONATYPE_USERNAME=global-user
+            SONATYPE_PASSWORD=global-password
         """.trimIndent())
         
         try {
@@ -139,29 +139,11 @@ class SigningStepProcessorTest {
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("global-key")
-            assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("global-password")
-            assertThat(result.updatedContext?.hasAutoDetectedSigning).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("global-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("global-password")
+            assertThat(result.updatedContext?.hasAutoDetectedCredentials).isTrue()
         } finally {
             gradleProps.delete()
         }
-    }
-
-    @Test
-    fun `should mask signing key properly in confirmation prompt`() {
-        // Given
-        environmentVariables.set("SIGNING_KEY", "very-long-signing-key-that-should-be-masked")
-        environmentVariables.set("SIGNING_PASSWORD", "test-password")
-        
-        // Mock user saying yes
-        `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
-
-        // When
-        val result = processor.process(context, mockPromptSystem)
-
-        // Then - The key should be masked but still work
-        assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId)
-            .isEqualTo("very-long-signing-key-that-should-be-masked")
     }
 }
