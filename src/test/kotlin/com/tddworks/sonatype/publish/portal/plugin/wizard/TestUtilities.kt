@@ -13,19 +13,19 @@ class MockPromptSystem : PromptSystem {
     private val confirmResponses = mutableListOf<Boolean>()
     private var currentIndex = 0
     private var currentConfirmIndex = 0
-    
+
     val prompts = mutableListOf<String>()
     var lastPrompt: String = ""
     var allPrompts: String = "" // Concatenates all prompts for easier testing
-    
+
     fun addResponse(response: String) {
         responses.add(response)
     }
-    
+
     fun addConfirmResponse(response: Boolean) {
         confirmResponses.add(response)
     }
-    
+
     override fun prompt(message: String): String {
         lastPrompt = message
         prompts.add(message)
@@ -36,22 +36,22 @@ class MockPromptSystem : PromptSystem {
             "" // Default empty response
         }
     }
-    
+
     override fun promptWithDefault(message: String, defaultValue: String): String {
         val response = prompt(message)
         return response.ifEmpty { defaultValue }
     }
-    
+
     override fun confirm(message: String): Boolean {
         // Store the confirm message but don't overwrite lastPrompt from prompt() calls
         prompts.add(message)
         allPrompts += message + "\n"
-        
+
         // First try explicit confirm responses
         if (currentConfirmIndex < confirmResponses.size) {
             return confirmResponses[currentConfirmIndex++]
         }
-        
+
         // Fall back to converting string responses to boolean (for compatibility)
         val response = if (currentIndex < responses.size) {
             responses[currentIndex++]
@@ -60,7 +60,7 @@ class MockPromptSystem : PromptSystem {
         }
         return toBooleanResponse(response)
     }
-    
+
     override fun select(message: String, options: List<String>): String {
         val response = prompt(message)
         return if (response.isNotEmpty() && options.contains(response)) {
@@ -68,6 +68,10 @@ class MockPromptSystem : PromptSystem {
         } else {
             options.first() // Default to first option
         }
+    }
+
+    private fun toBooleanResponse(response: String): Boolean {
+        return response.lowercase() in listOf("y", "yes", "true")
     }
 }
 
