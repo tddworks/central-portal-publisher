@@ -9,8 +9,9 @@ import com.tddworks.sonatype.publish.portal.plugin.publication.PublicationProvid
 import com.tddworks.sonatype.publish.portal.plugin.validation.ValidationEngine
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.kotlin.dsl.configure
 import java.io.File
-import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -104,6 +105,27 @@ class CentralPublisherPlugin : Plugin<Project> {
         val publicationRegistry = PublicationProviderRegistry()
         publicationRegistry.configurePublications(this, config)
         
+        // Create a local repository for deployment bundle (generates checksums automatically)
+        extensions.configure<PublishingExtension> {
+            repositories {
+                maven {
+                    name = "LocalRepo"
+                    setUrl(layout.buildDirectory.dir("maven-repo").get().asFile)
+                }
+            }
+        }
+        
+        // Create publish task that generates checksums and signatures
+        tasks.register("publishToLocalRepo") {
+            group = PLUGIN_GROUP
+            description = "Publishes to local repository (generates checksums and signatures)"
+            
+            val publishTasks = tasks.matching { task ->
+                task.name.matches(Regex("publish.+PublicationToLocalRepoRepository"))
+            }
+            dependsOn(publishTasks)
+        }
+        
         logger.quiet("🔧 Publications auto-configured based on project type")
     }
     
@@ -159,14 +181,14 @@ class CentralPublisherPlugin : Plugin<Project> {
             group = PLUGIN_GROUP
             description = "Creates deployment bundle for Maven Central"
             
-            // Make sure publications are built first
-            dependsOn("publishToMavenLocal")
+            // Use local repository that generates checksums and signatures automatically
+            dependsOn("publishToLocalRepo")
             
             doLast {
                 logger.quiet("📦 Creating deployment bundle...")
                 logger.quiet("  - Signing enabled: ${config.signing.keyId.isNotBlank()}")
                 
-                val bundleFile = createDeploymentBundle(project, config)
+                val bundleFile = createDeploymentBundle(project)
                 logger.lifecycle("✅ Bundle created: ${bundleFile.absolutePath}")
             }
         }
@@ -206,20 +228,21 @@ class CentralPublisherPlugin : Plugin<Project> {
     
     /**
      * Creates a deployment bundle ZIP file containing all published artifacts with proper Maven repository layout.
+     * Uses the vanniktech plugin approach: publish to local repo (generates checksums) then ZIP it up.
      */
-    private fun createDeploymentBundle(project: Project, config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig): File {
+    private fun createDeploymentBundle(project: Project): File {
         val bundleDir = project.layout.buildDirectory.dir("central-portal").get().asFile
         bundleDir.mkdirs()
         
         val bundleFile = File(bundleDir, "${project.name}-${project.version}-bundle.zip")
         
-        // Get local Maven repository path where artifacts were published
-        val localRepo = File(System.getProperty("user.home"), ".m2/repository")
+        // Get our local repository where artifacts were published with checksums and signatures
+        val localRepo = project.layout.buildDirectory.dir("maven-repo").get().asFile
         val groupPath = project.group.toString().replace('.', '/')
         val artifactDir = File(localRepo, "$groupPath/${project.name}/${project.version}")
         
         if (!artifactDir.exists()) {
-            throw IllegalStateException("Published artifacts not found at: ${artifactDir.absolutePath}. Run 'publishToMavenLocal' first.")
+            throw IllegalStateException("Published artifacts not found at: ${artifactDir.absolutePath}. Run 'publishToLocalRepo' first.")
         }
         
         // Validate namespace (Maven Central requirement)
@@ -229,27 +252,15 @@ class CentralPublisherPlugin : Plugin<Project> {
             project.logger.warn("   Please use a valid domain you own (e.g., com.yourcompany.projectname)")
         }
         
-        // Create ZIP bundle with proper Maven repository layout
+        // Create ZIP bundle with all files from the repository (includes checksums and signatures)
+        // This follows the vanniktech pattern: rely on Gradle's publishing to generate everything
         ZipOutputStream(bundleFile.outputStream()).use { zip ->
-            artifactDir.listFiles()?.forEach { file ->
-                if (file.isFile && !file.name.endsWith(".asc") && !file.name.endsWith(".md5") && !file.name.endsWith(".sha1")) {
-                    val relativePath = "$groupPath/${project.name}/${project.version}/${file.name}"
-                    
-                    // Add the main file
+            artifactDir.walkTopDown()
+                .filter { it.isFile && !it.name.startsWith("maven-metadata") }
+                .forEach { file ->
+                    val relativePath = file.relativeTo(localRepo).path.replace('\\', '/')
                     addFileToZip(zip, file, relativePath, project)
-                    
-                    // Generate and add checksums
-                    addChecksumsToZip(zip, file, relativePath, project)
-                    
-                    // Add signature if signing is configured and signature exists
-                    val signatureFile = File(file.parent, "${file.name}.asc")
-                    if (config.signing.keyId.isNotBlank() && signatureFile.exists()) {
-                        addFileToZip(zip, signatureFile, "$relativePath.asc", project)
-                    } else if (config.signing.keyId.isNotBlank()) {
-                        project.logger.warn("⚠️ Signature file not found for ${file.name}. Run gradle signing tasks first.")
-                    }
                 }
-            }
         }
         
         return bundleFile
@@ -267,37 +278,13 @@ class CentralPublisherPlugin : Plugin<Project> {
         project.logger.quiet("  ✓ Added $entryPath")
     }
     
-    /**
-     * Generates and adds MD5 and SHA1 checksums to the ZIP.
-     */
-    private fun addChecksumsToZip(zip: ZipOutputStream, file: File, basePath: String, project: Project) {
-        val content = file.readBytes()
-        
-        // Generate MD5
-        val md5 = MessageDigest.getInstance("MD5").digest(content).joinToString("") { 
-            "%02x".format(it) 
-        }
-        zip.putNextEntry(ZipEntry("$basePath.md5"))
-        zip.write(md5.toByteArray())
-        zip.closeEntry()
-        project.logger.quiet("  ✓ Added $basePath.md5")
-        
-        // Generate SHA1  
-        val sha1 = MessageDigest.getInstance("SHA-1").digest(content).joinToString("") { 
-            "%02x".format(it) 
-        }
-        zip.putNextEntry(ZipEntry("$basePath.sha1"))
-        zip.write(sha1.toByteArray())
-        zip.closeEntry()
-        project.logger.quiet("  ✓ Added $basePath.sha1")
-    }
     
     /**
      * Publishes the deployment bundle to Sonatype Central Portal.
      */
     private fun publishToSonatypePortal(project: Project, config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig): String {
         // Create deployment bundle
-        val bundleFile = createDeploymentBundle(project, config)
+        val bundleFile = createDeploymentBundle(project)
         
         // Create authentication
         val auth = Authentication(
