@@ -231,20 +231,24 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
         val publishing = project.extensions.getByType<PublishingExtension>()
         
         publishing.publications.withType(MavenPublication::class.java).configureEach {
-            // Create a publication-specific empty javadoc JAR (standard practice for KMP)
-            val javadocJar = project.tasks.register<Jar>("${name}JavadocJar") {
-                archiveClassifier.set("javadoc")
-                archiveAppendix.set(this@configureEach.name)
-                duplicatesStrategy = DuplicatesStrategy.WARN
-                // Contents are deliberately left empty - standard practice for Kotlin Multiplatform
-            }
-            
-            // Add javadoc JAR to this publication
-            artifact(javadocJar)
+            // Add publication-specific javadoc JAR (avoids task dependency conflicts)
+            artifact(createJavadocJarTask(project, name))
             // Configure POM metadata
             configurePom(project, config)
         }
     }
+    
+    /**
+     * Creates a publication-specific empty javadoc JAR task.
+     * This avoids task dependency conflicts that occur when sharing a single javadoc JAR across publications.
+     */
+    private fun createJavadocJarTask(project: Project, publicationName: String) = 
+        project.tasks.register<Jar>("${publicationName}JavadocJar") {
+            archiveClassifier.set("javadoc")
+            archiveAppendix.set(publicationName)
+            duplicatesStrategy = DuplicatesStrategy.WARN
+            // Contents are deliberately left empty - standard practice for Kotlin Multiplatform
+        }
     
     private fun configureSigning(project: Project, config: CentralPublisherConfig) {
         project.plugins.apply("signing")
