@@ -194,4 +194,113 @@ class RefactoredSetupWizardTest {
             wizard.processStep(WizardStep.WELCOME)
         }
     }
+
+    @Test
+    fun `should integrate with auto-detection system for environment variables`() {
+        // Given
+        environmentVariables.set("SONATYPE_USERNAME", "env-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "env-password")
+        environmentVariables.set("SIGNING_KEY", "env-key")
+        environmentVariables.set("SIGNING_PASSWORD", "env-key-password")
+        
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val mockPromptSystem = MockPromptSystem()
+        mockPromptSystem.addResponse("") // Welcome info
+        mockPromptSystem.addConfirmResponse(true) // Project info confirmation
+        mockPromptSystem.addResponse("") // Credentials auto-detected info  
+        mockPromptSystem.addResponse("") // Signing auto-detected info
+        mockPromptSystem.addConfirmResponse(true) // Review confirmation
+        mockPromptSystem.addResponse("") // Test info
+        
+        val wizard = RefactoredSetupWizard(
+            project = project,
+            promptSystem = mockPromptSystem,
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        // When
+        wizard.start()
+        val credentialsResult = wizard.processStep(WizardStep.CREDENTIALS)
+        val signingResult = wizard.processStep(WizardStep.SIGNING)
+        
+        // Then
+        assertThat(credentialsResult.isValid).isTrue()
+        assertThat(credentialsResult.updatedContext?.hasAutoDetectedCredentials).isTrue()
+        assertThat(signingResult.isValid).isTrue()
+        assertThat(signingResult.updatedContext?.hasAutoDetectedSigning).isTrue()
+    }
+
+    @Test
+    fun `should validate input at each step`() {
+        // Given
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val mockPromptSystem = MockPromptSystem()
+        mockPromptSystem.addResponse("") // Empty key response
+        
+        val wizard = RefactoredSetupWizard(
+            project = project,
+            promptSystem = mockPromptSystem,
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        wizard.start()
+        
+        // When - Process signing step with invalid input
+        val result = wizard.processStep(WizardStep.SIGNING)
+        
+        // Then
+        assertThat(result.isValid).isFalse()
+        assertThat(result.validationErrors).contains("Signing key is required")
+    }
+
+    @Test
+    fun `should generate extended file list including gitignore and CI workflow`() {
+        // Given
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val mockPromptSystem = MockPromptSystem()
+        val extendedFileGenerator = DefaultWizardFileGeneratorWithExtras()
+        
+        val wizard = RefactoredSetupWizard(
+            project = project,
+            promptSystem = mockPromptSystem,
+            fileGenerator = extendedFileGenerator,
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        val detectedInfo = DetectedProjectInfo("test-project")
+        val context = WizardContext(
+            project = project,
+            detectedInfo = detectedInfo,
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false,
+            hasAutoDetectedCredentials = true,
+            hasAutoDetectedSigning = true
+        )
+        
+        // When
+        val generatedFiles = extendedFileGenerator.generateFiles(context, TestConfigBuilder.createConfig())
+        
+        // Then - Should include additional files
+        assertThat(generatedFiles).containsExactly(
+            "build.gradle.kts",
+            ".gitignore", 
+            ".github/workflows/publish.yml"
+        )
+        
+        // Verify files were actually created
+        assertThat(File(tempDir.toFile(), ".gitignore")).exists()
+        assertThat(File(tempDir.toFile(), ".github/workflows/publish.yml")).exists()
+    }
 }

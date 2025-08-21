@@ -150,4 +150,107 @@ class WizardFileGeneratorTest {
         assertThat(content).contains("auto@detected.com")
         assertThat(content).contains("auto") // developer ID
     }
+
+    @Test
+    fun `should generate dynamic file list based on what was actually created`() {
+        // Given - Both credentials and signing are auto-detected (no gradle.properties should be generated)
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = DetectedProjectInfo("test-project"),
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false,
+            hasAutoDetectedCredentials = true,
+            hasAutoDetectedSigning = true
+        )
+        
+        val finalConfig = TestConfigBuilder.createConfig()
+        
+        // When
+        val generatedFiles = fileGenerator.generateFiles(context, finalConfig)
+        
+        // Then - Should only include files that were actually created
+        assertThat(generatedFiles).containsExactly("build.gradle.kts")
+        assertThat(generatedFiles).doesNotContain("gradle.properties")
+        
+        // Verify actual files on disk
+        val buildFile = File(tempDir.toFile(), "build.gradle.kts")
+        val gradlePropsFile = File(tempDir.toFile(), "gradle.properties")
+        
+        assertThat(buildFile).exists()
+        assertThat(gradlePropsFile).doesNotExist()
+    }
+
+    @Test
+    fun `should generate gitignore file`() {
+        // Given
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = DetectedProjectInfo("test-project"),
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        val finalConfig = TestConfigBuilder.createConfig()
+        
+        // Create a file generator that includes gitignore generation
+        val extendedFileGenerator = DefaultWizardFileGeneratorWithExtras()
+        
+        // When
+        val generatedFiles = extendedFileGenerator.generateFiles(context, finalConfig)
+        
+        // Then
+        assertThat(generatedFiles).contains(".gitignore")
+        
+        val gitignoreFile = File(tempDir.toFile(), ".gitignore")
+        assertThat(gitignoreFile).exists()
+        
+        val content = gitignoreFile.readText()
+        assertThat(content).contains("gradle.properties")
+        assertThat(content).contains("*.gpg")
+        assertThat(content).contains("local.properties")
+    }
+
+    @Test
+    fun `should generate CI workflow file`() {
+        // Given
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = DetectedProjectInfo("test-project"),
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        val finalConfig = TestConfigBuilder.createConfig()
+        
+        // Create a file generator that includes CI generation
+        val extendedFileGenerator = DefaultWizardFileGeneratorWithExtras()
+        
+        // When
+        val generatedFiles = extendedFileGenerator.generateFiles(context, finalConfig)
+        
+        // Then
+        assertThat(generatedFiles).contains(".github/workflows/publish.yml")
+        
+        val ciFile = File(tempDir.toFile(), ".github/workflows/publish.yml")
+        assertThat(ciFile).exists()
+        
+        val content = ciFile.readText()
+        assertThat(content).contains("name: Publish to Maven Central")
+        assertThat(content).contains("centralPublish")
+    }
 }
