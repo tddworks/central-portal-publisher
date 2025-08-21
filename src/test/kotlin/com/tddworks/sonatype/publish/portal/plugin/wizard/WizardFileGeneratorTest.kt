@@ -252,4 +252,173 @@ class WizardFileGeneratorTest {
         assertThat(content).contains("name: Publish to Maven Central")
         assertThat(content).contains("centralPublish")
     }
+
+    @Test
+    fun `should preserve existing build file content when updating`() {
+        // Given - Create existing build.gradle.kts with user content
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val buildFile = File(tempDir.toFile(), "build.gradle.kts")
+        buildFile.writeText("""
+            plugins {
+                kotlin("jvm") version "2.2.0"
+                `maven-publish`
+            }
+            
+            group = "com.example"
+            version = "1.0.0"
+            
+            repositories {
+                mavenCentral()
+            }
+            
+            dependencies {
+                implementation(kotlin("stdlib"))
+            }
+            
+            // Custom user task
+            tasks.register("customTask") {
+                doLast { println("Custom task") }
+            }
+        """.trimIndent())
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = DetectedProjectInfo("test-project", "https://github.com/test/test-project"),
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false,
+            hasAutoDetectedCredentials = true,
+            hasAutoDetectedSigning = true
+        )
+        
+        val finalConfig = TestConfigBuilder.createConfig()
+        
+        // When
+        fileGenerator.generateFiles(context, finalConfig)
+        
+        // Then
+        val updatedContent = buildFile.readText()
+        
+        // Should preserve original content
+        assertThat(updatedContent).contains("kotlin(\"jvm\") version \"2.2.0\"")
+        assertThat(updatedContent).contains("group = \"com.example\"")
+        assertThat(updatedContent).contains("version = \"1.0.0\"")
+        assertThat(updatedContent).contains("implementation(kotlin(\"stdlib\"))")
+        assertThat(updatedContent).contains("tasks.register(\"customTask\")")
+        assertThat(updatedContent).contains("Custom task")
+        
+        // Should add plugin
+        assertThat(updatedContent).contains("id(\"com.tddworks.central-publisher\")")
+        
+        // Should add centralPublisher block
+        assertThat(updatedContent).contains("centralPublisher {")
+        assertThat(updatedContent).contains("credentials {")
+        assertThat(updatedContent).contains("projectInfo {")
+    }
+
+    @Test
+    fun `should update existing centralPublisher block without duplicating`() {
+        // Given - Build file already has centralPublisher block
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val buildFile = File(tempDir.toFile(), "build.gradle.kts")
+        buildFile.writeText("""
+            plugins {
+                id("com.tddworks.central-publisher")
+            }
+            
+            centralPublisher {
+                credentials {
+                    username = "old-username"
+                    password = "old-password"
+                }
+                projectInfo {
+                    name = "old-project"
+                    description = "Old description"
+                }
+            }
+        """.trimIndent())
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = DetectedProjectInfo("new-project", "https://github.com/new/project"),
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false,
+            hasAutoDetectedCredentials = true,
+            hasAutoDetectedSigning = true
+        )
+        
+        val finalConfig = TestConfigBuilder.createConfig()
+        
+        // When
+        fileGenerator.generateFiles(context, finalConfig)
+        
+        // Then
+        val updatedContent = buildFile.readText()
+        
+        // Should have updated centralPublisher block
+        assertThat(updatedContent).contains("name = \"new-project\"")
+        assertThat(updatedContent).contains("https://github.com/new/project")
+        
+        // Should not contain old values
+        assertThat(updatedContent).doesNotContain("old-username")
+        assertThat(updatedContent).doesNotContain("old-project")
+        assertThat(updatedContent).doesNotContain("Old description")
+        
+        // Should have only one centralPublisher block
+        assertThat(updatedContent.split("centralPublisher \\{".toRegex())).hasSize(2) // Split creates 2 parts for 1 occurrence
+    }
+
+    @Test
+    fun `should add plugin and block to build file without plugins block`() {
+        // Given - Build file without plugins block
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val buildFile = File(tempDir.toFile(), "build.gradle.kts")
+        buildFile.writeText("""
+            group = "com.example"
+            version = "1.0.0"
+            
+            repositories {
+                mavenCentral()
+            }
+        """.trimIndent())
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = DetectedProjectInfo("test-project"),
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false,
+            hasAutoDetectedCredentials = true,
+            hasAutoDetectedSigning = true
+        )
+        
+        val finalConfig = TestConfigBuilder.createConfig()
+        
+        // When
+        fileGenerator.generateFiles(context, finalConfig)
+        
+        // Then
+        val updatedContent = buildFile.readText()
+        
+        // Should add plugins block at the beginning
+        assertThat(updatedContent).startsWith("plugins {")
+        assertThat(updatedContent).contains("id(\"com.tddworks.central-publisher\")")
+        
+        // Should preserve existing content
+        assertThat(updatedContent).contains("group = \"com.example\"")
+        assertThat(updatedContent).contains("repositories {")
+        
+        // Should add centralPublisher block
+        assertThat(updatedContent).contains("centralPublisher {")
+    }
 }
