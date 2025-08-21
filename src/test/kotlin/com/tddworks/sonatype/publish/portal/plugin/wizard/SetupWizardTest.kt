@@ -467,38 +467,3 @@ class SetupWizardTest {
 /**
  * Mock implementation of PromptSystem for testing
  */
-class MockPromptSystem : PromptSystem {
-    private val responses = mutableListOf<String>()
-    private var currentIndex = 0
-    
-    fun addResponse(response: String) {
-        responses.add(response)
-    }
-    
-    override fun prompt(message: String): String {
-        return if (currentIndex < responses.size) {
-            responses[currentIndex++]
-        } else {
-            "" // Default empty response
-        }
-    }
-    
-    override fun promptWithDefault(message: String, defaultValue: String): String {
-        val response = prompt(message)
-        return response.ifEmpty { defaultValue }
-    }
-    
-    override fun confirm(message: String): Boolean {
-        val response = prompt(message)
-        return response.lowercase() in listOf("y", "yes", "true")
-    }
-    
-    override fun select(message: String, options: List<String>): String {
-        val response = prompt(message)
-        return if (response.isNotEmpty() && options.contains(response)) {
-            response
-        } else {
-            options.first() // Default to first option
-        }
-    }
-}

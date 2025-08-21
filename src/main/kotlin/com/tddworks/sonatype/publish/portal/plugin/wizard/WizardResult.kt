@@ -17,7 +17,8 @@ data class WizardStepResult(
     val currentStep: WizardStep,
     val isValid: Boolean,
     val validationErrors: List<String> = emptyList(),
-    val canProceed: Boolean = isValid
+    val canProceed: Boolean = isValid,
+    val updatedContext: WizardContext? = null
 )
 
 /**
