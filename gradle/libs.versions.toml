@@ -18,17 +18,17 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 [versions]
 
-kotlin = "1.9.23"
-ktor = "2.3.7"
-kotlinx-serialization = "1.6.2"
-kover = "0.7.5"
+kotlin = "2.2.0"
+ktor = "3.2.3"
+kotlinx-serialization = "1.9.0"
+kover = "0.9.1"
 
-kotlinx-coroutines = "1.7.3"
+kotlinx-coroutines = "1.10.2"
 
-junit = "5.10.1"
-mockito-junit-jupiter = "5.8.0"
-mockito-kotlin = "5.2.1"
-assertj-core = "3.24.2"
+junit = "5.11.3"
+mockito-junit-jupiter = "5.19.0"
+mockito-kotlin = "6.0.0"
+assertj-core = "3.27.4"
 
 # plugins
 
@@ -41,6 +41,8 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+
+kotlin-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 #jvm-libraries
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }

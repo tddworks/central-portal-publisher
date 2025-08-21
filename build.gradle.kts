@@ -22,7 +22,7 @@ gradlePlugin {
             tags = listOf("sonatype", "publish", "maven-central", "dsl", "auto-detection")
             implementationClass = "com.tddworks.sonatype.publish.portal.plugin.CentralPublisherPlugin"
         }
-        
+
         // Legacy plugin for backward compatibility
         create("central-portal-publisher") {
             id = "com.tddworks.central-portal-publisher"
@@ -43,9 +43,12 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation(libs.kotlinx.serialization.json)
+    // Kotlin Multiplatform plugin API (for accessing KotlinMultiplatformExtension)
+    compileOnly(libs.kotlin.plugin)
 
     testImplementation(libs.bundles.jvm.test)
     testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 group = "com.tddworks"

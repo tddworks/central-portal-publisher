@@ -28,7 +28,7 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 // Central Portal Publisher Configuration
@@ -87,23 +87,21 @@ centralPublisher {
     publishing {
         autoPublish = false // Manual approval by default (safe)
         aggregation = true  // Standard default
-        dryRun = false     // Set to true to test without actually publishing
+        dryRun = true     // Set to true to test without actually publishing
     }
 }
 
-// Configure what gets published
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            
-            // The POM information is automatically populated from centralPublisher configuration
-            pom {
-                // All POM details are handled by the centralPublisher DSL above
-            }
-        }
-    }
-}
-
-// Note: The plugin automatically creates tasks like 'publishToCentral'
-// Run './gradlew tasks --group="Central Publishing"' to see all available tasks
+// ✅ PUBLICATIONS AUTO-CONFIGURED!
+// The plugin automatically:
+// - Applies maven-publish plugin
+// - Creates Maven publication with sources/javadoc JARs  
+// - Populates POM metadata from centralPublisher configuration above
+// - Configures signing from signing configuration
+//
+// No manual publication setup required!
+//
+// Available tasks:
+// - './gradlew publishToCentral' - Publish to Maven Central
+// - './gradlew bundleArtifacts' - Create deployment bundle
+// - './gradlew validatePublishing' - Validate configuration
+// - './gradlew setupPublishing' - Interactive setup wizard

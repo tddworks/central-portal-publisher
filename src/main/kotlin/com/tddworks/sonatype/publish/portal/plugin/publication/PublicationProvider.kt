@@ -9,6 +9,8 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.plugins.signing.SigningExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import kotlin.jvm.java
 
 /**
  * Interface for configuring Maven publications based on project configuration.
@@ -203,9 +205,9 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
     }
     
     internal fun configureKotlinMultiplatformProject(project: Project, config: CentralPublisherConfig) {
+        // KMP plugin automatically creates publications and sources JARs
+        // We just need to configure POM metadata for all publications created by KMP plugin
         val publishing = project.extensions.getByType<PublishingExtension>()
-        
-        // Configure all Maven publications created by KMP plugin
         publishing.publications.withType(MavenPublication::class.java).configureEach {
             configurePom(project, config)
         }
