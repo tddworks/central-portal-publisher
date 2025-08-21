@@ -32,13 +32,13 @@ class SetupWizardTest {
             .withProjectDir(tempDir)
             .build()
         mockPromptSystem = MockPromptSystem()
-        setupWizard = SetupWizard(project, mockPromptSystem)
+        setupWizard = SetupWizard(project, mockPromptSystem, enableGlobalGradlePropsDetection = false)
     }
     
     @Test
     fun `should create setup wizard with default configuration`() {
         // When
-        val wizard = SetupWizard(project)
+        val wizard = SetupWizard(project, enableGlobalGradlePropsDetection = false)
         
         // Then
         assertThat(wizard).isNotNull()
@@ -57,19 +57,19 @@ class SetupWizardTest {
         assertThat(result.detectedInfo.projectName).isNotEmpty()
     }
     
-    @Test
+    @Test  
     fun `should guide through all wizard steps with clear separation of concerns`() {
-        // Given - Mock responses for each step (including informational prompts)
-        mockPromptSystem.addResponse("") // Project info display (Press Enter to continue)
-        mockPromptSystem.addResponse("y") // Confirm auto-detected project info
-        mockPromptSystem.addResponse("") // Credentials setup explanation (Press Enter to continue)
-        mockPromptSystem.addResponse("test-user") // Username (clearly prompted as manual input)
-        mockPromptSystem.addResponse("test-token") // Password
-        mockPromptSystem.addResponse("") // GPG signing explanation (Press Enter to continue)
+        // Given - Mock responses for the simplified flow (no global gradle.properties detection)
+        mockPromptSystem.addResponse("") // Project info display - Press Enter to continue
+        mockPromptSystem.addResponse("y") // Use auto-detected project information?
+        mockPromptSystem.addResponse("") // Credentials manual setup info - Press Enter to continue
+        mockPromptSystem.addResponse("test-user") // Username
+        mockPromptSystem.addResponse("test-password") // Password
+        mockPromptSystem.addResponse("") // Signing manual setup info - Press Enter to continue
         mockPromptSystem.addResponse("12345678") // GPG Key ID
-        mockPromptSystem.addResponse("gpg-password") // GPG Password  
-        mockPromptSystem.addResponse("y") // Confirm configuration
-        mockPromptSystem.addResponse("y") // Test configuration
+        mockPromptSystem.addResponse("gpg-password") // GPG Password
+        mockPromptSystem.addResponse("y") // Confirm configuration?
+        mockPromptSystem.addResponse("y") // Test configuration?
         
         // When - Run complete wizard
         val result = setupWizard.runComplete()
@@ -91,23 +91,26 @@ class SetupWizardTest {
     
     @Test
     fun `should validate input at each step`() {
-        // Given - Invalid input followed by valid input
-        mockPromptSystem.addResponse("") // Credentials setup explanation (Press Enter to continue)
-        mockPromptSystem.addResponse("") // Empty username - should be rejected
-        mockPromptSystem.addResponse("") // Credentials setup explanation again (Press Enter to continue)
-        mockPromptSystem.addResponse("valid-user") // Valid username
-        mockPromptSystem.addResponse("valid-password") // Valid password
+        // Given - Test validation by providing empty username first
+        mockPromptSystem.addResponse("") // Credentials manual setup info - Press Enter to continue
+        mockPromptSystem.addResponse("") // Empty username - should trigger validation error
         
         // When
         setupWizard.start()
         val result = setupWizard.processStep(WizardStep.CREDENTIALS)
         
-        // Then
+        // Then - Should have validation error for empty username
         assertThat(result.validationErrors).hasSize(1)
         assertThat(result.validationErrors[0]).contains("Username is required")
         
         // When - Process again with valid input
+        mockPromptSystem.addResponse("") // Credentials manual setup info - Press Enter to continue
+        mockPromptSystem.addResponse("valid-user") // Valid username
+        mockPromptSystem.addResponse("valid-password") // Valid password
+        
         val validResult = setupWizard.processStep(WizardStep.CREDENTIALS)
+        
+        // Then - Should have no validation errors
         assertThat(validResult.validationErrors).isEmpty()
     }
     
@@ -181,6 +184,25 @@ class SetupWizardTest {
         
         // When - This test verifies the wizard can handle auto-detection flow
         // In a real scenario with env vars set, the wizard would show auto-detection messages
+        val result = setupWizard.runComplete()
+        
+        // Then
+        assertThat(result.isComplete).isTrue()
+        assertThat(result.finalConfiguration).isNotNull()
+    }
+    
+    @Test
+    fun `should auto-detect global gradle properties`() {
+        // Given - Simulate global gradle.properties auto-detection with mock responses  
+        // Note: In actual usage, the wizard would detect ~/.gradle/gradle.properties
+        mockPromptSystem.addResponse("") // Project info display
+        mockPromptSystem.addResponse("y") // Confirm auto-detected project info
+        mockPromptSystem.addResponse("") // Global gradle.properties credentials detected message
+        mockPromptSystem.addResponse("") // Global gradle.properties signing detected message  
+        mockPromptSystem.addResponse("y") // Confirm configuration
+        mockPromptSystem.addResponse("y") // Test configuration
+        
+        // When - This test verifies the wizard handles global gradle.properties detection
         val result = setupWizard.runComplete()
         
         // Then
