@@ -10,6 +10,7 @@ import com.tddworks.sonatype.publish.portal.plugin.validation.ValidationEngine
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import java.io.File
+import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -204,7 +205,7 @@ class CentralPublisherPlugin : Plugin<Project> {
     }
     
     /**
-     * Creates a deployment bundle ZIP file containing all published artifacts.
+     * Creates a deployment bundle ZIP file containing all published artifacts with proper Maven repository layout.
      */
     private fun createDeploymentBundle(project: Project, config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig): File {
         val bundleDir = project.layout.buildDirectory.dir("central-portal").get().asFile
@@ -221,21 +222,74 @@ class CentralPublisherPlugin : Plugin<Project> {
             throw IllegalStateException("Published artifacts not found at: ${artifactDir.absolutePath}. Run 'publishToMavenLocal' first.")
         }
         
-        // Create ZIP bundle with all artifacts
+        // Validate namespace (Maven Central requirement)
+        val groupId = project.group.toString()
+        if (groupId.startsWith("com.example") || groupId.startsWith("org.example")) {
+            project.logger.warn("⚠️ Group ID '$groupId' uses example namespace which is not allowed on Maven Central")
+            project.logger.warn("   Please use a valid domain you own (e.g., com.yourcompany.projectname)")
+        }
+        
+        // Create ZIP bundle with proper Maven repository layout
         ZipOutputStream(bundleFile.outputStream()).use { zip ->
             artifactDir.listFiles()?.forEach { file ->
-                if (file.isFile) {
-                    zip.putNextEntry(ZipEntry(file.name))
-                    file.inputStream().use { input ->
-                        input.copyTo(zip)
+                if (file.isFile && !file.name.endsWith(".asc") && !file.name.endsWith(".md5") && !file.name.endsWith(".sha1")) {
+                    val relativePath = "$groupPath/${project.name}/${project.version}/${file.name}"
+                    
+                    // Add the main file
+                    addFileToZip(zip, file, relativePath, project)
+                    
+                    // Generate and add checksums
+                    addChecksumsToZip(zip, file, relativePath, project)
+                    
+                    // Add signature if signing is configured and signature exists
+                    val signatureFile = File(file.parent, "${file.name}.asc")
+                    if (config.signing.keyId.isNotBlank() && signatureFile.exists()) {
+                        addFileToZip(zip, signatureFile, "$relativePath.asc", project)
+                    } else if (config.signing.keyId.isNotBlank()) {
+                        project.logger.warn("⚠️ Signature file not found for ${file.name}. Run gradle signing tasks first.")
                     }
-                    zip.closeEntry()
-                    project.logger.quiet("  ✓ Added ${file.name} to bundle")
                 }
             }
         }
         
         return bundleFile
+    }
+    
+    /**
+     * Adds a file to the ZIP with proper entry.
+     */
+    private fun addFileToZip(zip: ZipOutputStream, file: File, entryPath: String, project: Project) {
+        zip.putNextEntry(ZipEntry(entryPath))
+        file.inputStream().use { input ->
+            input.copyTo(zip)
+        }
+        zip.closeEntry()
+        project.logger.quiet("  ✓ Added $entryPath")
+    }
+    
+    /**
+     * Generates and adds MD5 and SHA1 checksums to the ZIP.
+     */
+    private fun addChecksumsToZip(zip: ZipOutputStream, file: File, basePath: String, project: Project) {
+        val content = file.readBytes()
+        
+        // Generate MD5
+        val md5 = MessageDigest.getInstance("MD5").digest(content).joinToString("") { 
+            "%02x".format(it) 
+        }
+        zip.putNextEntry(ZipEntry("$basePath.md5"))
+        zip.write(md5.toByteArray())
+        zip.closeEntry()
+        project.logger.quiet("  ✓ Added $basePath.md5")
+        
+        // Generate SHA1  
+        val sha1 = MessageDigest.getInstance("SHA-1").digest(content).joinToString("") { 
+            "%02x".format(it) 
+        }
+        zip.putNextEntry(ZipEntry("$basePath.sha1"))
+        zip.write(sha1.toByteArray())
+        zip.closeEntry()
+        project.logger.quiet("  ✓ Added $basePath.sha1")
     }
     
     /**

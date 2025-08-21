@@ -7,7 +7,7 @@ plugins {
     id("com.tddworks.central-publisher")
 }
 
-group = "com.example"
+group = "com.tddworks.example"
 version = "1.0.0"
 
 repositories {
@@ -38,13 +38,13 @@ centralPublisher {
     projectInfo {
         name = project.name // Auto-detected from project
         description = "A simple single-module Kotlin library example"
-        url = "https://github.com/example/single-module-kotlin" // Can be auto-detected from git
+        url = "https://github.com/tddworks/central-portal-publisher" // Can be auto-detected from git
         
         // SCM information - auto-detected from git if available
         scm {
-            url = "https://github.com/example/single-module-kotlin"
-            connection = "scm:git:git://github.com/example/single-module-kotlin.git"
-            developerConnection = "scm:git:ssh://github.com/example/single-module-kotlin.git"
+            url = "https://github.com/tddworks/central-portal-publisher"
+            connection = "scm:git:git://github.com/tddworks/central-portal-publisher.git"
+            developerConnection = "scm:git:ssh://github.com/tddworks/central-portal-publisher.git"
         }
         
         // License information
@@ -56,7 +56,7 @@ centralPublisher {
         
         // Developer information - can be auto-detected from git config
         developer {
-            id = "developer1"
+            id = "tddworks"
             name = "Developer Name"
             email = "developer@example.com"
         }
@@ -87,7 +87,7 @@ centralPublisher {
     publishing {
         autoPublish = false // Manual approval by default (safe)
         aggregation = true  // Standard default
-        dryRun = true     // Set to true to test without actually publishing
+        dryRun = false     // Set to true to test without actually publishing
     }
 }
 

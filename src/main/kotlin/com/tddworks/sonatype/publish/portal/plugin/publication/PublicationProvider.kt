@@ -97,6 +97,11 @@ class JvmPublicationProvider : PublicationProvider {
             project.plugins.apply("maven-publish")
         }
         
+        // Configure sources jar - Kotlin JVM projects need explicit configuration
+        project.extensions.configure<JavaPluginExtension> {
+            withSourcesJar()
+        }
+        
         // Create javadoc jar (empty for Kotlin projects - common practice)
         val javadocJar = project.tasks.register<Jar>("javadocJar") {
             archiveClassifier.set("javadoc")
