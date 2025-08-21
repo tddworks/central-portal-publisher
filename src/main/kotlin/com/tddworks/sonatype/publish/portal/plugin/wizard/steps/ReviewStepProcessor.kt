@@ -21,15 +21,22 @@ class ReviewStepProcessor : WizardStepProcessor {
             appendLine()
             
             appendLine("Project Information:")
-            appendLine("• Name: ${detectedInfo?.projectName ?: config.projectInfo.name}")
-            appendLine("• URL: ${detectedInfo?.projectUrl ?: config.projectInfo.url}")
+            appendLine("• Name: ${config.projectInfo.name.ifBlank { detectedInfo?.projectName ?: "Not set" }}")
+            appendLine("• URL: ${config.projectInfo.url.ifBlank { detectedInfo?.projectUrl ?: "Not set" }}")
             appendLine("• License: ${config.projectInfo.license.name}")
             appendLine("• Description: ${config.projectInfo.description}")
             
-            if (!detectedInfo?.developers.isNullOrEmpty()) {
+            // Show developers from config first, fallback to detected
+            val developers = if (config.projectInfo.developers.isNotEmpty()) {
+                config.projectInfo.developers.map { dev -> "${dev.name} <${dev.email}>" }
+            } else {
+                detectedInfo?.developers?.map { dev -> "${dev.name} <${dev.email}>" } ?: emptyList()
+            }
+            
+            if (developers.isNotEmpty()) {
                 appendLine("• Developers:")
-                detectedInfo?.developers?.forEach { dev ->
-                    appendLine("  - ${dev.name} <${dev.email}>")
+                developers.forEach { dev ->
+                    appendLine("  - $dev")
                 }
             }
             

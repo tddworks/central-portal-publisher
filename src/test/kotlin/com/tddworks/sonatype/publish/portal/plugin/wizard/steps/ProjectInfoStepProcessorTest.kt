@@ -34,8 +34,10 @@ class ProjectInfoStepProcessorTest {
         )
 
         val mockPromptSystem = MockPromptSystem()
-        mockPromptSystem.addResponse("") // Press enter to continue
-        mockPromptSystem.addConfirmResponse(true) // Confirm auto-detected values
+        mockPromptSystem.addConfirmResponse(true) // Accept project name
+        mockPromptSystem.addConfirmResponse(true) // Accept project URL
+        mockPromptSystem.addResponse("Auto project description") // Project description
+        mockPromptSystem.addConfirmResponse(true) // Accept developer
 
         val processor = ProjectInfoStepProcessor()
 
@@ -45,8 +47,12 @@ class ProjectInfoStepProcessorTest {
         // Then
         assertThat(result.isValid).isTrue()
         assertThat(result.currentStep).isEqualTo(WizardStep.PROJECT_INFO)
-        // Should not update context since we're using auto-detected values
-        assertThat(result.updatedContext).isNull()
+        // Should update context with selected values
+        assertThat(result.updatedContext).isNotNull()
+        val config = result.updatedContext!!.wizardConfig
+        assertThat(config.projectInfo.name).isEqualTo("auto-project")
+        assertThat(config.projectInfo.url).isEqualTo("https://github.com/auto/project")
+        assertThat(config.projectInfo.description).isEqualTo("Auto project description")
     }
 
     @Test
@@ -71,15 +77,12 @@ class ProjectInfoStepProcessorTest {
         )
 
         val mockPromptSystem = MockPromptSystem()
-        mockPromptSystem.addResponse("") // Press enter to continue
-        mockPromptSystem.addConfirmResponse(false) // Reject auto-detected values
-        
-        // Manual input responses
-        mockPromptSystem.addResponse("Manual Project") // Project name
+        mockPromptSystem.addConfirmResponse(false) // Reject project name
+        mockPromptSystem.addResponse("Manual Project") // Manual project name
+        mockPromptSystem.addConfirmResponse(false) // Reject project URL
+        mockPromptSystem.addResponse("https://github.com/manual/project") // Manual project URL
         mockPromptSystem.addResponse("A manually configured project") // Description
-        mockPromptSystem.addResponse("https://github.com/manual/project") // Project URL
-        mockPromptSystem.addResponse("MIT License") // License name
-        mockPromptSystem.addResponse("https://opensource.org/licenses/MIT") // License URL
+        mockPromptSystem.addConfirmResponse(false) // Reject developer
         mockPromptSystem.addResponse("manual-dev") // Developer ID
         mockPromptSystem.addResponse("Manual Developer") // Developer name
         mockPromptSystem.addResponse("manual@dev.com") // Developer email
@@ -99,8 +102,6 @@ class ProjectInfoStepProcessorTest {
         assertThat(updatedWizardConfig.projectInfo.name).isEqualTo("Manual Project")
         assertThat(updatedWizardConfig.projectInfo.description).isEqualTo("A manually configured project")
         assertThat(updatedWizardConfig.projectInfo.url).isEqualTo("https://github.com/manual/project")
-        assertThat(updatedWizardConfig.projectInfo.license.name).isEqualTo("MIT License")
-        assertThat(updatedWizardConfig.projectInfo.license.url).isEqualTo("https://opensource.org/licenses/MIT")
         assertThat(updatedWizardConfig.projectInfo.developers).hasSize(1)
         assertThat(updatedWizardConfig.projectInfo.developers.first().name).isEqualTo("Manual Developer")
         assertThat(updatedWizardConfig.projectInfo.developers.first().email).isEqualTo("manual@dev.com")
@@ -122,18 +123,8 @@ class ProjectInfoStepProcessorTest {
         )
 
         val mockPromptSystem = MockPromptSystem()
-        mockPromptSystem.addResponse("") // Press enter to continue
-        mockPromptSystem.addConfirmResponse(false) // Reject auto-detected values
-        
-        // Empty manual input (invalid)
-        mockPromptSystem.addResponse("") // Empty project name
-        mockPromptSystem.addResponse("") // Empty description
-        mockPromptSystem.addResponse("") // Empty project URL
-        mockPromptSystem.addResponse("") // Empty license name
-        mockPromptSystem.addResponse("") // Empty license URL
-        mockPromptSystem.addResponse("") // Empty developer ID
-        mockPromptSystem.addResponse("") // Empty developer name
-        mockPromptSystem.addResponse("") // Empty developer email
+        mockPromptSystem.addConfirmResponse(false) // Reject project name  
+        mockPromptSystem.addResponse("") // Empty project name (will cause validation error)
 
         val processor = ProjectInfoStepProcessor()
 
@@ -144,9 +135,6 @@ class ProjectInfoStepProcessorTest {
         assertThat(result.isValid).isFalse()
         assertThat(result.validationErrors).isNotEmpty()
         assertThat(result.validationErrors).contains("Project name is required")
-        assertThat(result.validationErrors).contains("Project URL is required")
-        assertThat(result.validationErrors).contains("Developer name is required")
-        assertThat(result.validationErrors).contains("Developer email is required")
     }
 
     @Test
@@ -186,5 +174,59 @@ class ProjectInfoStepProcessorTest {
         val updatedWizardConfig = result.updatedContext!!.wizardConfig
         assertThat(updatedWizardConfig.projectInfo.name).isEqualTo("Manual Project")
         assertThat(updatedWizardConfig.projectInfo.url).isEqualTo("https://github.com/manual/project")
+    }
+
+    @Test
+    fun `should ask about each detected field individually and allow selective acceptance`() {
+        // Given
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+
+        val detectedInfo = DetectedProjectInfo(
+            projectName = "auto-detected-project",
+            projectUrl = "https://github.com/auto/detected",
+            developers = listOf(DetectedDeveloper("Auto User", "auto@example.com"))
+        )
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = detectedInfo,
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        val mockPromptSystem = MockPromptSystem().apply {
+            // Accept project name, reject URL, accept developer
+            addConfirmResponse(true)  // Accept project name
+            addConfirmResponse(false) // Reject project URL 
+            addConfirmResponse(true)  // Accept developer
+            
+            // Manual input for rejected URL
+            addResponse("https://github.com/manual/url")
+            addResponse("Manual project description")
+        }
+        
+        val processor = ProjectInfoStepProcessor()
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        assertThat(result.updatedContext).isNotNull()
+        
+        val config = result.updatedContext!!.wizardConfig
+        assertThat(config.projectInfo.name).isEqualTo("auto-detected-project") // accepted
+        assertThat(config.projectInfo.url).isEqualTo("https://github.com/manual/url") // manually entered
+        assertThat(config.projectInfo.description).isEqualTo("Manual project description") // manually entered
+        assertThat(config.projectInfo.developers.first().name).isEqualTo("Auto User") // accepted
+        assertThat(config.projectInfo.developers.first().email).isEqualTo("auto@example.com") // accepted
+        
+        // Verify prompts asked about each field
+        assertThat(mockPromptSystem.allPrompts).contains("Use auto-detected project name 'auto-detected-project'?")
+        assertThat(mockPromptSystem.allPrompts).contains("Use auto-detected project URL 'https://github.com/auto/detected'?")
+        assertThat(mockPromptSystem.allPrompts).contains("Use auto-detected developer 'Auto User <auto@example.com>'?")
     }
 }
