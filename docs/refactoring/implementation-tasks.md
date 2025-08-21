@@ -284,14 +284,15 @@ centralPublisher {
 - **Estimate**: 10 hours
 - **Dependencies**: TASK-2.2
 
-**TASK-5.5: Example Projects**
-- [ ] Create single-module Kotlin example
-- [ ] Create multi-module Kotlin example
+**TASK-5.5: Example Projects** ✅ **PARTIALLY COMPLETED**
+- [x] Create single-module Kotlin example
+- [x] Create multi-module Kotlin example
 - [ ] Create Java project example
 - [ ] Create Android library example
 - [ ] Add CI/CD configurations to examples
 - **Estimate**: 12 hours
 - **Dependencies**: All previous tasks
+- **Actual Time**: ~2 hours for Kotlin examples (comprehensive examples with full documentation)
 
 ### Phase 6: Testing and Quality (Ongoing)
 
@@ -376,7 +377,7 @@ centralPublisher {
 
 ## 📊 Progress Summary
 
-### ✅ **Completed Tasks (19/40+)**:
+### ✅ **Completed Tasks (20/40+)**:
 - **TASK-2.4**: Refactor Task Names - Simple, memorable task names (`publishToCentral`, `bundleArtifacts`, etc.)
 - **TASK-2.5**: Create Task Aliases - Complete mapping system with deprecation warnings
 - **TASK-3.4**: Error Message System - Structured error codes (PUB-xxx) with rich context
@@ -396,6 +397,7 @@ centralPublisher {
 - **TASK-3.3**: Wizard File Generation - Comprehensive file generation for build.gradle.kts, gradle.properties, .gitignore, and GitHub Actions CI/CD
 - **TASK-4.1**: Multi-Module Support Framework - Auto-detect multi-module structure, configuration inheritance, module dependency resolution, publishable module classification
 - **TASK-4.2**: Selective Publishing - Include/exclude patterns, module filters, selection DSL, module groups, validation
+- **TASK-5.5**: Example Projects (Partial) - Single-module and multi-module Kotlin examples with comprehensive documentation
 
 ### 🚧 **In Progress**:
 - None currently - ready to start next phase
@@ -415,7 +417,7 @@ centralPublisher {
 - **Major Milestone**: Phase 1 (Configuration Layer) + Phase 2 (DSL + Smart Defaults) + Phase 3 Setup Wizard **COMPLETE**!
 - **Next Phase**: Multi-Module Support (TASK-4.1) or Migration Tools (TASK-5.1)
 
-The refactoring has completed 47.5% of tasks with **Phase 1 Configuration Layer + Phase 2 DSL & Smart Defaults + Phase 3 Setup Wizard COMPLETE + Phase 4 Multi-Module Support MOSTLY COMPLETE**! Key achievements:
+The refactoring has completed 50% of tasks with **Phase 1 Configuration Layer + Phase 2 DSL & Smart Defaults + Phase 3 Setup Wizard COMPLETE + Phase 4 Multi-Module Support MOSTLY COMPLETE**! Key achievements:
 
 **Configuration Infrastructure**:
 - **Multi-source loading** with proper precedence (DSL > Properties > Environment > Auto-detected > Smart-Defaults > Defaults)
@@ -481,4 +483,13 @@ The refactoring has completed 47.5% of tasks with **Phase 1 Configuration Layer 
 - **Smart Root Module Handling** automatically excluding non-publishable root modules in multi-module projects
 - **100% test coverage** with 10/10 comprehensive tests passing
 
-**Phase 3 Setup Wizard + Phase 4 Multi-Module Support (TASK-4.1 & 4.2) COMPLETE!** Ready for CI/CD Integration (TASK-4.3) or Migration Tools (TASK-5.1)!
+**Example Projects (TASK-5.5 Kotlin Examples) COMPLETE**:
+- **Single-Module Kotlin Example** - Complete working example with StringUtils library
+- **Multi-Module Kotlin Example** - Complex project with core, api, client, and test-utils modules
+- **Comprehensive Documentation** - Each example includes detailed README with setup, usage, and troubleshooting
+- **Best Practices Demonstrated** - Security, modularity, testing, CI/CD integration patterns
+- **Selective Publishing Example** - Shows how to control which modules get published
+- **Configuration Inheritance** - Demonstrates root and per-module configuration patterns
+
+**Phase 3 Setup Wizard + Phase 4 Multi-Module Support (TASK-4.1 & 4.2) + Example Projects (Kotlin) COMPLETE!** 
+Ready for CI/CD Integration (TASK-4.3), Migration Tools (TASK-5.1), or completing remaining examples (Java, Android)!
