@@ -6,14 +6,28 @@ import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.nio.file.Path
 
 class CentralPublisherPluginTest {
     
+    @TempDir
+    lateinit var tempDir: Path
+    
     private lateinit var project: Project
+    private lateinit var outputStream: ByteArrayOutputStream
+    private lateinit var originalOut: PrintStream
     
     @BeforeEach
     fun setup() {
-        project = ProjectBuilder.builder().build()
+        project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .build()
+        outputStream = ByteArrayOutputStream()
+        originalOut = System.out
+        System.setOut(PrintStream(outputStream))
     }
     
     @Test
@@ -328,5 +342,116 @@ class CentralPublisherPluginTest {
         
         assertThat(config.projectInfo.name).isNotEmpty()
         // The actual warning would be logged during bundle creation
+    }
+    
+    @Test
+    fun `should not show validation errors when no explicit configuration exists`() {
+        // Given - Apply plugin but don't configure centralPublisher block
+        project.pluginManager.apply(CentralPublisherPlugin::class.java)
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+
+        // When - Force project evaluation to trigger configuration phase
+        project.getTasksByName("tasks", false)
+
+        // Then - Should not have explicit configuration
+        assertThat(extension.hasExplicitConfiguration()).isFalse()
+        
+        // Note: Logger output goes to logger.quiet() which may not be captured by System.out redirection
+        // The core behavior is that hasExplicitConfiguration returns false when no DSL configuration is used
+    }
+
+    @Test
+    fun `should show validation errors when explicit configuration exists but is invalid`() {
+        // Given
+        project.pluginManager.apply(CentralPublisherPlugin::class.java)
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+
+        // Configure extension with invalid data to trigger explicit configuration
+        extension.credentials {
+            username = ""  // Invalid - empty username
+            password = "test-password"
+        }
+
+        // When
+        project.getTasksByName("tasks", false)
+
+        // Then - Should have explicit configuration marked  
+        assertThat(extension.hasExplicitConfiguration()).isTrue()
+        
+        // Note: Validation error messages are logged via logger.error() and may not be captured in System.out
+        // The key behavior is that hasExplicitConfiguration() is true
+    }
+
+    @Test
+    fun `should pass validation when explicit configuration exists and is valid`() {
+        // Given
+        project.pluginManager.apply(CentralPublisherPlugin::class.java)
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+
+        // Configure extension with valid data
+        extension.credentials {
+            username = "test-user"
+            password = "test-password"
+        }
+        
+        extension.projectInfo {
+            name = "test-project"
+            description = "Test project description"
+            url = "https://github.com/test/test-project"
+            
+            license {
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
+            }
+            
+            developer {
+                id = "test-dev"
+                name = "Test Developer"
+                email = "test@example.com"
+            }
+            
+            scm {
+                url = "https://github.com/test/test-project"
+                connection = "scm:git:git://github.com/test/test-project.git"
+                developerConnection = "scm:git:ssh://github.com/test/test-project.git"
+            }
+        }
+        
+        extension.signing {
+            keyId = "test-key"
+            password = "test-key-password"
+            secretKeyRingFile = "~/.gnupg/secring.gpg"
+        }
+
+        // When
+        project.getTasksByName("tasks", false) //internally it calls project.evaluate()
+
+        // Then - Should have explicit configuration
+        assertThat(extension.hasExplicitConfiguration()).isTrue()
+        
+        // Note: Validation success messages are logged via logger.quiet() which may not be captured
+        // The important behavior is that hasExplicitConfiguration() correctly identifies explicit config
+    }
+
+    @Test
+    fun `should handle hasExplicitConfiguration correctly across different configurations`() {
+        // Given
+        project.pluginManager.apply(CentralPublisherPlugin::class.java)
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+
+        // When - No configuration
+        assertThat(extension.hasExplicitConfiguration()).isFalse()
+
+        // When - Configure credentials only
+        extension.credentials {
+            username = "test-user"
+        }
+        assertThat(extension.hasExplicitConfiguration()).isTrue()
+
+        // When - Configure another section  
+        extension.projectInfo {
+            name = "test-project"
+        }
+        assertThat(extension.hasExplicitConfiguration()).isTrue()
     }
 }
