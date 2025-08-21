@@ -28,6 +28,8 @@ class SetupWizard(
     private val completedSteps = mutableListOf<WizardStep>()
     private var wizardConfig = CentralPublisherConfigBuilder().build()
     private var detectedInfo: DetectedProjectInfo? = null
+    private var hasAutoDetectedCredentials = false
+    private var hasAutoDetectedSigning = false
     
     val currentStep: WizardStep get() = _currentStep
     val isComplete: Boolean get() = _isComplete
@@ -76,12 +78,21 @@ class SetupWizard(
         // Actually generate the files
         generateFiles()
         
+        // Determine which files were actually generated
+        val actualFilesGenerated = mutableListOf<String>()
+        actualFilesGenerated.add("build.gradle.kts")
+        if (!(hasAutoDetectedCredentials && hasAutoDetectedSigning)) {
+            actualFilesGenerated.add("gradle.properties")
+        }
+        actualFilesGenerated.add(".gitignore")
+        actualFilesGenerated.add(".github/workflows/publish.yml")
+        
         return WizardCompletionResult(
             isComplete = true,
             finalConfiguration = finalConfig,
             stepsCompleted = completedSteps.toList(),
             summary = generateSummary(finalConfig),
-            filesGenerated = listOf("build.gradle.kts", "gradle.properties", ".gitignore", ".github/workflows/publish.yml")
+            filesGenerated = actualFilesGenerated.toList()
         )
     }
     
@@ -151,6 +162,7 @@ class SetupWizard(
                             password = envPassword
                         )
                     )
+                    hasAutoDetectedCredentials = true
                 } else if (hasGlobalCredentials) {
                     promptSystem.prompt("""
                         📋 CREDENTIALS SETUP - AUTO-DETECTED!
@@ -170,6 +182,7 @@ class SetupWizard(
                             password = globalPassword
                         )
                     )
+                    hasAutoDetectedCredentials = true
                 } else {
                     // Show configuration options
                     promptSystem.prompt("""
@@ -245,6 +258,7 @@ class SetupWizard(
                             password = envSigningPassword
                         )
                     )
+                    hasAutoDetectedSigning = true
                 } else if (hasGlobalSigning) {
                     promptSystem.prompt("""
                         🔐 GPG SIGNING SETUP - AUTO-DETECTED!
@@ -265,6 +279,7 @@ class SetupWizard(
                             password = globalSigningPassword
                         )
                     )
+                    hasAutoDetectedSigning = true
                 } else {
                     // Show configuration options
                     promptSystem.prompt("""
@@ -427,15 +442,44 @@ class SetupWizard(
             appendLine("- License: ${finalConfig.projectInfo.license.name}")
             appendLine("- Auto-publish: ${finalConfig.publishing.autoPublish}")
             appendLine("- Aggregation: ${finalConfig.publishing.aggregation}")
+            
+            if (hasAutoDetectedCredentials || hasAutoDetectedSigning) {
+                appendLine()
+                appendLine("Auto-detection Results:")
+                if (hasAutoDetectedCredentials) {
+                    appendLine("✅ Credentials: Auto-detected from environment/global gradle.properties")
+                }
+                if (hasAutoDetectedSigning) {
+                    appendLine("✅ Signing: Auto-detected from environment/global gradle.properties")
+                }
+            }
+            
             appendLine()
             appendLine("Next steps:")
             appendLine("1. Review generated build.gradle.kts")
-            appendLine("2. Configure credentials (recommended: environment variables)")
-            appendLine("   - Environment: export SONATYPE_USERNAME=... SONATYPE_PASSWORD=...")
-            appendLine("   - Global gradle.properties: ~/.gradle/gradle.properties")
-            appendLine("   - Local gradle.properties: update generated file (not recommended)")
-            appendLine("3. Configure GPG signing (export SIGNING_KEY=... SIGNING_PASSWORD=...)")
-            appendLine("4. Run './gradlew publishToCentral' to publish")
+            
+            if (!hasAutoDetectedCredentials) {
+                appendLine("2. Configure credentials (recommended: environment variables):")
+                appendLine("   - Environment: export SONATYPE_USERNAME=... SONATYPE_PASSWORD=...")
+                appendLine("   - Global gradle.properties: ~/.gradle/gradle.properties")
+                appendLine("   - Local gradle.properties: update generated file (not recommended)")
+            }
+            
+            if (!hasAutoDetectedSigning) {
+                val stepNum = if (hasAutoDetectedCredentials) "2" else "3"
+                appendLine("$stepNum. Configure GPG signing:")
+                appendLine("   - Environment: export SIGNING_KEY=... SIGNING_PASSWORD=...")
+                appendLine("   - Global gradle.properties: ~/.gradle/gradle.properties")
+                appendLine("   - Local gradle.properties: update generated file (not recommended)")
+            }
+            
+            val finalStepNum = when {
+                hasAutoDetectedCredentials && hasAutoDetectedSigning -> "2"
+                hasAutoDetectedCredentials || hasAutoDetectedSigning -> "3"
+                else -> "4"
+            }
+            
+            appendLine("$finalStepNum. Run './gradlew publishToCentral' to publish")
         }
     }
     
@@ -480,6 +524,12 @@ class SetupWizard(
     }
     
     private fun generatePropertiesFile() {
+        // Only generate gradle.properties if neither credentials nor signing were auto-detected
+        if (hasAutoDetectedCredentials && hasAutoDetectedSigning) {
+            // Both were auto-detected, no need for local gradle.properties
+            return
+        }
+        
         val propsFile = File(project.projectDir, "gradle.properties")
         val existingContent = if (propsFile.exists()) propsFile.readText() else ""
         
@@ -490,18 +540,34 @@ class SetupWizard(
             appendLine("# 1. Environment variables: export SONATYPE_USERNAME=...")
             appendLine("# 2. Global gradle.properties: ~/.gradle/gradle.properties")
             appendLine()
-            appendLine("SONATYPE_USERNAME=your-username")
-            appendLine("SONATYPE_PASSWORD=your-password")
-            appendLine()
-            appendLine("# Signing Configuration")
-            appendLine("# For better security, consider using environment variables:")
-            appendLine("# export SIGNING_KEY=\"-----BEGIN PGP PRIVATE KEY BLOCK-----...\"")
-            appendLine("# export SIGNING_PASSWORD=your-gpg-password")
-            appendLine()
-            appendLine("SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----")
-            appendLine("# ... your full PGP private key here ...")
-            appendLine("# -----END PGP PRIVATE KEY BLOCK-----")
-            appendLine("SIGNING_PASSWORD=your-gpg-password")
+            
+            // Only add credential placeholders if not auto-detected
+            if (!hasAutoDetectedCredentials) {
+                appendLine("# Credentials Configuration")
+                appendLine("SONATYPE_USERNAME=your-username")
+                appendLine("SONATYPE_PASSWORD=your-password")
+                appendLine()
+            } else {
+                appendLine("# ✅ Credentials auto-detected from environment/global gradle.properties")
+                appendLine("# No local credential configuration needed!")
+                appendLine()
+            }
+            
+            // Only add signing placeholders if not auto-detected
+            if (!hasAutoDetectedSigning) {
+                appendLine("# Signing Configuration")
+                appendLine("# For better security, consider using environment variables:")
+                appendLine("# export SIGNING_KEY=\"-----BEGIN PGP PRIVATE KEY BLOCK-----...\"")
+                appendLine("# export SIGNING_PASSWORD=your-gpg-password")
+                appendLine()
+                appendLine("SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----")
+                appendLine("# ... your full PGP private key here ...")
+                appendLine("# -----END PGP PRIVATE KEY BLOCK-----")
+                appendLine("SIGNING_PASSWORD=your-gpg-password")
+            } else {
+                appendLine("# ✅ Signing configuration auto-detected from environment/global gradle.properties")
+                appendLine("# No local signing configuration needed!")
+            }
             
             if (existingContent.isNotEmpty()) {
                 appendLine()
