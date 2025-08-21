@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm") version "2.2.0"
     `maven-publish`
     signing
-    id("com.tddworks.sonatype-portal-publisher") version "0.0.6"
+    id("com.tddworks.central-publisher")
 }
 
 group = "com.example"
@@ -55,12 +55,10 @@ centralPublisher {
         }
         
         // Developer information - can be auto-detected from git config
-        developers {
-            developer {
-                id = "developer1"
-                name = "Developer Name"
-                email = "developer@example.com"
-            }
+        developer {
+            id = "developer1"
+            name = "Developer Name"
+            email = "developer@example.com"
         }
     }
     
@@ -107,32 +105,5 @@ publishing {
     }
 }
 
-// Simplified task aliases for better discoverability
-tasks.register("publishToCentral") {
-    group = "Central Publishing"
-    description = "Publish artifacts to Maven Central Portal"
-    dependsOn("publishAllPublicationsToCentralPortal")
-}
-
-tasks.register("validatePublishing") {
-    group = "Central Publishing"
-    description = "Validate publishing configuration"
-    doLast {
-        println("✓ Publishing configuration is valid")
-        println("  - Project: ${project.name}")
-        println("  - Version: ${project.version}")
-        println("  - Group: ${project.group}")
-    }
-}
-
-// Example of using the dry-run mode
-tasks.register("publishDryRun") {
-    group = "Central Publishing"
-    description = "Perform a dry-run of the publishing process"
-    doLast {
-        println("🔍 Dry-run mode: Simulating publish to Central Portal")
-        println("  This would publish: ${project.name}-${project.version}")
-        println("  To repository: Maven Central Portal")
-        println("  With artifacts: JAR, sources, javadoc")
-    }
-}
+// Note: The plugin automatically creates tasks like 'publishToCentral'
+// Run './gradlew tasks --group="Central Publishing"' to see all available tasks

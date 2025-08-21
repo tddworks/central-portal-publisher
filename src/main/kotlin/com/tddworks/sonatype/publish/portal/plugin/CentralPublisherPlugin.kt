@@ -148,15 +148,35 @@ class CentralPublisherPlugin : Plugin<Project> {
             }
         }
         
-        // Create setup wizard task (placeholder for future implementation)
+        // Create setup wizard task
         tasks.register(TASK_SETUP_PUBLISHING) {
             group = PLUGIN_GROUP
             description = "Interactive setup wizard for Maven Central publishing"
             
             doLast {
-                logger.lifecycle("🧙 Setup Wizard (Coming Soon!)")
-                logger.lifecycle("This will guide you through setting up Maven Central publishing")
-                logger.lifecycle("For now, please configure using the centralPublisher DSL block")
+                logger.lifecycle("🧙 Starting Central Publisher Setup Wizard...")
+                
+                try {
+                    val wizard = com.tddworks.sonatype.publish.portal.plugin.wizard.SetupWizard(project)
+                    val result = wizard.runComplete()
+                    
+                    if (result.isComplete) {
+                        logger.lifecycle("✅ Setup completed successfully!")
+                        logger.lifecycle("")
+                        logger.lifecycle(result.summary)
+                        logger.lifecycle("")
+                        logger.lifecycle("Generated files:")
+                        result.filesGenerated.forEach { file ->
+                            logger.lifecycle("  - $file")
+                        }
+                    } else {
+                        logger.warn("⚠️ Setup was not completed successfully")
+                    }
+                } catch (e: Exception) {
+                    logger.error("❌ Setup wizard failed: ${e.message}")
+                    logger.lifecycle("For manual setup, please configure using the centralPublisher DSL block")
+                    logger.lifecycle("See documentation: https://github.com/tddworks/central-portal-publisher")
+                }
             }
         }
     }
