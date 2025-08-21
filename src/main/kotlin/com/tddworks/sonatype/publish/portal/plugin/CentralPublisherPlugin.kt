@@ -250,10 +250,10 @@ class CentralPublisherPlugin : Plugin<Project> {
         // Get our local repository where artifacts were published with checksums and signatures
         val localRepo = project.layout.buildDirectory.dir("maven-repo").get().asFile
         val groupPath = project.group.toString().replace('.', '/')
-        val artifactDir = File(localRepo, "$groupPath/${project.name}/${project.version}")
+        val groupDir = File(localRepo, groupPath)
         
-        if (!artifactDir.exists()) {
-            throw IllegalStateException("Published artifacts not found at: ${artifactDir.absolutePath}. Run 'publishToLocalRepo' first.")
+        if (!groupDir.exists()) {
+            throw IllegalStateException("Published artifacts not found at: ${groupDir.absolutePath}. Run 'publishToLocalRepo' first.")
         }
         
         // Validate namespace (Maven Central requirement)
@@ -265,8 +265,9 @@ class CentralPublisherPlugin : Plugin<Project> {
         
         // Create ZIP bundle with all files from the repository (includes checksums and signatures)
         // This follows the vanniktech pattern: rely on Gradle's publishing to generate everything
+        // For KMP projects, this includes all platform-specific publications
         ZipOutputStream(bundleFile.outputStream()).use { zip ->
-            artifactDir.walkTopDown()
+            groupDir.walkTopDown()
                 .filter { it.isFile && !it.name.startsWith("maven-metadata") }
                 .forEach { file ->
                     val relativePath = file.relativeTo(localRepo).path.replace('\\', '/')
