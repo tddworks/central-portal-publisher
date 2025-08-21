@@ -4,240 +4,335 @@
 ![CI](https://github.com/tddworks/central-portal-publisher/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/tddworks/central-portal-publisher/graph/badge.svg?token=izDBfMwLY0)](https://codecov.io/gh/tddworks/central-portal-publisher)
 
+A modern Gradle plugin for publishing to Maven Central via the Sonatype Central Portal. Features intelligent auto-detection, type-safe configuration, and an interactive setup wizard.
+
+## Quick Start
+
+### 🧙 Interactive Setup Wizard (Recommended)
+
+The easiest way to get started is with the interactive setup wizard:
+
+```kotlin
+plugins {
+    id("com.tddworks.central-publisher") version "0.0.6"
+}
+```
+
+Then run the setup wizard:
+```bash
+./gradlew setupPublishing
+```
+
+The wizard will:
+- ✅ **Auto-detect** project information from git
+- ✅ **Auto-detect** existing environment variables (recommended for security)
+- ✅ **Guide you** through credentials and GPG signing setup
+- ✅ **Generate** all necessary configuration files
+- ✅ **Explain** security best practices
+
+#### Environment Variable Auto-Detection
+
+For best security, the wizard automatically detects and uses environment variables:
+
+```bash
+# Credentials (detected automatically)
+export SONATYPE_USERNAME=your-username
+export SONATYPE_PASSWORD=your-password
+
+# GPG Signing (detected automatically) 
+export SIGNING_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----..."
+export SIGNING_PASSWORD=your-gpg-password
+```
+
+If found, the wizard will show:
+```
+📋 CREDENTIALS SETUP - AUTO-DETECTED!
+✅ Found existing environment variables:
+• SONATYPE_USERNAME: your-username
+• SONATYPE_PASSWORD: ********
+
+Using these existing credentials.
+```
+
 ## Usage
 
-### Minimal configuration
+### Manual Configuration
+
+If you prefer manual setup, you can configure the plugin directly:
+
 #### build.gradle.kts
 ```kotlin
 plugins {
-  id("com.tddworks.central-portal-publisher") version "0.0.5"
+    id("com.tddworks.central-publisher") version "0.0.6"
 }
 
-sonatypePortalPublisher {}
+centralPublisher {
+    // Credentials from environment variables (recommended)
+    credentials {
+        username = project.findProperty("SONATYPE_USERNAME")?.toString() ?: ""
+        password = project.findProperty("SONATYPE_PASSWORD")?.toString() ?: ""
+    }
+    
+    // Project info (many fields auto-detected from git)
+    projectInfo {
+        name = project.name
+        description = "Description of your project"
+        url = "https://github.com/yourorg/${project.name}"
+        
+        license {
+            name = "Apache License 2.0"
+            url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+        
+        developer {
+            id = "yourid"
+            name = "Your Name"
+            email = "your.email@example.com"
+        }
+        
+        scm {
+            url = "https://github.com/yourorg/${project.name}"
+            connection = "scm:git:git://github.com/yourorg/${project.name}.git"
+            developerConnection = "scm:git:ssh://github.com/yourorg/${project.name}.git"
+        }
+    }
+    
+    // GPG signing (also supports environment variables)
+    signing {
+        keyId = project.findProperty("SIGNING_KEY_ID")?.toString() ?: ""
+        password = project.findProperty("SIGNING_PASSWORD")?.toString() ?: ""
+        secretKeyRingFile = project.findProperty("SIGNING_SECRET_KEY_RING_FILE")?.toString() ?: ""
+    }
+    
+    // Publishing options
+    publishing {
+        autoPublish = false // Manual approval (default, safer)
+        aggregation = true  // Bundle multiple modules (default)
+        dryRun = false     // Set true to test without publishing
+    }
+}
 ```
 
-add gradle.properties file in the root project with the following content:
-refer to [Signing Plugin](https://docs.gradle.org/current/userguide/signing_plugin.html) for more information.
+## Available Tasks
+
+Once configured, the plugin provides these tasks:
+
+- **`setupPublishing`** - Interactive setup wizard (recommended for first-time setup)
+- **`publishToCentral`** - Publish all artifacts to Maven Central
+- **`bundleArtifacts`** - Create deployment bundle for Maven Central  
+- **`validatePublishing`** - Validate configuration without publishing
+
+Example workflow:
+```bash
+# First-time setup
+./gradlew setupPublishing
+
+# Validate your configuration
+./gradlew validatePublishing  
+
+# Test bundle creation (recommended)
+./gradlew bundleArtifacts
+
+# Publish to Maven Central
+./gradlew publishToCentral
+```
+
+## Configuration Options
+
+### Environment Variables (Recommended)
+
+The most secure approach uses environment variables (automatically detected by the setup wizard):
+
+```bash
+# Sonatype credentials
+export SONATYPE_USERNAME=your-username
+export SONATYPE_PASSWORD=your-password
+
+# GPG signing (get your private key with: gpg --armor --export-secret-keys email@example.com)
+export SIGNING_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----
+...your full private key here...
+-----END PGP PRIVATE KEY BLOCK-----"
+export SIGNING_PASSWORD=your-gpg-password
+```
+
+### Global gradle.properties
+
+Alternative: add to `~/.gradle/gradle.properties` (applies to all projects):
+
 ```properties
-## Provide signing information required by Maven Central
-signing.keyId=[your-key-id]
-signing.password=[your-key-password]
-signing.secretKeyRingFile=[your-key-file]
+SONATYPE_USERNAME=your-username
+SONATYPE_PASSWORD=your-password
 
-## Provide artifacts information required by Maven Central
-POM_NAME=openai-kotlin
-POM_DESCRIPTION=OpenAI API KMP Client
-POM_URL=https://github.com/tddworks/openai-kotlin
-POM_SCM_URL=https://github.com/tddworks/openai-kotlin
-POM_SCM_CONNECTION=scm:git:git://github.com/tddworks/openai-kotlin.git
-POM_SCM_DEV_CONNECTION=scm:git:ssh://github.com/tddworks/openai-kotlin.git
-POM_LICENCE_NAME=MIT License
-POM_LICENCE_URL=https://github.com/tddworks/openai-kotlin/blob/main/LICENSE
-
-POM_LICENCE_DIST=repo
-POM_DEVELOPER_ID=tddworks
-POM_DEVELOPER_NAME=itshan
-POM_DEVELOPER_EMAIL=itshan@ttdworks.com
-POM_DEVELOPER_ORGANIZATION=tddworks
-POM_DEVELOPER_ORGANIZATION_URL=https://tddworks.com
-POM_ISSUE_SYSTEM=github
-POM_ISSUE_URL=https://github.com/tddworks/openai-kotlin/issues
-
-## Provide Sonatype Portal credentials
-SONATYPE_USERNAME=[your-sonatype-username]
-SONATYPE_PASSWORD=[your-sonatype-password]
+SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----\n...\n-----END PGP PRIVATE KEY BLOCK-----
+SIGNING_PASSWORD=your-gpg-password
 ```
 
-Or you can provide the credentials in the system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD` and `SIGNING_KEY` and `SIGNING_PASSWORD` for the signing key.
+### Local gradle.properties (Not Recommended)
 
-```shell
-export SONATYPE_USERNAME=your-sonatype-username
-export SONATYPE_PASSWORD=your-sonatype-password
+Only use for local development, **never commit to git**:
 
-export SIGNING_KEY=your-key
-export SIGNING_PASSWORD=your-key-password
-```
-SIGING_KEY can be get from
-```shell
-gpg --armor --export-secret-keys foobar@example.com \
-    | awk 'NR == 1 { print "SIGNING_KEY=" } 1' ORS='\\n' \
-    >> gradle.properties
-```
-
-## About signing
-The plugin will use the signing information from the gradle.properties file first, and then the system environment. If you don't provide the signing information, the plugin will use the default signing configuration.
-### example
 ```properties
-## Provide signing information required by Maven Central - default  - order(3)
-signing.keyId=[your-key-id]
-signing.password=[your-key-password]
-signing.secretKeyRingFile=[your-key-file]
+# WARNING: Do not commit this file to version control!
+SONATYPE_USERNAME=your-username
+SONATYPE_PASSWORD=your-password
 
-
-## Provide signing information required by Maven Central - order(1)
-SIGNING_KEY=\n-----BEGIN PGP PRIVATE KEY BLOCK-----END PGP PRIVATE KEY BLOCK-----\n
-SIGNING_PASSWORD=your-key-password
-````
-
-###
-```shell
-## Provide signing information required by Maven Central - order(2)
-export SIGNING_KEY=your-key
-export SIGNING_PASSWORD=your-key-password
+SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----
+# ... your full PGP private key here ...
+-----END PGP PRIVATE KEY BLOCK-----
+SIGNING_PASSWORD=your-gpg-password
 ```
 
+## Legacy Configuration (Deprecated)
 
-For those two configurations, the plugin will use the credentials from the gradle.properties file first, and then the system environment. and configure the plugin in the build.gradle file as follows:
+> **Note:** The old `sonatypePortalPublisher {}` DSL is deprecated. Use `centralPublisher {}` with the setup wizard for the best experience.
+
+For existing projects, you can migrate by running:
+```bash
+./gradlew setupPublishing
+```
+
+## Project Types Supported
+
+### Single Module Projects
+
+The plugin automatically detects single-module projects and configures publishing accordingly:
 
 ```kotlin
-sonatypePortalPublisher {
-    settings {
-        autoPublish = false
+centralPublisher {
+    // Configuration as shown above
+    publishing {
+        aggregation = true  // Still useful for consistent behavior
     }
 }
 ```
 
+### Multi-Module Projects
 
-### Single module
+The plugin automatically detects and supports multi-module projects with two publishing strategies:
+
+#### Individual Module Publishing
+
+Each module is published separately (useful for independent versioning):
 
 ```kotlin
-sonatypePortalPublisher {
-    authentication {
-        username = "your-username"
-        password = "your-password"
-    }
-
-    settings {
-        autoPublish = false
+centralPublisher {
+    publishing {
+        aggregation = false  // Each module publishes independently
+        autoPublish = false  // Manual approval for each module
     }
 }
 ```
 
-### Multi-modules
+#### Aggregated Publishing (Recommended)
 
-Supported Features:
-- [x] publish different publications (maven, kotlinMultiplatform, etc.)
-    - [x] publishMavenPublicationToSonatypePortalRepository
-        - [x] publish by signing from gradle.properties
-            - [x] publish by specific username and password
-            - [x] publish by system environment, e.g. `SONATYPE_USERNAME` and `SONATYPE_PASSWORD`
-        - [x] publish by custom signing
-            - [x] publish by specific signing.keyId, signing.password and signing.secretKeyRingFile
-            - [x] publish by system environment, e.g. `SIGNING_KEY` and `SIGNING_PASSWORD`
-    - [x] publishKotlinMultiplatformPublicationToSonatypeRepository
-        - [x] publishMacosX64PublicationToSonatypePortalRepository
-
-- [x] publish aggregation publications
-    - [x] publish by signing from gradle.properties
-        - [x] publishAggregationPublicationsToSonatypePortalRepository
-            - kmp aggregated deployment bundle zip layout
-              <img src="./docs/images/kmp-aggregated-deployment-bundle.png">
-
-- [x] zip different publications
-    - [x] zipMavenPublication
-    - [x] zipKotlinMultiplatformPublication
-    - [x] zipAllPublications
-        - Generated zip files:
-            - [x] jvm-deployment-bundle.zip
-            - [x] kotlinMultiplatform-deployment-bundle.zip
-- [x] zip aggregation
-    - [x] zipAggregationPublications
-
-- [x] SCM settings
-    - [x] Developers information
-    - [x] License information
-    - [x] Project URL
-    - [x] Project description
-    - [x] SCM URL
-
-
-#### With project isolation
-This will publish all the subprojects in its own module.
+All modules are bundled into a single deployment (simpler, faster):
 
 ```kotlin
-sonatypePortal {
-    authentication {
-        username = "your-username"
-        password = "your-password"
-    }
-
-    settings {
-        autoPublish = false
-        aggregation = false
+centralPublisher {
+    publishing {
+        aggregation = true   // Bundle all modules together (default)
+        autoPublish = false  // Manual approval for entire bundle
     }
 }
 ```
 
-`aggregation = false` will disable the task `zipAggregationPublication`.
+With aggregation enabled, you'll get a single deployment bundle containing all modules:
+```
+build/central-portal/project-name-1.0.0-bundle.zip
+```
 
-#### With project aggregation
+### Kotlin Multiplatform (KMP) Projects
+
+Full support for KMP projects with all target publications:
+
 ```kotlin
-sonatypePortal {
-    authentication {
-        username = "your-username"
-        password = "your-password"
-    }
+kotlin {
+    jvm()
+    js(IR) { browser(); nodejs() }
+    linuxX64()
+    macosX64() 
+    macosArm64()
+    // ... other targets
+}
 
-    settings {
-        autoPublish = false
-        aggregation = true
-    }
+centralPublisher {
+    // Same configuration as above
+    // Plugin automatically detects and includes all platform publications
 }
 ```
 
-This will publish all the subprojects in the root project.
+The generated bundle includes all platform-specific artifacts with proper Maven repository layout.
 
-`aggregation = true` will enable the task `zipAggregationPublication`, which will generate a zip file containing all the subprojects' artifacts. You can find the zip file in the `build/sonatype/zip` directory.
+## Supported Features
 
-```shell
-example-multi-modules/build/sonatype/zip/aggregated-deployment-bundle.zip
-```
+- ✅ **Auto-detection**: Project info, git repository, developer information
+- ✅ **Multiple project types**: Single-module, multi-module, Kotlin Multiplatform  
+- ✅ **Flexible authentication**: Environment variables, gradle.properties, or DSL
+- ✅ **GPG signing**: In-memory keys, file-based, or environment variables
+- ✅ **Bundle generation**: Proper Maven repository layout with checksums and signatures
+- ✅ **Validation**: Configuration validation before publishing
+- ✅ **CI/CD friendly**: Works great with GitHub Actions, Jenkins, etc.
+- ✅ **Interactive setup**: Guided wizard for first-time setup
 
-You can run the following command to generate the zip file:
+## CI/CD Integration
 
-```shell
-gradle clean zipAggregationPublication
-```
+### GitHub Actions
 
-# Publish to Sonatype Portal
-## kmp deployment info
-[<img src="./docs/images/kmp-deployment-Info.png">](https://central.sonatype.com/publishing/deployments)
+The plugin works seamlessly with GitHub Actions. Here's a complete workflow example:
 
+1. **Add secrets to your GitHub repository**:
+   - `SONATYPE_USERNAME` - Your Sonatype username  
+   - `SONATYPE_PASSWORD` - Your Sonatype password/token
+   - `SIGNING_KEY` - Your GPG private key 
+   - `SIGNING_PASSWORD` - Your GPG key password
 
-# CI Pipeline on Github Actions
-## Config the secrets first
-[<img src="./docs/images/github-action-secrets.png">](https://docs.github.com/en/actions/reference/encrypted-secrets)
+2. **Create `.github/workflows/publish.yml`**:
 
 ```yaml
-name: build and publish a release to Central Sonatype
+name: Publish to Maven Central
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags
 
 jobs:
-  build:
-    runs-on: macOS-latest
-    env:
-      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+  publish:
+    runs-on: ubuntu-latest
+    
+    environment: publishing  # Optional: use GitHub environments for additional protection
+    
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+        
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 21
+          distribution: 'temurin'
+          java-version: '17'
+          
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-      - name: Release to Central Sonatype with Gradle
-        run: ./gradlew build publishAggregationPublicationsToSonatypePortalRepository
+        uses: gradle/actions/setup-gradle@v3
+        
+      - name: Validate configuration  
+        run: ./gradlew validatePublishing
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        
+      - name: Publish to Maven Central
+        run: ./gradlew publishToCentral
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
 ```
 
-## Build and publish a release to Central Sonatype
-[<img src="./docs/images/github-action-workflow.png">](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
+The setup wizard can generate this workflow file for you automatically!
 
 
 # Maven Repository Layout

@@ -1,0 +1,13 @@
+# Central Publisher sensitive files
+gradle.properties
+*.gpg
+local.properties
+
+# Build outputs
+build/
+.gradle/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
