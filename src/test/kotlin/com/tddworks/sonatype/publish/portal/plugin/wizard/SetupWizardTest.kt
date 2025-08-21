@@ -359,6 +359,13 @@ class SetupWizardTest {
             isAccessible = true 
             set(wizardWithAutoDetection, true)
         }
+        val wizardWithAutoDetection = TestableSetupWizard(
+            project,
+            mockPromptSystem,
+            enableGlobalGradlePropsDetection = false,
+            hasAutoDetectedCredentials = true,
+            hasAutoDetectedSigning = true
+        )
         
         // When
         wizardWithAutoDetection.generateFiles()
