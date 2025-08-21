@@ -35,7 +35,32 @@ class DefaultWizardFileGenerator : WizardFileGenerator {
     }
     
     private fun shouldGenerateGradleProperties(context: WizardContext): Boolean {
-        return !context.hasAutoDetectedCredentials || !context.hasAutoDetectedSigning
+        // Only generate gradle.properties if user manually entered credentials/signing
+        // AND they don't have global credentials already set up
+        return (!context.hasAutoDetectedCredentials || !context.hasAutoDetectedSigning) && 
+               !hasGlobalCredentials()
+    }
+    
+    private fun hasGlobalCredentials(): Boolean {
+        // Check if user has global gradle.properties with credentials
+        val globalGradleProps = File(System.getProperty("user.home"), ".gradle/gradle.properties")
+        if (!globalGradleProps.exists()) return false
+        
+        val content = globalGradleProps.readText()
+        val hasUsername = content.contains("SONATYPE_USERNAME=") && 
+                         content.lines().find { it.startsWith("SONATYPE_USERNAME=") }
+                             ?.substringAfter("=")?.trim()?.isNotBlank() == true
+        val hasPassword = content.contains("SONATYPE_PASSWORD=") && 
+                         content.lines().find { it.startsWith("SONATYPE_PASSWORD=") }
+                             ?.substringAfter("=")?.trim()?.isNotBlank() == true
+        val hasSigningKey = content.contains("SIGNING_KEY=") && 
+                           content.lines().find { it.startsWith("SIGNING_KEY=") }
+                               ?.substringAfter("=")?.trim()?.isNotBlank() == true
+        val hasSigningPassword = content.contains("SIGNING_PASSWORD=") && 
+                                content.lines().find { it.startsWith("SIGNING_PASSWORD=") }
+                                    ?.substringAfter("=")?.trim()?.isNotBlank() == true
+        
+        return (hasUsername && hasPassword) || (hasSigningKey && hasSigningPassword)
     }
     
     private fun generateGradleProperties(context: WizardContext, finalConfig: CentralPublisherConfig) {
