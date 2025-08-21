@@ -123,7 +123,13 @@ class CentralPublisherPlugin : Plugin<Project> {
             val publishTasks = tasks.matching { task ->
                 task.name.matches(Regex("publish.+PublicationToLocalRepoRepository"))
             }
-            dependsOn(publishTasks)
+            
+            // Also ensure signing tasks run if signing is configured
+            val signingTasks = tasks.matching { task ->
+                task.name.startsWith("sign") && task.name.endsWith("Publication")
+            }
+            
+            dependsOn(publishTasks + signingTasks)
         }
         
         logger.quiet("🔧 Publications auto-configured based on project type")
@@ -186,7 +192,12 @@ class CentralPublisherPlugin : Plugin<Project> {
             
             doLast {
                 logger.quiet("📦 Creating deployment bundle...")
-                logger.quiet("  - Signing enabled: ${config.signing.keyId.isNotBlank()}")
+                
+                // Check for signing configuration in multiple places
+                val hasSigningKey = project.findProperty("SIGNING_KEY") != null || 
+                                  System.getenv("SIGNING_KEY") != null ||
+                                  config.signing.keyId.isNotBlank()
+                logger.quiet("  - Signing enabled: $hasSigningKey")
                 
                 val bundleFile = createDeploymentBundle(project)
                 logger.lifecycle("✅ Bundle created: ${bundleFile.absolutePath}")
