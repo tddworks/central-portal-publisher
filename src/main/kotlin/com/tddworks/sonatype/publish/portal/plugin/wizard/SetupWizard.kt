@@ -485,6 +485,14 @@ class SetupWizard(
     
     private fun generateBuildFile() {
         val buildFile = File(project.projectDir, "build.gradle.kts")
+        
+        // Use auto-detected information or fallback to defaults
+        val projectUrl = detectedInfo?.projectUrl ?: "https://github.com/yourorg/${project.name}"
+        val firstDeveloper = detectedInfo?.developers?.firstOrNull()
+        val developerId = firstDeveloper?.email?.substringBefore("@") ?: "yourid"
+        val developerName = firstDeveloper?.name ?: "Your Name"
+        val developerEmail = firstDeveloper?.email ?: "your.email@example.com"
+        
         val content = buildString {
             appendLine("plugins {")
             appendLine("    id(\"com.tddworks.central-publisher\")")
@@ -497,9 +505,9 @@ class SetupWizard(
             appendLine("    }")
             appendLine("    ")
             appendLine("    projectInfo {")
-            appendLine("        name = \"${project.name}\"")
+            appendLine("        name = \"${detectedInfo?.projectName ?: project.name}\"")
             appendLine("        description = \"Description of your project\"")
-            appendLine("        url = \"https://github.com/yourorg/${project.name}\"")
+            appendLine("        url = \"$projectUrl\"")
             appendLine("        ")
             appendLine("        license {")
             appendLine("            name = \"Apache License 2.0\"")
@@ -507,15 +515,15 @@ class SetupWizard(
             appendLine("        }")
             appendLine("        ")
             appendLine("        developer {")
-            appendLine("            id = \"yourid\"")
-            appendLine("            name = \"Your Name\"")
-            appendLine("            email = \"your.email@example.com\"")
+            appendLine("            id = \"$developerId\"")
+            appendLine("            name = \"$developerName\"")
+            appendLine("            email = \"$developerEmail\"")
             appendLine("        }")
             appendLine("        ")
             appendLine("        scm {")
-            appendLine("            url = \"https://github.com/yourorg/${project.name}\"")
-            appendLine("            connection = \"scm:git:git://github.com/yourorg/${project.name}.git\"")
-            appendLine("            developerConnection = \"scm:git:ssh://github.com/yourorg/${project.name}.git\"")
+            appendLine("            url = \"$projectUrl\"")
+            appendLine("            connection = \"scm:git:git://${projectUrl.removePrefix("https://")}.git\"")
+            appendLine("            developerConnection = \"scm:git:ssh://${projectUrl.removePrefix("https://")}.git\"")
             appendLine("        }")
             appendLine("    }")
             appendLine("}")
