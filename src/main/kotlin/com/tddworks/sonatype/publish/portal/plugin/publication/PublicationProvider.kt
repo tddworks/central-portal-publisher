@@ -214,8 +214,12 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
             
             configureKotlinMultiplatformProject(project, config)
             
-            // Configure signing if signing information is provided
-            if (config.signing.keyId.isNotBlank()) {
+            // Configure signing if signing information is provided (check multiple sources)
+            val hasSigningConfig = config.signing.keyId.isNotBlank() || 
+                                   project.get("SIGNING_KEY") != "SIGNING_KEY not found" ||
+                                   project.findProperty("signing.keyId") != null
+            
+            if (hasSigningConfig) {
                 configureSigning(project, config)
             }
         }
@@ -231,13 +235,27 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
     }
     
     private fun configureSigning(project: Project, config: CentralPublisherConfig) {
-        if (!project.plugins.hasPlugin("signing")) {
-            project.plugins.apply("signing")
-        }
-        
-        project.extensions.configure<SigningExtension> {
-            val publishing = project.extensions.getByType<PublishingExtension>()
-            sign(publishing.publications)
+        project.plugins.apply("signing")
+        project.plugins.withId("signing") {
+            project.configure<SigningExtension> {
+                val publishing = project.extensions.getByType<PublishingExtension>()
+                sign(publishing.publications)
+                
+                // Use in-memory PGP keys if available (following original pattern)
+                val signingKey = project.get("SIGNING_KEY")
+                val signingPassword = project.get("SIGNING_PASSWORD")
+                
+                if (signingKey != "SIGNING_KEY not found") {
+                    project.logger.info("✅ Using in-memory GPG keys for signing")
+                    useInMemoryPgpKeys(signingKey, signingPassword)
+                } else if (config.signing.keyId.isNotBlank()) {
+                    // Fall back to file-based signing if configured
+                    project.logger.info("✅ Using file-based signing with keyId: ${config.signing.keyId}")
+                } else {
+                    project.logger.warn("⚠️ No signing configuration found. Artifacts will not be signed.")
+                    project.logger.warn("   Set SIGNING_KEY and SIGNING_PASSWORD in gradle.properties or environment variables")
+                }
+            }
         }
     }
     
