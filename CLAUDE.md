@@ -88,7 +88,17 @@ The plugin uses configuration in this order:
 
 ## Development Practices
 
-### TDD Process
+### In order to lower the cognitive load and improve maintainability, please follow these practices:
+0. **Follow OCP**: Open/Closed Principle - code should be open for extension but closed for modification which help to make the code more maintainable and extensible.
+1. **Follow the TDD process**: Always write tests first, then implement code to make them pass.
+2. **Use the TodoWrite tool**: Track your progress and update task status in `docs/refactoring/implementation-tasks.md`.
+3. **Write descriptive test names**: Use backticks for clarity, e.g., `` `should validate empty configuration and return errors` ``.
+4. **Use AssertJ assertions**: They provide readable test failures and better error messages.
+5. **Follow existing naming conventions**: Maintain consistency with the project's style.
+6. **Add KDoc/JavaDoc for public APIs**: Document all public methods and DSL components for clarity.
+7. **Run tests before committing changes**: Ensure all tests pass to maintain code quality.
+
+### TDD Process - Always Follow TDD!!!!!
 1. **Red**: Write a failing test that describes the desired functionality
 2. **Green**: Write minimal code to make the test pass
 3. **Refactor**: Improve code quality while keeping tests green
