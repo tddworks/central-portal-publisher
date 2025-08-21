@@ -223,9 +223,8 @@ class RefactoredSetupWizardTest {
             .withName("test-project")
             .build()
 
-        // Only mock what's actually called - the informational prompts that expect Enter key
-        // Both CredentialsStepProcessor and SigningStepProcessor call prompt() to show info and wait for Enter
-        `when`(mockPromptSystem.prompt(anyString())).thenReturn("")
+        // Mock user saying yes to auto-detected credentials and signing
+        `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
         val wizard = RefactoredSetupWizard(
             project = project,

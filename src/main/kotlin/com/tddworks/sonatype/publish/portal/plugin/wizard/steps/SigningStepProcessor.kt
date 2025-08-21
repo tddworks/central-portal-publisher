@@ -35,84 +35,55 @@ class SigningStepProcessor : WizardStepProcessor {
         
         when {
             hasEnvSigning -> {
-                promptSystem.prompt("""
+                val useAutoDetected = promptSystem.confirm("""
                     🔐 SIGNING SETUP - AUTO-DETECTED!
                     ✅ Found existing environment variables:
                     • SIGNING_KEY: ${maskKey(envKey!!)}
                     • SIGNING_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
                     
-                    Using these existing signing credentials (environment variables take precedence).
-                    
-                    Press Enter to continue...
+                    Use these auto-detected signing credentials?
                 """.trimIndent())
                 
-                updatedContext = context.updateConfig(
-                    context.wizardConfig.copy(
-                        signing = context.wizardConfig.signing.copy(
-                            keyId = envKey,
-                            password = envPassword
+                if (useAutoDetected) {
+                    updatedContext = context.updateConfig(
+                        context.wizardConfig.copy(
+                            signing = context.wizardConfig.signing.copy(
+                                keyId = envKey,
+                                password = envPassword
+                            )
                         )
-                    )
-                ).withAutoDetectedSigning()
+                    ).withAutoDetectedSigning()
+                } else {
+                    updatedContext = handleManualSigningInput(context, promptSystem, validationErrors)
+                }
             }
             
             hasGlobalSigning -> {
-                promptSystem.prompt("""
+                val useAutoDetected = promptSystem.confirm("""
                     🔐 SIGNING SETUP - AUTO-DETECTED!
                     ✅ Found existing global gradle.properties (~/.gradle/gradle.properties):
                     • SIGNING_KEY: ${maskKey(globalKey!!)}
                     • SIGNING_PASSWORD: ${"*".repeat(globalPassword!!.length.coerceAtMost(8))}
                     
-                    Using these existing signing credentials from global gradle.properties.
-                    
-                    Press Enter to continue...
+                    Use these auto-detected signing credentials?
                 """.trimIndent())
                 
-                updatedContext = context.updateConfig(
-                    context.wizardConfig.copy(
-                        signing = context.wizardConfig.signing.copy(
-                            keyId = globalKey,
-                            password = globalPassword
-                        )
-                    )
-                ).withAutoDetectedSigning()
-            }
-            
-            else -> {
-                // Show configuration options
-                promptSystem.prompt("""
-                    🔐 SIGNING SETUP
-                    No environment variables or global gradle.properties signing detected. Manual configuration needed.
-                    
-                    Configuration options (in order of preference):
-                    1. Environment variables (recommended for CI/CD):
-                       export SIGNING_KEY=your-private-key
-                       export SIGNING_PASSWORD=your-key-password
-                    
-                    2. Global gradle.properties (~/.gradle/gradle.properties):
-                       SIGNING_KEY=your-private-key
-                       SIGNING_PASSWORD=your-key-password
-                    
-                    3. Local gradle.properties (this project only - not recommended):
-                       Will be generated for you but should not be committed to git
-                    
-                    Press Enter to continue...
-                """.trimIndent())
-                
-                val keyId = promptSystem.prompt("Enter your GPG signing key (private key or key ID):")
-                if (keyId.isEmpty()) {
-                    validationErrors.add("Signing key is required")
-                } else {
-                    val password = promptSystem.prompt("Enter your GPG key password:")
+                if (useAutoDetected) {
                     updatedContext = context.updateConfig(
                         context.wizardConfig.copy(
                             signing = context.wizardConfig.signing.copy(
-                                keyId = keyId,
-                                password = password
+                                keyId = globalKey,
+                                password = globalPassword
                             )
                         )
-                    )
+                    ).withAutoDetectedSigning()
+                } else {
+                    updatedContext = handleManualSigningInput(context, promptSystem, validationErrors)
                 }
+            }
+            
+            else -> {
+                updatedContext = handleManualSigningInput(context, promptSystem, validationErrors)
             }
         }
         
@@ -122,6 +93,48 @@ class SigningStepProcessor : WizardStepProcessor {
             validationErrors = validationErrors,
             updatedContext = updatedContext
         )
+    }
+    
+    private fun handleManualSigningInput(
+        context: WizardContext,
+        promptSystem: PromptSystem,
+        validationErrors: MutableList<String>
+    ): WizardContext {
+        // Show configuration options
+        promptSystem.prompt("""
+            🔐 SIGNING SETUP
+            No auto-detected signing credentials or user chose manual input. Manual configuration needed.
+            
+            Configuration options (in order of preference):
+            1. Environment variables (recommended for CI/CD):
+               export SIGNING_KEY=your-private-key
+               export SIGNING_PASSWORD=your-key-password
+            
+            2. Global gradle.properties (~/.gradle/gradle.properties):
+               SIGNING_KEY=your-private-key
+               SIGNING_PASSWORD=your-key-password
+            
+            3. Local gradle.properties (this project only - not recommended):
+               Will be generated for you but should not be committed to git
+            
+            Press Enter to continue...
+        """.trimIndent())
+        
+        val keyId = promptSystem.prompt("Enter your GPG signing key (private key or key ID):")
+        if (keyId.isEmpty()) {
+            validationErrors.add("Signing key is required")
+            return context
+        } else {
+            val password = promptSystem.prompt("Enter your GPG key password:")
+            return context.updateConfig(
+                context.wizardConfig.copy(
+                    signing = context.wizardConfig.signing.copy(
+                        keyId = keyId,
+                        password = password
+                    )
+                )
+            )
+        }
     }
     
     private fun maskKey(key: String): String {
