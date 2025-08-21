@@ -29,7 +29,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build koverVerify koverXmlReport
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ${{ github.workspace }}/build/reports/kover/report.xml
         env:
