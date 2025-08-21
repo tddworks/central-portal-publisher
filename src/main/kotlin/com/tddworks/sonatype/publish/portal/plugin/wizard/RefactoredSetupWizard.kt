@@ -86,15 +86,19 @@ class RefactoredSetupWizard(
             if (result.isValid) {
                 completedSteps.add(step)
             }
+
+            // Update context if the step processor returned an updated context
+            result.updatedContext?.let { context = it }
         }
-        
+
+
         // Create final configuration
         val finalConfig = createFinalConfiguration()
         _isComplete = true
-        
+
         // Generate files using the file generator
         val generatedFiles = fileGenerator.generateFiles(context, finalConfig)
-        
+
         return WizardCompletionResult(
             isComplete = true,
             finalConfiguration = finalConfig,
