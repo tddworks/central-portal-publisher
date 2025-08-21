@@ -35,10 +35,9 @@ class DefaultWizardFileGenerator : WizardFileGenerator {
     }
     
     private fun shouldGenerateGradleProperties(context: WizardContext): Boolean {
-        // Only generate gradle.properties if user manually entered credentials/signing
-        // AND they don't have global credentials already set up
-        return (!context.hasAutoDetectedCredentials || !context.hasAutoDetectedSigning) && 
-               !hasGlobalCredentials()
+        // Generate gradle.properties if user manually entered credentials OR signing
+        // The user explicitly chose manual input, so we should generate the file
+        return !context.hasAutoDetectedCredentials || !context.hasAutoDetectedSigning
     }
     
     private fun hasGlobalCredentials(): Boolean {

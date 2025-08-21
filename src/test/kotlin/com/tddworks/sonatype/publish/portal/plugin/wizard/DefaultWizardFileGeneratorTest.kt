@@ -54,7 +54,7 @@ class DefaultWizardFileGeneratorTest {
     }
 
     @Test
-    fun `should not generate gradle properties when global credentials exist`() {
+    fun `should generate gradle properties when user provides manual input even if global credentials exist`() {
         // Given - create fake global gradle.properties
         val userHome = System.getProperty("user.home")
         val globalGradleDir = File(userHome, ".gradle")
@@ -70,7 +70,8 @@ class DefaultWizardFileGeneratorTest {
                 SIGNING_PASSWORD=global-key-password
             """.trimIndent())
 
-            // Context with manual credentials but global exists
+            // Context with manual credentials (user explicitly chose manual input)
+            // Even though global credentials exist, we should respect user's explicit choice
             val contextWithManual = context.copy(
                 hasAutoDetectedCredentials = false,
                 hasAutoDetectedSigning = false
@@ -79,9 +80,9 @@ class DefaultWizardFileGeneratorTest {
             // When
             val generatedFiles = generator.generateFiles(contextWithManual, config)
 
-            // Then - should only generate build.gradle.kts (no local gradle.properties)
-            assertThat(generatedFiles).containsExactly("build.gradle.kts")
-            assertThat(File(tempDir.toFile(), "gradle.properties")).doesNotExist()
+            // Then - should generate both files (user chose manual input, so respect their choice)
+            assertThat(generatedFiles).containsExactly("gradle.properties", "build.gradle.kts")
+            assertThat(File(tempDir.toFile(), "gradle.properties")).exists()
             
         } finally {
             // Cleanup - restore original content or delete

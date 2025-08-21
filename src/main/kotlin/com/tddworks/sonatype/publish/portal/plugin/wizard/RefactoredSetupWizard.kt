@@ -163,11 +163,15 @@ class RefactoredSetupWizard(
     }
     
     private fun createFinalConfiguration(): CentralPublisherConfig {
-        val smartDefaultManager = SmartDefaultManager(project)
-        val configWithDefaults = smartDefaultManager.applySmartDefaults(project, context.wizardConfig)
-        
-        // Use the wizard config values (which include manual input) rather than overriding with detected info
-        return configWithDefaults
+        // For manual input, prioritize the wizard config over defaults
+        if (!context.hasAutoDetectedCredentials || !context.hasAutoDetectedSigning) {
+            // User provided manual input - use wizard config directly to preserve their values
+            return context.wizardConfig
+        } else {
+            // All values were auto-detected - safe to apply smart defaults
+            val smartDefaultManager = SmartDefaultManager(project)
+            return smartDefaultManager.applySmartDefaults(project, context.wizardConfig)
+        }
     }
     
     private fun generateSummary(finalConfig: CentralPublisherConfig): String {
