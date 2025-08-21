@@ -138,13 +138,10 @@ class JvmPublicationProvider : PublicationProvider {
                 val publishing = project.extensions.getByType<PublishingExtension>()
                 sign(publishing.publications)
                 
-                // Debug: Check what signing properties are available
+                // Use in-memory PGP keys if available (following original pattern)
                 val signingKey = project.get("SIGNING_KEY")
                 val signingPassword = project.get("SIGNING_PASSWORD")
-                project.logger.info("Debug: SIGNING_KEY found: ${signingKey != "SIGNING_KEY not found"}")
-                project.logger.info("Debug: Config signing keyId: '${config.signing.keyId}'")
                 
-                // Use in-memory PGP keys if available (following original pattern)
                 if (signingKey != "SIGNING_KEY not found") {
                     project.logger.info("✅ Using in-memory GPG keys for signing")
                     useInMemoryPgpKeys(signingKey, signingPassword)
