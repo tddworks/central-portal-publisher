@@ -54,7 +54,7 @@ class CredentialsStepProcessor : WizardStepProcessor {
                         )
                     ).withAutoDetectedCredentials()
                 } else {
-                    updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors)
+                    updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors, userChoseManual = true)
                 }
             }
             
@@ -78,12 +78,12 @@ class CredentialsStepProcessor : WizardStepProcessor {
                         )
                     ).withAutoDetectedCredentials()
                 } else {
-                    updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors)
+                    updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors, userChoseManual = true)
                 }
             }
             
             else -> {
-                updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors)
+                updatedContext = handleManualCredentialsInput(context, promptSystem, validationErrors, userChoseManual = false)
             }
         }
         
@@ -98,12 +98,19 @@ class CredentialsStepProcessor : WizardStepProcessor {
     private fun handleManualCredentialsInput(
         context: WizardContext,
         promptSystem: PromptSystem,
-        validationErrors: MutableList<String>
+        validationErrors: MutableList<String>,
+        userChoseManual: Boolean = false
     ): WizardContext {
-        // Show configuration options
-        promptSystem.prompt("""
-            📋 CREDENTIALS SETUP
-            No auto-detected credentials or user chose manual input. Manual configuration needed.
+        // Show configuration options with appropriate message
+        val message = if (userChoseManual) {
+            "You chose to configure credentials manually."
+        } else {
+            "No credentials detected. Manual configuration needed."
+        }
+        
+        println("""
+            📋 CREDENTIALS SETUP - MANUAL INPUT
+            $message
             
             Configuration options (in order of preference):
             1. Environment variables (recommended for CI/CD):
@@ -116,8 +123,6 @@ class CredentialsStepProcessor : WizardStepProcessor {
             
             3. Local gradle.properties (this project only - not recommended):
                Will be generated for you but should not be committed to git
-            
-            Press Enter to continue...
         """.trimIndent())
         
         val username = promptSystem.prompt("Enter your Sonatype username:")
@@ -126,7 +131,7 @@ class CredentialsStepProcessor : WizardStepProcessor {
             return context
         } else {
             val password = promptSystem.prompt("Enter your Sonatype password/token:")
-            return context.updateConfig(
+            val updatedContext = context.updateConfig(
                 context.wizardConfig.copy(
                     credentials = context.wizardConfig.credentials.copy(
                         username = username,
@@ -134,6 +139,13 @@ class CredentialsStepProcessor : WizardStepProcessor {
                     )
                 )
             )
+            
+            // Only reset auto-detected flag if user actively chose manual input
+            return if (userChoseManual) {
+                updatedContext.withManualCredentials()
+            } else {
+                updatedContext
+            }
         }
     }
 }

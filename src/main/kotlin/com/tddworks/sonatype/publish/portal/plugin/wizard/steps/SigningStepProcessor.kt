@@ -54,7 +54,7 @@ class SigningStepProcessor : WizardStepProcessor {
                         )
                     ).withAutoDetectedSigning()
                 } else {
-                    updatedContext = handleManualSigningInput(context, promptSystem, validationErrors)
+                    updatedContext = handleManualSigningInput(context, promptSystem, validationErrors, userChoseManual = true)
                 }
             }
             
@@ -78,12 +78,12 @@ class SigningStepProcessor : WizardStepProcessor {
                         )
                     ).withAutoDetectedSigning()
                 } else {
-                    updatedContext = handleManualSigningInput(context, promptSystem, validationErrors)
+                    updatedContext = handleManualSigningInput(context, promptSystem, validationErrors, userChoseManual = true)
                 }
             }
             
             else -> {
-                updatedContext = handleManualSigningInput(context, promptSystem, validationErrors)
+                updatedContext = handleManualSigningInput(context, promptSystem, validationErrors, userChoseManual = false)
             }
         }
         
@@ -98,12 +98,19 @@ class SigningStepProcessor : WizardStepProcessor {
     private fun handleManualSigningInput(
         context: WizardContext,
         promptSystem: PromptSystem,
-        validationErrors: MutableList<String>
+        validationErrors: MutableList<String>,
+        userChoseManual: Boolean = false
     ): WizardContext {
-        // Show configuration options
-        promptSystem.prompt("""
-            🔐 SIGNING SETUP
-            No auto-detected signing credentials or user chose manual input. Manual configuration needed.
+        // Show configuration options with appropriate message
+        val message = if (userChoseManual) {
+            "You chose to configure signing credentials manually."
+        } else {
+            "No signing credentials detected. Manual configuration needed."
+        }
+        
+        println("""
+            🔐 SIGNING SETUP - MANUAL INPUT
+            $message
             
             Configuration options (in order of preference):
             1. Environment variables (recommended for CI/CD):
@@ -116,8 +123,6 @@ class SigningStepProcessor : WizardStepProcessor {
             
             3. Local gradle.properties (this project only - not recommended):
                Will be generated for you but should not be committed to git
-            
-            Press Enter to continue...
         """.trimIndent())
         
         val keyId = promptSystem.prompt("Enter your GPG signing key (private key or key ID):")
@@ -126,7 +131,7 @@ class SigningStepProcessor : WizardStepProcessor {
             return context
         } else {
             val password = promptSystem.prompt("Enter your GPG key password:")
-            return context.updateConfig(
+            val updatedContext = context.updateConfig(
                 context.wizardConfig.copy(
                     signing = context.wizardConfig.signing.copy(
                         keyId = keyId,
@@ -134,6 +139,13 @@ class SigningStepProcessor : WizardStepProcessor {
                     )
                 )
             )
+            
+            // Only reset auto-detected flag if user actively chose manual input
+            return if (userChoseManual) {
+                updatedContext.withManualSigning()
+            } else {
+                updatedContext
+            }
         }
     }
     

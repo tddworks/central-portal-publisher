@@ -76,7 +76,7 @@ class CredentialsStepProcessorTest {
         
         // Mock user saying no to auto-detected, then providing manual input
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
-        `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "manual-user", "manual-password")
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
 
         // When
         val result = processor.process(context, mockPromptSystem)
@@ -91,7 +91,7 @@ class CredentialsStepProcessorTest {
     @Test
     fun `should prompt for manual input when no auto-detection found`() {
         // Given - no environment variables
-        `when`(mockPromptSystem.prompt(anyString())).thenReturn("", "manual-user", "manual-password")
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
 
         // When
         val result = processor.process(context, mockPromptSystem)

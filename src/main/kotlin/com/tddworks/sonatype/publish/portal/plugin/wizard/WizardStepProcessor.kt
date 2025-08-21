@@ -54,4 +54,18 @@ data class WizardContext(
     fun withAutoDetectedSigning(): WizardContext {
         return copy(hasAutoDetectedSigning = true)
     }
+    
+    /**
+     * Reset auto-detected credentials flag (when user chooses manual input)
+     */
+    fun withManualCredentials(): WizardContext {
+        return copy(hasAutoDetectedCredentials = false)
+    }
+    
+    /**
+     * Reset auto-detected signing flag (when user chooses manual input)  
+     */
+    fun withManualSigning(): WizardContext {
+        return copy(hasAutoDetectedSigning = false)
+    }
 }
