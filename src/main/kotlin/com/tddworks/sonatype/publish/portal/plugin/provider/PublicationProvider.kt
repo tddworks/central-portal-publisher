@@ -4,24 +4,12 @@ import com.tddworks.sonatype.publish.portal.plugin.configureIfExists
 import com.tddworks.sonatype.publish.portal.plugin.configureMavenPublication
 import com.tddworks.sonatype.publish.portal.plugin.get
 import com.tddworks.sonatype.publish.portal.plugin.publishingExtension
-import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
-import kotlin.jvm.java
-
-internal inline val Project.gradlePublishing: PublishingExtension
-    get() = extensions.getByType(PublishingExtension::class.java)
-
-internal fun Project.mavenPublications(action: Action<MavenPublication>) {
-    gradlePublishing.publications.withType(MavenPublication::class.java).configureEach(action)
-}
 
 interface PublicationProvider {
     fun preparePublication(project: Project)
@@ -33,15 +21,6 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
         project.plugins.withId("org.jetbrains.kotlin.multiplatform") {
             project.configureMavenPublication()
         }
-
-        check(project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
-            "Calling configure(KotlinMultiplatform(...)) requires the org.jetbrains.kotlin.multiplatform plugin to be applied"
-        }
-
-        project.extensions.configure(KotlinMultiplatformExtension::class.java) {
-            withSourcesJar(true)
-        }
-
     }
 }
 
