@@ -1,10 +1,17 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
+import com.tddworks.sonatype.publish.portal.api.Authentication
+import com.tddworks.sonatype.publish.portal.api.DeploymentBundle
+import com.tddworks.sonatype.publish.portal.api.PublicationType
+import com.tddworks.sonatype.publish.portal.api.SonatypePortalPublisher
 import com.tddworks.sonatype.publish.portal.plugin.dsl.CentralPublisherExtension
 import com.tddworks.sonatype.publish.portal.plugin.publication.PublicationProviderRegistry
 import com.tddworks.sonatype.publish.portal.plugin.validation.ValidationEngine
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /**
  * Modern Central Portal Publisher plugin with simplified DSL and auto-detection.
@@ -105,23 +112,24 @@ class CentralPublisherPlugin : Plugin<Project> {
             group = PLUGIN_GROUP
             description = "Publishes all artifacts to Maven Central"
             
+            // Make sure bundle is created first
+            dependsOn(TASK_BUNDLE_ARTIFACTS)
+            
             doLast {
                 logger.quiet("🚀 Publishing to Maven Central...")
                 logger.quiet("Configuration: ${config.credentials.username}@${config.projectInfo.name}")
                 
-                // TODO: Implement actual publishing logic
-                // For now, just show what would be published
-                logger.quiet("📦 Would publish:")
-                logger.quiet("  - Project: ${config.projectInfo.name}")
-                logger.quiet("  - Description: ${config.projectInfo.description}")
-                logger.quiet("  - URL: ${config.projectInfo.url}")
-                logger.quiet("  - Auto-publish: ${config.publishing.autoPublish}")
-                logger.quiet("  - Dry run: ${config.publishing.dryRun}")
-                
                 if (config.publishing.dryRun) {
+                    logger.quiet("📦 Would publish:")
+                    logger.quiet("  - Project: ${config.projectInfo.name}")
+                    logger.quiet("  - Description: ${config.projectInfo.description}")
+                    logger.quiet("  - URL: ${config.projectInfo.url}")
+                    logger.quiet("  - Auto-publish: ${config.publishing.autoPublish}")
                     logger.lifecycle("🧪 DRY RUN MODE - No actual publishing performed")
                 } else {
-                    logger.lifecycle("✅ Publishing completed successfully!")
+                    // Actual publishing logic
+                    val result = publishToSonatypePortal(project, config)
+                    logger.lifecycle("✅ Publishing completed: $result")
                 }
             }
         }
@@ -150,13 +158,15 @@ class CentralPublisherPlugin : Plugin<Project> {
             group = PLUGIN_GROUP
             description = "Creates deployment bundle for Maven Central"
             
+            // Make sure publications are built first
+            dependsOn("publishToMavenLocal")
+            
             doLast {
                 logger.quiet("📦 Creating deployment bundle...")
                 logger.quiet("  - Signing enabled: ${config.signing.keyId.isNotBlank()}")
-                logger.quiet("  - Bundle location: ${project.layout.buildDirectory.dir("publications")}")
                 
-                // TODO: Implement actual bundling logic
-                logger.lifecycle("✅ Bundle created successfully!")
+                val bundleFile = createDeploymentBundle(project, config)
+                logger.lifecycle("✅ Bundle created: ${bundleFile.absolutePath}")
             }
         }
         
@@ -191,5 +201,75 @@ class CentralPublisherPlugin : Plugin<Project> {
                 }
             }
         }
+    }
+    
+    /**
+     * Creates a deployment bundle ZIP file containing all published artifacts.
+     */
+    private fun createDeploymentBundle(project: Project, config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig): File {
+        val bundleDir = project.layout.buildDirectory.dir("central-portal").get().asFile
+        bundleDir.mkdirs()
+        
+        val bundleFile = File(bundleDir, "${project.name}-${project.version}-bundle.zip")
+        
+        // Get local Maven repository path where artifacts were published
+        val localRepo = File(System.getProperty("user.home"), ".m2/repository")
+        val groupPath = project.group.toString().replace('.', '/')
+        val artifactDir = File(localRepo, "$groupPath/${project.name}/${project.version}")
+        
+        if (!artifactDir.exists()) {
+            throw IllegalStateException("Published artifacts not found at: ${artifactDir.absolutePath}. Run 'publishToMavenLocal' first.")
+        }
+        
+        // Create ZIP bundle with all artifacts
+        ZipOutputStream(bundleFile.outputStream()).use { zip ->
+            artifactDir.listFiles()?.forEach { file ->
+                if (file.isFile) {
+                    zip.putNextEntry(ZipEntry(file.name))
+                    file.inputStream().use { input ->
+                        input.copyTo(zip)
+                    }
+                    zip.closeEntry()
+                    project.logger.quiet("  ✓ Added ${file.name} to bundle")
+                }
+            }
+        }
+        
+        return bundleFile
+    }
+    
+    /**
+     * Publishes the deployment bundle to Sonatype Central Portal.
+     */
+    private fun publishToSonatypePortal(project: Project, config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig): String {
+        // Create deployment bundle
+        val bundleFile = createDeploymentBundle(project, config)
+        
+        // Create authentication
+        val auth = Authentication(
+            username = config.credentials.username.ifBlank { null },
+            password = config.credentials.password.ifBlank { null }
+        )
+        
+        if (auth.username.isNullOrBlank() || auth.password.isNullOrBlank()) {
+            throw IllegalStateException("Username and password are required for publishing. Configure them in gradle.properties or environment variables.")
+        }
+        
+        // Determine publication type based on auto-publish setting
+        val publicationType = if (config.publishing.autoPublish) {
+            PublicationType.AUTOMATIC
+        } else {
+            PublicationType.USER_MANAGED
+        }
+        
+        // Create deployment bundle
+        val deploymentBundle = DeploymentBundle(
+            file = bundleFile,
+            publicationType = publicationType
+        )
+        
+        // Publish to Sonatype
+        val publisher = SonatypePortalPublisher.default()
+        return publisher.deploy(auth, deploymentBundle)
     }
 }

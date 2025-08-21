@@ -47,11 +47,11 @@ class JvmPublicationProvider : PublicationProvider {
     
     override fun configurePublications(project: Project, config: CentralPublisherConfig) {
         when {
-            project.plugins.hasPlugin("java") -> {
-                configureJavaProject(project, config)
-            }
             project.plugins.hasPlugin("org.jetbrains.kotlin.jvm") -> {
                 configureKotlinJvmProject(project, config)
+            }
+            project.plugins.hasPlugin("java") -> {
+                configureJavaProject(project, config)
             }
             else -> {
                 // No JVM plugins found, skip configuration
