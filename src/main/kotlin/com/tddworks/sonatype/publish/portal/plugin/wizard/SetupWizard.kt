@@ -72,6 +72,9 @@ class SetupWizard(
         val finalConfig = createFinalConfiguration()
         _isComplete = true
         
+        // Actually generate the files
+        generateFiles()
+        
         return WizardCompletionResult(
             isComplete = true,
             finalConfiguration = finalConfig,
@@ -94,38 +97,144 @@ class SetupWizard(
                 // No validation needed
             }
             WizardStep.PROJECT_INFO -> {
-                // Handle project info step
-                val confirmed = promptSystem.confirm("Use auto-detected project information?")
+                // Show what was detected first
+                promptSystem.prompt("""
+                    Auto-detected project information:
+                    • Project: ${detectedInfo?.projectName ?: "not detected"}
+                    • URL: ${detectedInfo?.projectUrl ?: "not detected"}
+                    • Developers: ${detectedInfo?.developers?.map { "${it.name} <${it.email}>" }?.joinToString() ?: "not detected"}
+                    
+                    Press Enter to continue...
+                """.trimIndent())
+                
+                val confirmed = promptSystem.confirm("Use this auto-detected project information?")
                 if (!confirmed) {
-                    // Could prompt for manual input here
+                    // Could prompt for manual input here in future
+                    promptSystem.prompt("Manual project setup not yet implemented. Using auto-detected values...")
                 }
             }
             WizardStep.CREDENTIALS -> {
-                val username = promptSystem.prompt("Enter username:")
-                if (username.isEmpty()) {
-                    validationErrors.add("Username is required")
-                } else {
-                    // Update wizard config with username
-                    wizardConfig = wizardConfig.copy(
-                        credentials = wizardConfig.credentials.copy(username = username)
-                    )
+                // Check for existing environment variables
+                val envUsername = System.getenv("SONATYPE_USERNAME")
+                val envPassword = System.getenv("SONATYPE_PASSWORD")
+                val hasEnvCredentials = !envUsername.isNullOrBlank() && !envPassword.isNullOrBlank()
+                
+                if (hasEnvCredentials) {
+                    promptSystem.prompt("""
+                        📋 CREDENTIALS SETUP - AUTO-DETECTED!
+                        ✅ Found existing environment variables:
+                        • SONATYPE_USERNAME: ${envUsername}
+                        • SONATYPE_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
+                        
+                        Using these existing credentials.
+                        
+                        Press Enter to continue...
+                    """.trimIndent())
                     
-                    val password = promptSystem.prompt("Enter password:")
+                    // Use detected credentials
                     wizardConfig = wizardConfig.copy(
-                        credentials = wizardConfig.credentials.copy(password = password)
+                        credentials = wizardConfig.credentials.copy(
+                            username = envUsername!!,
+                            password = envPassword
+                        )
                     )
+                } else {
+                    // Show configuration options
+                    promptSystem.prompt("""
+                        📋 CREDENTIALS SETUP
+                        No environment variables detected. Manual configuration needed.
+                        
+                        Configuration options (in order of preference):
+                        1. Environment variables (recommended for CI/CD):
+                           export SONATYPE_USERNAME=your-username
+                           export SONATYPE_PASSWORD=your-password
+                        
+                        2. Global gradle.properties (~/.gradle/gradle.properties):
+                           SONATYPE_USERNAME=your-username
+                           SONATYPE_PASSWORD=your-password
+                        
+                        3. Local gradle.properties (this project only - not recommended):
+                           Will be generated for you but should not be committed to git
+                        
+                        Press Enter to continue...
+                    """.trimIndent())
+                    
+                    val username = promptSystem.prompt("Enter your Sonatype username:")
+                    if (username.isEmpty()) {
+                        validationErrors.add("Username is required")
+                    } else {
+                        // Update wizard config with username
+                        wizardConfig = wizardConfig.copy(
+                            credentials = wizardConfig.credentials.copy(username = username)
+                        )
+                        
+                        val password = promptSystem.prompt("Enter your Sonatype password/token:")
+                        wizardConfig = wizardConfig.copy(
+                            credentials = wizardConfig.credentials.copy(password = password)
+                        )
+                    }
                 }
             }
             WizardStep.SIGNING -> {
-                val keyId = promptSystem.prompt("Enter GPG Key ID:")
-                wizardConfig = wizardConfig.copy(
-                    signing = wizardConfig.signing.copy(keyId = keyId)
-                )
+                // Check for existing environment variables
+                val envSigningKey = System.getenv("SIGNING_KEY")
+                val envSigningPassword = System.getenv("SIGNING_PASSWORD")
+                val hasEnvSigning = !envSigningKey.isNullOrBlank() && !envSigningPassword.isNullOrBlank()
                 
-                val gpgPassword = promptSystem.prompt("Enter GPG Password:")
-                wizardConfig = wizardConfig.copy(
-                    signing = wizardConfig.signing.copy(password = gpgPassword)
-                )
+                if (hasEnvSigning) {
+                    promptSystem.prompt("""
+                        🔐 GPG SIGNING SETUP - AUTO-DETECTED!
+                        ✅ Found existing environment variables:
+                        • SIGNING_KEY: ${if (envSigningKey!!.contains("BEGIN PGP")) "PGP private key found" else envSigningKey.take(20) + "..."}
+                        • SIGNING_PASSWORD: ${"*".repeat(envSigningPassword!!.length.coerceAtMost(8))}
+                        
+                        Using these existing signing credentials.
+                        
+                        Press Enter to continue...
+                    """.trimIndent())
+                    
+                    // Use detected signing config - extract key ID if possible
+                    val keyId = if (envSigningKey.contains("BEGIN PGP")) "detected-from-env" else envSigningKey
+                    wizardConfig = wizardConfig.copy(
+                        signing = wizardConfig.signing.copy(
+                            keyId = keyId,
+                            password = envSigningPassword
+                        )
+                    )
+                } else {
+                    // Show configuration options
+                    promptSystem.prompt("""
+                        🔐 GPG SIGNING SETUP
+                        Maven Central requires all artifacts to be cryptographically signed.
+                        No environment variables detected. Manual configuration needed.
+                        
+                        Configuration options (in order of preference):
+                        1. Environment variables (recommended for CI/CD):
+                           export SIGNING_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----..."
+                           export SIGNING_PASSWORD=your-gpg-password
+                        
+                        2. Global gradle.properties (~/.gradle/gradle.properties):
+                           SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----...
+                           SIGNING_PASSWORD=your-gpg-password
+                        
+                        3. Local gradle.properties (this project only - not recommended):
+                           Will be generated for you but should not be committed to git
+                        
+                        Note: You can generate GPG keys with: gpg --gen-key
+                        
+                        Press Enter to continue...
+                    """.trimIndent())
+                    
+                    val keyId = promptSystem.prompt("Enter your GPG Key ID (e.g. 1234567890ABCDEF):")
+                    wizardConfig = wizardConfig.copy(
+                        signing = wizardConfig.signing.copy(keyId = keyId)
+                    )
+                    
+                    val gpgPassword = promptSystem.prompt("Enter your GPG key password:")
+                    wizardConfig = wizardConfig.copy(
+                        signing = wizardConfig.signing.copy(password = gpgPassword)
+                    )
+                }
             }
             WizardStep.REVIEW -> {
                 // Review step - confirm configuration
@@ -257,8 +366,12 @@ class SetupWizard(
             appendLine()
             appendLine("Next steps:")
             appendLine("1. Review generated build.gradle.kts")
-            appendLine("2. Update gradle.properties with your credentials")
-            appendLine("3. Run './gradlew centralPublish' to publish")
+            appendLine("2. Configure credentials (recommended: environment variables)")
+            appendLine("   - Environment: export SONATYPE_USERNAME=... SONATYPE_PASSWORD=...")
+            appendLine("   - Global gradle.properties: ~/.gradle/gradle.properties")
+            appendLine("   - Local gradle.properties: update generated file (not recommended)")
+            appendLine("3. Configure GPG signing (export SIGNING_KEY=... SIGNING_PASSWORD=...)")
+            appendLine("4. Run './gradlew publishToCentral' to publish")
         }
     }
     
@@ -266,12 +379,37 @@ class SetupWizard(
         val buildFile = File(project.projectDir, "build.gradle.kts")
         val content = buildString {
             appendLine("plugins {")
-            appendLine("    id(\"com.tddworks.central-publisher\") version \"<latest-version>\"")
+            appendLine("    id(\"com.tddworks.central-publisher\")")
             appendLine("}")
             appendLine()
             appendLine("centralPublisher {")
-            appendLine("    // Configuration will be loaded from gradle.properties")
-            appendLine("    // or can be configured here using DSL")
+            appendLine("    credentials {")
+            appendLine("        username = project.findProperty(\"SONATYPE_USERNAME\")?.toString() ?: \"\"")
+            appendLine("        password = project.findProperty(\"SONATYPE_PASSWORD\")?.toString() ?: \"\"")
+            appendLine("    }")
+            appendLine("    ")
+            appendLine("    projectInfo {")
+            appendLine("        name = \"${project.name}\"")
+            appendLine("        description = \"Description of your project\"")
+            appendLine("        url = \"https://github.com/yourorg/${project.name}\"")
+            appendLine("        ")
+            appendLine("        license {")
+            appendLine("            name = \"Apache License 2.0\"")
+            appendLine("            url = \"https://www.apache.org/licenses/LICENSE-2.0.txt\"")
+            appendLine("        }")
+            appendLine("        ")
+            appendLine("        developer {")
+            appendLine("            id = \"yourid\"")
+            appendLine("            name = \"Your Name\"")
+            appendLine("            email = \"your.email@example.com\"")
+            appendLine("        }")
+            appendLine("        ")
+            appendLine("        scm {")
+            appendLine("            url = \"https://github.com/yourorg/${project.name}\"")
+            appendLine("            connection = \"scm:git:git://github.com/yourorg/${project.name}.git\"")
+            appendLine("            developerConnection = \"scm:git:ssh://github.com/yourorg/${project.name}.git\"")
+            appendLine("        }")
+            appendLine("    }")
             appendLine("}")
         }
         buildFile.writeText(content)
@@ -283,13 +421,23 @@ class SetupWizard(
         
         val content = buildString {
             appendLine("# Central Publisher Configuration")
-            appendLine("central.username=your-username")
-            appendLine("central.password=your-password")
+            appendLine("# WARNING: This file should NOT be committed to git!")
+            appendLine("# For better security, consider using:")
+            appendLine("# 1. Environment variables: export SONATYPE_USERNAME=...")
+            appendLine("# 2. Global gradle.properties: ~/.gradle/gradle.properties")
+            appendLine()
+            appendLine("SONATYPE_USERNAME=your-username")
+            appendLine("SONATYPE_PASSWORD=your-password")
             appendLine()
             appendLine("# Signing Configuration")
-            appendLine("signing.keyId=your-key-id")
-            appendLine("signing.password=your-gpg-password")
-            appendLine("signing.secretKeyRingFile=${System.getProperty("user.home")}/.gnupg/secring.gpg")
+            appendLine("# For better security, consider using environment variables:")
+            appendLine("# export SIGNING_KEY=\"-----BEGIN PGP PRIVATE KEY BLOCK-----...\"")
+            appendLine("# export SIGNING_PASSWORD=your-gpg-password")
+            appendLine()
+            appendLine("SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----")
+            appendLine("# ... your full PGP private key here ...")
+            appendLine("# -----END PGP PRIVATE KEY BLOCK-----")
+            appendLine("SIGNING_PASSWORD=your-gpg-password")
             
             if (existingContent.isNotEmpty()) {
                 appendLine()
