@@ -83,54 +83,108 @@ class DefaultWizardFileGenerator : WizardFileGenerator {
         val developerName = firstDeveloper?.name ?: "Your Name"
         val developerEmail = firstDeveloper?.email ?: "your.email@example.com"
         
-        val content = buildString {
-            appendLine("plugins {")
-            appendLine("    kotlin(\"jvm\") version \"1.9.23\"")
-            appendLine("    id(\"com.tddworks.sonatype-portal-publisher\") version \"1.0.0\"")
-            appendLine("}")
-            appendLine()
-            appendLine("group = \"com.example\"") // TODO: Add groupId to config model
-            appendLine("version = \"1.0.0\"") // TODO: Add version to config model
-            appendLine("description = \"${finalConfig.projectInfo.description}\"")
-            appendLine()
-            appendLine("repositories {")
-            appendLine("    mavenCentral()")
-            appendLine("}")
-            appendLine()
-            appendLine("dependencies {")
-            appendLine("    // Add your dependencies here")
-            appendLine("}")
-            appendLine()
-            appendLine("sonatypePortalPublisher {")
+        // Generate the centralPublisher block (using original format)
+        val centralPublisherBlock = buildString {
+            appendLine("centralPublisher {")
+            appendLine("    credentials {")
+            appendLine("        username = project.findProperty(\"SONATYPE_USERNAME\")?.toString() ?: \"\"")
+            appendLine("        password = project.findProperty(\"SONATYPE_PASSWORD\")?.toString() ?: \"\"")
+            appendLine("    }")
+            appendLine("    ")
             appendLine("    projectInfo {")
-            appendLine("        name.set(\"${finalConfig.projectInfo.name}\")")
-            appendLine("        description.set(\"${finalConfig.projectInfo.description}\")")
-            appendLine("        url.set(\"$projectUrl\")")
+            appendLine("        name = \"${detectedInfo?.projectName ?: context.project.name}\"")
+            appendLine("        description = \"Description of your project\"")
+            appendLine("        url = \"$projectUrl\"")
+            appendLine("        ")
             appendLine("        license {")
-            appendLine("            name.set(\"${finalConfig.projectInfo.license.name}\")")
-            appendLine("            url.set(\"${finalConfig.projectInfo.license.url}\")")
+            appendLine("            name = \"Apache License 2.0\"")
+            appendLine("            url = \"https://www.apache.org/licenses/LICENSE-2.0.txt\"")
             appendLine("        }")
+            appendLine("        ")
             appendLine("        developer {")
-            appendLine("            id.set(\"$developerId\")")
-            appendLine("            name.set(\"$developerName\")")
-            appendLine("            email.set(\"$developerEmail\")")
+            appendLine("            id = \"$developerId\"")
+            appendLine("            name = \"$developerName\"")
+            appendLine("            email = \"$developerEmail\"")
             appendLine("        }")
+            appendLine("        ")
             appendLine("        scm {")
-            appendLine("            connection.set(\"scm:git:git://github.com/yourorg/${context.project.name}.git\")")
-            appendLine("            developerConnection.set(\"scm:git:ssh://github.com:yourorg/${context.project.name}.git\")")
-            appendLine("            url.set(\"$projectUrl\")")
+            appendLine("            url = \"$projectUrl\"")
+            appendLine("            connection = \"scm:git:git://${projectUrl.removePrefix("https://")}.git\"")
+            appendLine("            developerConnection = \"scm:git:ssh://${projectUrl.removePrefix("https://")}.git\"")
             appendLine("        }")
-            appendLine("    }")
-            appendLine("    publishing {")
-            appendLine("        autoPublish.set(${finalConfig.publishing.autoPublish})")
-            appendLine("        aggregation.set(${finalConfig.publishing.aggregation})")
             appendLine("    }")
             appendLine("}")
-            appendLine()
-            appendLine("// Additional build configuration can be added here")
         }
         
+        if (buildFile.exists()) {
+            // Update existing build.gradle.kts without destroying user's content
+            updateExistingBuildFile(buildFile, centralPublisherBlock)
+        } else {
+            // Create new minimal build.gradle.kts
+            createNewBuildFile(buildFile, centralPublisherBlock)
+        }
+    }
+    
+    private fun updateExistingBuildFile(buildFile: File, centralPublisherBlock: String) {
+        val existingContent = buildFile.readText()
+        
+        // Check if central-publisher plugin is already in plugins block
+        val hasPlugin = existingContent.contains("id(\"com.tddworks.central-publisher\")")
+        
+        val updatedContent = if (existingContent.contains("centralPublisher {")) {
+            // Replace existing centralPublisher block
+            replaceCentralPublisherBlock(existingContent, centralPublisherBlock)
+        } else {
+            // Add centralPublisher block at the end
+            if (hasPlugin) {
+                // Plugin exists, just add the block
+                "$existingContent\n\n$centralPublisherBlock"
+            } else {
+                // Need to add both plugin and block
+                addPluginAndBlock(existingContent, centralPublisherBlock)
+            }
+        }
+        
+        buildFile.writeText(updatedContent)
+    }
+    
+    private fun createNewBuildFile(buildFile: File, centralPublisherBlock: String) {
+        val content = buildString {
+            appendLine("plugins {")
+            appendLine("    id(\"com.tddworks.central-publisher\")")
+            appendLine("}")
+            appendLine()
+            appendLine(centralPublisherBlock)
+        }
         buildFile.writeText(content)
+    }
+    
+    private fun replaceCentralPublisherBlock(content: String, newBlock: String): String {
+        // Find the centralPublisher block and replace it
+        val regex = Regex(
+            "centralPublisher\\s*\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}",
+            RegexOption.DOT_MATCHES_ALL
+        )
+        return regex.replace(content, newBlock.trim())
+    }
+    
+    private fun addPluginAndBlock(content: String, centralPublisherBlock: String): String {
+        // Try to add plugin to existing plugins block
+        val pluginsRegex = Regex("plugins\\s*\\{([^}]*)\\}")
+        val pluginsMatch = pluginsRegex.find(content)
+        
+        return if (pluginsMatch != null) {
+            // Add to existing plugins block
+            val pluginsContent = pluginsMatch.groupValues[1]
+            val newPluginsContent = "$pluginsContent\n    id(\"com.tddworks.central-publisher\")"
+            content.replace(
+                pluginsMatch.value,
+                "plugins {\n$newPluginsContent\n}"
+            ) + "\n\n$centralPublisherBlock"
+        } else {
+            // No plugins block exists, add one at the beginning
+            "plugins {\n    id(\"com.tddworks.central-publisher\")\n}\n\n$content\n\n$centralPublisherBlock"
+        }
     }
 }
 
