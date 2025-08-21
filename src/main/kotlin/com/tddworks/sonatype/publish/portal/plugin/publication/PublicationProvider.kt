@@ -60,8 +60,12 @@ class JvmPublicationProvider : PublicationProvider {
             }
         }
         
-        // Configure signing if signing information is provided
-        if (config.signing.keyId.isNotBlank()) {
+        // Configure signing if signing information is provided (check multiple sources)
+        val hasSigningConfig = config.signing.keyId.isNotBlank() || 
+                               project.get("SIGNING_KEY") != "SIGNING_KEY not found" ||
+                               project.findProperty("signing.keyId") != null
+        
+        if (hasSigningConfig) {
             configureSigning(project, config)
         }
     }
@@ -134,20 +138,22 @@ class JvmPublicationProvider : PublicationProvider {
                 val publishing = project.extensions.getByType<PublishingExtension>()
                 sign(publishing.publications)
                 
+                // Debug: Check what signing properties are available
+                val signingKey = project.get("SIGNING_KEY")
+                val signingPassword = project.get("SIGNING_PASSWORD")
+                project.logger.info("Debug: SIGNING_KEY found: ${signingKey != "SIGNING_KEY not found"}")
+                project.logger.info("Debug: Config signing keyId: '${config.signing.keyId}'")
+                
                 // Use in-memory PGP keys if available (following original pattern)
-                if (project.get("SIGNING_KEY") != "SIGNING_KEY not found") {
-                    useInMemoryPgpKeys(
-                        project.get("SIGNING_KEY"),
-                        project.get("SIGNING_PASSWORD")
-                    )
+                if (signingKey != "SIGNING_KEY not found") {
+                    project.logger.info("✅ Using in-memory GPG keys for signing")
+                    useInMemoryPgpKeys(signingKey, signingPassword)
                 } else if (config.signing.keyId.isNotBlank()) {
                     // Fall back to file-based signing if configured
-                    // Note: In production, this would be configured via gradle.properties
-                    // or environment variables for security
-                    project.logger.info("Using file-based signing with keyId: ${config.signing.keyId}")
+                    project.logger.info("✅ Using file-based signing with keyId: ${config.signing.keyId}")
                 } else {
                     project.logger.warn("⚠️ No signing configuration found. Artifacts will not be signed.")
-                    project.logger.warn("   Set SIGNING_KEY and SIGNING_PASSWORD environment variables or configure signing in gradle.properties")
+                    project.logger.warn("   Set SIGNING_KEY and SIGNING_PASSWORD in gradle.properties or environment variables")
                 }
             }
         }
