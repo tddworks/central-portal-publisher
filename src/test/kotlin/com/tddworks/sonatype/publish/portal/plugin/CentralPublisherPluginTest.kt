@@ -162,7 +162,7 @@ class CentralPublisherPluginTest {
         
         // Tasks should be easy to discover
         val centralTasks = project.tasks.matching { it.group == "Central Publishing" }
-        assertThat(centralTasks).hasSize(4)
+        assertThat(centralTasks).hasSize(5) // publishToCentral, bundleArtifacts, validatePublishing, setupPublishing, publishToLocalRepo
     }
     
     @Test
@@ -193,5 +193,140 @@ class CentralPublisherPluginTest {
         
         // May have warnings but should not crash
         assertThat(result).isNotNull()
+    }
+    
+    @Test
+    fun `should configure local repository for bundle creation`() {
+        // Given
+        project.pluginManager.apply("com.tddworks.central-publisher")
+        
+        // When - Configure minimal extension to trigger afterEvaluate
+        project.extensions.configure(CentralPublisherExtension::class.java) {
+            credentials {
+                username = "test-user"
+                password = "test-token"
+            }
+        }
+        
+        // Manually trigger the plugin configuration that would happen in afterEvaluate
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+        val plugin = CentralPublisherPlugin()
+        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
+        configureMethod.isAccessible = true
+        configureMethod.invoke(plugin, project, extension)
+        
+        // Then - Should have configured publishing extension with local repository
+        val publishing = project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java)
+        assertThat(publishing.repositories).isNotEmpty()
+        
+        val localRepo = publishing.repositories.findByName("LocalRepo")
+        assertThat(localRepo).isNotNull()
+        
+        // Should have publishToLocalRepo task
+        val publishTask = project.tasks.findByName("publishToLocalRepo")
+        assertThat(publishTask).isNotNull()
+        assertThat(publishTask!!.group).isEqualTo("Central Publishing")
+    }
+    
+    @Test
+    fun `should create bundleArtifacts task with correct dependencies`() {
+        // Given
+        project.pluginManager.apply("com.tddworks.central-publisher")
+        
+        // When - Configure minimal extension to trigger afterEvaluate
+        project.extensions.configure(CentralPublisherExtension::class.java) {
+            credentials {
+                username = "test-user"
+                password = "test-token"
+            }
+        }
+        
+        // Manually trigger the plugin configuration that would happen in afterEvaluate
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+        val plugin = CentralPublisherPlugin()
+        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
+        configureMethod.isAccessible = true
+        configureMethod.invoke(plugin, project, extension)
+        
+        // Then - bundleArtifacts should depend on publishToLocalRepo
+        val bundleTask = project.tasks.findByName("bundleArtifacts")
+        assertThat(bundleTask).isNotNull()
+        
+        val dependencies = bundleTask!!.dependsOn
+        assertThat(dependencies).contains("publishToLocalRepo")
+    }
+    
+    @Test
+    fun `should apply maven-publish plugin and configure publications automatically`() {
+        // Given - Apply java plugin which is available in test environment
+        project.pluginManager.apply("java")
+        project.pluginManager.apply("com.tddworks.central-publisher")
+        
+        // When - Configure minimal extension to trigger afterEvaluate
+        project.extensions.configure(CentralPublisherExtension::class.java) {
+            credentials {
+                username = "test-user"
+                password = "test-token"
+            }
+        }
+        
+        // Manually trigger the plugin configuration that would happen in afterEvaluate
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+        val plugin = CentralPublisherPlugin()
+        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
+        configureMethod.isAccessible = true
+        configureMethod.invoke(plugin, project, extension)
+        
+        // Then - maven-publish plugin should be applied
+        assertThat(project.plugins.hasPlugin("maven-publish")).isTrue()
+        
+        // Publications should be auto-configured
+        val publishing = project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java)
+        assertThat(publishing.publications).isNotEmpty()
+    }
+    
+    @Test
+    fun `should handle dry run mode properly`() {
+        // Given
+        project.pluginManager.apply("com.tddworks.central-publisher")
+        
+        // When - Configure with dry run enabled
+        project.extensions.configure(CentralPublisherExtension::class.java) {
+            credentials {
+                username = "test-user"
+                password = "test-token"
+            }
+            publishing {
+                dryRun = true
+            }
+        }
+        
+        // Then - Should build configuration with dry run enabled
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+        val config = extension.build()
+        
+        assertThat(config.publishing.dryRun).isTrue()
+    }
+    
+    @Test
+    fun `should handle namespace validation for bundle creation`() {
+        // Given
+        project.group = "com.example"  // Invalid namespace for Maven Central
+        project.pluginManager.apply("com.tddworks.central-publisher")
+        
+        // When - Configure minimal extension to trigger afterEvaluate
+        project.extensions.configure(CentralPublisherExtension::class.java) {
+            credentials {
+                username = "test-user"
+                password = "test-token"
+            }
+        }
+        
+        // Then - Should not crash with example namespace (just warn)
+        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
+        val config = extension.build()
+        
+        assertThat(config.projectInfo.name).isNotEmpty()
+        // The actual warning would be logged during bundle creation
     }
 }
