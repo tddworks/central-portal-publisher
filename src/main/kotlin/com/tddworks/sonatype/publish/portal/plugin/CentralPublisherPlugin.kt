@@ -76,21 +76,27 @@ class CentralPublisherPlugin : Plugin<Project> {
         // Get the final configuration with all sources merged
         val config = extension.build()
         
-        // Validate configuration and show actionable errors
-        val validationEngine = ValidationEngine()
-        val validationResult = validationEngine.validate(config)
-        
-        if (!validationResult.isValid) {
-            logger.error("Configuration validation failed:")
-            logger.error(validationResult.formatReport())
+        // Only validate configuration if user explicitly configured the plugin
+        // If no explicit configuration, defer validation to setup wizard
+        if (extension.hasExplicitConfiguration()) {
+            val validationEngine = ValidationEngine()
+            val validationResult = validationEngine.validate(config)
             
-            // Don't fail the build during configuration, but warn user
-            logger.warn("Publishing tasks may fail due to configuration errors above")
-        } else if (validationResult.warningCount > 0) {
-            logger.warn("Configuration warnings:")
-            logger.warn(validationResult.formatReport())
+            if (!validationResult.isValid) {
+                logger.error("Configuration validation failed:")
+                logger.error(validationResult.formatReport())
+                
+                // Don't fail the build during configuration, but warn user
+                logger.warn("Publishing tasks may fail due to configuration errors above")
+            } else if (validationResult.warningCount > 0) {
+                logger.warn("Configuration warnings:")
+                logger.warn(validationResult.formatReport())
+            } else {
+                logger.quiet("✅ Central Publisher configuration validated successfully")
+            }
         } else {
-            logger.quiet("✅ Central Publisher configuration validated successfully")
+            // No explicit configuration - let setup wizard handle it
+            logger.quiet("🔧 No explicit configuration detected - use './gradlew setupPublishing' to configure interactively")
         }
         
         // Auto-configure publications

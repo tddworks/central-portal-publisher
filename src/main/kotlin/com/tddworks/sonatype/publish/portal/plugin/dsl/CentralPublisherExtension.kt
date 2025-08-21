@@ -87,6 +87,7 @@ annotation class CentralPublisherDsl
 open class CentralPublisherExtension(private val project: Project) {
     
     private val configBuilder = CentralPublisherConfigBuilder()
+    private var hasExplicitConfigurationFlag = false
     
     /**
      * Configures credentials for Maven Central publishing.
@@ -104,6 +105,7 @@ open class CentralPublisherExtension(private val project: Project) {
      * @see CredentialsDSL
      */
     fun credentials(configure: CredentialsDSL.() -> Unit) {
+        hasExplicitConfigurationFlag = true
         val credentialsDSL = CredentialsDSL()
         credentialsDSL.configure()
         
@@ -148,6 +150,7 @@ open class CentralPublisherExtension(private val project: Project) {
      * @see ProjectInfoDSL
      */
     fun projectInfo(configure: ProjectInfoDSL.() -> Unit) {
+        hasExplicitConfigurationFlag = true
         val projectInfoDSL = ProjectInfoDSL()
         projectInfoDSL.configure()
         
@@ -206,6 +209,7 @@ open class CentralPublisherExtension(private val project: Project) {
      * @see SigningDSL
      */
     fun signing(configure: SigningDSL.() -> Unit) {
+        hasExplicitConfigurationFlag = true
         val signingDSL = SigningDSL()
         signingDSL.configure()
         
@@ -233,6 +237,7 @@ open class CentralPublisherExtension(private val project: Project) {
      * @see PublishingDSL
      */
     fun publishing(configure: PublishingDSL.() -> Unit) {
+        hasExplicitConfigurationFlag = true
         val publishingDSL = PublishingDSL()
         publishingDSL.configure()
         
@@ -242,6 +247,12 @@ open class CentralPublisherExtension(private val project: Project) {
             if (publishingDSL._dryRun != null) dryRun = publishingDSL._dryRun!!
         }
     }
+    
+    /**
+     * Returns whether the user has explicitly configured any part of the plugin.
+     * Used to determine if validation errors should be shown during configuration phase.
+     */
+    fun hasExplicitConfiguration(): Boolean = hasExplicitConfigurationFlag
     
     /**
      * Builds the final configuration with auto-detection integration
