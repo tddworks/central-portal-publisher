@@ -1,6 +1,7 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.plugin.dsl.CentralPublisherExtension
+import com.tddworks.sonatype.publish.portal.plugin.publication.PublicationProviderRegistry
 import com.tddworks.sonatype.publish.portal.plugin.validation.ValidationEngine
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -83,8 +84,19 @@ class CentralPublisherPlugin : Plugin<Project> {
             logger.quiet("✅ Central Publisher configuration validated successfully")
         }
         
+        // Auto-configure publications
+        configurePublications(config)
+        
         // Create publishing tasks
         createPublishingTasks(config)
+    }
+    
+    private fun Project.configurePublications(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
+        // Use the publication provider registry to auto-configure publications
+        val publicationRegistry = PublicationProviderRegistry()
+        publicationRegistry.configurePublications(this, config)
+        
+        logger.quiet("🔧 Publications auto-configured based on project type")
     }
     
     private fun Project.createPublishingTasks(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
