@@ -162,12 +162,8 @@ class RefactoredSetupWizard(
         val smartDefaultManager = SmartDefaultManager(project)
         val configWithDefaults = smartDefaultManager.applySmartDefaults(project, context.wizardConfig)
         
-        return configWithDefaults.copy(
-            projectInfo = configWithDefaults.projectInfo.copy(
-                name = context.detectedInfo?.projectName ?: project.name,
-                url = context.detectedInfo?.projectUrl ?: configWithDefaults.projectInfo.url
-            )
-        )
+        // Use the wizard config values (which include manual input) rather than overriding with detected info
+        return configWithDefaults
     }
     
     private fun generateSummary(finalConfig: CentralPublisherConfig): String {

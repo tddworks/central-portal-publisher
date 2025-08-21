@@ -135,7 +135,13 @@ class WizardFileGeneratorTest {
             enableGlobalGradlePropsDetection = false
         )
         
-        val finalConfig = TestConfigBuilder.createConfig()
+        val finalConfig = TestConfigBuilder.createConfig().copy(
+            projectInfo = TestConfigBuilder.createConfig().projectInfo.copy(
+                name = "", // Empty so auto-detected "auto-detected-project" is used
+                url = "", // Empty so auto-detected "https://github.com/auto/detected" is used
+                developers = emptyList() // Empty so auto-detected developers are used
+            )
+        )
         
         // When
         fileGenerator.generateFiles(context, finalConfig)
@@ -354,7 +360,12 @@ class WizardFileGeneratorTest {
             hasAutoDetectedSigning = true
         )
         
-        val finalConfig = TestConfigBuilder.createConfig()
+        val finalConfig = TestConfigBuilder.createConfig().copy(
+            projectInfo = TestConfigBuilder.createConfig().projectInfo.copy(
+                name = "", // Empty so auto-detected "new-project" is used
+                url = "" // Empty so auto-detected "https://github.com/new/project" is used
+            )
+        )
         
         // When
         fileGenerator.generateFiles(context, finalConfig)
@@ -420,5 +431,64 @@ class WizardFileGeneratorTest {
         
         // Should add centralPublisher block
         assertThat(updatedContent).contains("centralPublisher {")
+    }
+
+    @Test
+    fun `should use manually entered project information in build file instead of auto-detected values`() {
+        // Given - Auto-detected info different from manual input
+        val project = ProjectBuilder.builder()
+            .withProjectDir(tempDir.toFile())
+            .withName("test-project")
+            .build()
+        
+        val detectedInfo = DetectedProjectInfo(
+            projectName = "auto-detected-project",
+            projectUrl = "https://github.com/auto/detected",
+            developers = listOf(DetectedDeveloper("Auto User", "auto@detected.com"))
+        )
+        
+        // Manual input in finalConfig should override auto-detected values
+        val finalConfig = TestConfigBuilder.createConfig().copy(
+            projectInfo = TestConfigBuilder.createConfig().projectInfo.copy(
+                name = "manually-entered-project",
+                description = "Manually entered description", 
+                url = "https://github.com/manual/entered",
+                developers = listOf(
+                    com.tddworks.sonatype.publish.portal.plugin.config.DeveloperConfig(
+                        id = "manual-user",
+                        name = "Manual User",
+                        email = "manual@entered.com"
+                    )
+                )
+            )
+        )
+        
+        val context = WizardContext(
+            project = project,
+            detectedInfo = detectedInfo,
+            wizardConfig = TestConfigBuilder.createConfig(),
+            enableGlobalGradlePropsDetection = false
+        )
+        
+        // When
+        fileGenerator.generateFiles(context, finalConfig)
+        
+        // Then
+        val buildFile = File(tempDir.toFile(), "build.gradle.kts")
+        val content = buildFile.readText()
+        
+        // Should use manually entered values from finalConfig, not auto-detected values
+        assertThat(content).contains("name = \"manually-entered-project\"")
+        assertThat(content).contains("description = \"Manually entered description\"")
+        assertThat(content).contains("url = \"https://github.com/manual/entered\"")
+        assertThat(content).contains("id = \"manual-user\"")
+        assertThat(content).contains("name = \"Manual User\"")
+        assertThat(content).contains("email = \"manual@entered.com\"")
+        
+        // Should NOT contain auto-detected values
+        assertThat(content).doesNotContain("auto-detected-project")
+        assertThat(content).doesNotContain("https://github.com/auto/detected")
+        assertThat(content).doesNotContain("Auto User")
+        assertThat(content).doesNotContain("auto@detected.com")
     }
 }

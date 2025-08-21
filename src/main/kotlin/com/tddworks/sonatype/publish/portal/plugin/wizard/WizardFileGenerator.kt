@@ -74,14 +74,23 @@ class DefaultWizardFileGenerator : WizardFileGenerator {
     
     private fun generateBuildFile(context: WizardContext, finalConfig: CentralPublisherConfig) {
         val buildFile = File(context.project.projectDir, "build.gradle.kts")
-        val detectedInfo = context.detectedInfo
         
-        // Use auto-detected information or fallback to defaults
-        val projectUrl = detectedInfo?.projectUrl ?: "https://github.com/yourorg/${context.project.name}"
-        val firstDeveloper = detectedInfo?.developers?.firstOrNull()
-        val developerId = firstDeveloper?.email?.substringBefore("@") ?: "yourid"
-        val developerName = firstDeveloper?.name ?: "Your Name"
-        val developerEmail = firstDeveloper?.email ?: "your.email@example.com"
+        // Use final configuration (includes manual input) with fallback to detected info
+        val projectUrl = finalConfig.projectInfo.url.takeIf { it.isNotBlank() } 
+            ?: context.detectedInfo?.projectUrl
+            ?: "https://github.com/yourorg/${context.project.name}"
+        val firstDeveloper = finalConfig.projectInfo.developers.firstOrNull()
+        val detectedDeveloper = context.detectedInfo?.developers?.firstOrNull()
+        val developerId = firstDeveloper?.id?.takeIf { it.isNotBlank() } 
+            ?: firstDeveloper?.email?.substringBefore("@")
+            ?: detectedDeveloper?.email?.substringBefore("@") 
+            ?: "yourid"
+        val developerName = firstDeveloper?.name?.takeIf { it.isNotBlank() } 
+            ?: detectedDeveloper?.name 
+            ?: "Your Name"
+        val developerEmail = firstDeveloper?.email?.takeIf { it.isNotBlank() } 
+            ?: detectedDeveloper?.email 
+            ?: "your.email@example.com"
         
         // Generate the centralPublisher block (using original format)
         val centralPublisherBlock = buildString {
@@ -92,13 +101,19 @@ class DefaultWizardFileGenerator : WizardFileGenerator {
             appendLine("    }")
             appendLine("    ")
             appendLine("    projectInfo {")
-            appendLine("        name = \"${detectedInfo?.projectName ?: context.project.name}\"")
-            appendLine("        description = \"Description of your project\"")
+            val projectName = finalConfig.projectInfo.name.takeIf { it.isNotBlank() } 
+                ?: context.detectedInfo?.projectName 
+                ?: context.project.name
+            val projectDescription = finalConfig.projectInfo.description.takeIf { it.isNotBlank() } 
+                ?: "Description of your project"
+            
+            appendLine("        name = \"$projectName\"")
+            appendLine("        description = \"$projectDescription\"")
             appendLine("        url = \"$projectUrl\"")
             appendLine("        ")
             appendLine("        license {")
-            appendLine("            name = \"Apache License 2.0\"")
-            appendLine("            url = \"https://www.apache.org/licenses/LICENSE-2.0.txt\"")
+            appendLine("            name = \"${finalConfig.projectInfo.license.name}\"")
+            appendLine("            url = \"${finalConfig.projectInfo.license.url}\"")
             appendLine("        }")
             appendLine("        ")
             appendLine("        developer {")

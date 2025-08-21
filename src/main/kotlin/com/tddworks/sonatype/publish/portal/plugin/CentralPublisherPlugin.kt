@@ -213,7 +213,7 @@ class CentralPublisherPlugin : Plugin<Project> {
                 logger.lifecycle("🧙 Starting Central Publisher Setup Wizard...")
                 
                 try {
-                    val wizard = com.tddworks.sonatype.publish.portal.plugin.wizard.SetupWizard(project)
+                    val wizard = com.tddworks.sonatype.publish.portal.plugin.wizard.RefactoredSetupWizard(project)
                     val result = wizard.runComplete()
                     
                     if (result.isComplete) {
@@ -236,7 +236,7 @@ class CentralPublisherPlugin : Plugin<Project> {
             }
         }
     }
-    
+
     /**
      * Creates a deployment bundle ZIP file containing all published artifacts with proper Maven repository layout.
      * Uses the vanniktech plugin approach: publish to local repo (generates checksums) then ZIP it up.
@@ -244,25 +244,25 @@ class CentralPublisherPlugin : Plugin<Project> {
     private fun createDeploymentBundle(project: Project): File {
         val bundleDir = project.layout.buildDirectory.dir("central-portal").get().asFile
         bundleDir.mkdirs()
-        
+
         val bundleFile = File(bundleDir, "${project.name}-${project.version}-bundle.zip")
-        
+
         // Get our local repository where artifacts were published with checksums and signatures
         val localRepo = project.layout.buildDirectory.dir("maven-repo").get().asFile
         val groupPath = project.group.toString().replace('.', '/')
         val groupDir = File(localRepo, groupPath)
-        
+
         if (!groupDir.exists()) {
             throw IllegalStateException("Published artifacts not found at: ${groupDir.absolutePath}. Run 'publishToLocalRepo' first.")
         }
-        
+
         // Validate namespace (Maven Central requirement)
         val groupId = project.group.toString()
         if (groupId.startsWith("com.example") || groupId.startsWith("org.example")) {
             project.logger.warn("⚠️ Group ID '$groupId' uses example namespace which is not allowed on Maven Central")
             project.logger.warn("   Please use a valid domain you own (e.g., com.yourcompany.projectname)")
         }
-        
+
         // Create ZIP bundle with all files from the repository (includes checksums and signatures)
         // This follows the vanniktech pattern: rely on Gradle's publishing to generate everything
         // For KMP projects, this includes all platform-specific publications
@@ -274,10 +274,10 @@ class CentralPublisherPlugin : Plugin<Project> {
                     addFileToZip(zip, file, relativePath, project)
                 }
         }
-        
+
         return bundleFile
     }
-    
+
     /**
      * Adds a file to the ZIP with proper entry.
      */
@@ -289,38 +289,38 @@ class CentralPublisherPlugin : Plugin<Project> {
         zip.closeEntry()
         project.logger.quiet("  ✓ Added $entryPath")
     }
-    
-    
+
+
     /**
      * Publishes the deployment bundle to Sonatype Central Portal.
      */
     private fun publishToSonatypePortal(project: Project, config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig): String {
         // Create deployment bundle
         val bundleFile = createDeploymentBundle(project)
-        
+
         // Create authentication
         val auth = Authentication(
             username = config.credentials.username.ifBlank { null },
             password = config.credentials.password.ifBlank { null }
         )
-        
+
         if (auth.username.isNullOrBlank() || auth.password.isNullOrBlank()) {
             throw IllegalStateException("Username and password are required for publishing. Configure them in gradle.properties or environment variables.")
         }
-        
+
         // Determine publication type based on auto-publish setting
         val publicationType = if (config.publishing.autoPublish) {
             PublicationType.AUTOMATIC
         } else {
             PublicationType.USER_MANAGED
         }
-        
+
         // Create deployment bundle
         val deploymentBundle = DeploymentBundle(
             file = bundleFile,
             publicationType = publicationType
         )
-        
+
         // Publish to Sonatype
         val publisher = SonatypePortalPublisher.default()
         return publisher.deploy(auth, deploymentBundle)
