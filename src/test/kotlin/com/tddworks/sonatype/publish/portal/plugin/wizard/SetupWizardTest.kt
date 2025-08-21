@@ -344,6 +344,124 @@ class SetupWizardTest {
         assertThat(content).contains("name: Publish to Maven Central")
         assertThat(content).contains("centralPublish")
     }
+    
+    @Test
+    fun `should NOT generate gradle properties when both credentials and signing are auto-detected`() {
+        // Given - Setup mock to simulate full auto-detection
+        val wizardWithAutoDetection = SetupWizard(project, mockPromptSystem, enableGlobalGradlePropsDetection = false)
+        
+        // Set auto-detection flags directly (simulating environment variable detection)
+        wizardWithAutoDetection.javaClass.getDeclaredField("hasAutoDetectedCredentials").apply {
+            isAccessible = true
+            set(wizardWithAutoDetection, true)
+        }
+        wizardWithAutoDetection.javaClass.getDeclaredField("hasAutoDetectedSigning").apply {
+            isAccessible = true 
+            set(wizardWithAutoDetection, true)
+        }
+        
+        // When
+        wizardWithAutoDetection.generateFiles()
+        
+        // Then - gradle.properties should NOT exist
+        val propsFile = File(tempDir, "gradle.properties")
+        assertThat(propsFile).doesNotExist()
+        
+        // Other files should still be generated
+        assertThat(File(tempDir, "build.gradle.kts")).exists()
+        assertThat(File(tempDir, ".gitignore")).exists()
+    }
+    
+    @Test
+    fun `should generate gradle properties with only missing sections when partially auto-detected`() {
+        // Given - Setup mock to simulate partial auto-detection (only credentials)
+        val wizardWithPartialDetection = SetupWizard(project, mockPromptSystem, enableGlobalGradlePropsDetection = false)
+        
+        // Set only credentials as auto-detected
+        wizardWithPartialDetection.javaClass.getDeclaredField("hasAutoDetectedCredentials").apply {
+            isAccessible = true
+            set(wizardWithPartialDetection, true)
+        }
+        // hasAutoDetectedSigning remains false
+        
+        // When
+        wizardWithPartialDetection.generateFiles()
+        
+        // Then - gradle.properties should exist with only signing section
+        val propsFile = File(tempDir, "gradle.properties")
+        assertThat(propsFile).exists()
+        
+        val content = propsFile.readText()
+        assertThat(content).contains("✅ Credentials auto-detected")
+        assertThat(content).contains("No local credential configuration needed!")
+        assertThat(content).contains("SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----")
+        // Should not contain credential placeholders (not in comments)
+        assertThat(content).doesNotContain("SONATYPE_USERNAME=your-username")
+        assertThat(content).doesNotContain("SONATYPE_PASSWORD=your-password")
+    }
+    
+    @Test
+    fun `should use auto-detected values in generated build file`() {
+        // Given - Create a wizard with mock project info
+        val mockDetectedInfo = DetectedProjectInfo(
+            projectName = "auto-detected-project",
+            projectUrl = "https://github.com/auto/detected",
+            developers = listOf(
+                DetectedDeveloper(name = "Auto Developer", email = "auto@developer.com")
+            )
+        )
+        
+        // Set the detected info via reflection
+        setupWizard.javaClass.getDeclaredField("detectedInfo").apply {
+            isAccessible = true
+            set(setupWizard, mockDetectedInfo)
+        }
+        
+        // When
+        setupWizard.generateFiles()
+        
+        // Then
+        val buildFile = File(tempDir, "build.gradle.kts")
+        assertThat(buildFile).exists()
+        
+        val content = buildFile.readText()
+        assertThat(content).contains("name = \"auto-detected-project\"")
+        assertThat(content).contains("url = \"https://github.com/auto/detected\"")
+        assertThat(content).contains("id = \"auto\"") // from email
+        assertThat(content).contains("name = \"Auto Developer\"")
+        assertThat(content).contains("email = \"auto@developer.com\"")
+        assertThat(content).contains("connection = \"scm:git:git://github.com/auto/detected.git\"")
+    }
+    
+    @Test
+    fun `should generate dynamic file list based on what was actually created`() {
+        // Given - Setup wizard with both auto-detected (no gradle.properties should be generated)
+        val wizardWithAutoDetection = SetupWizard(project, mockPromptSystem, enableGlobalGradlePropsDetection = false)
+        
+        wizardWithAutoDetection.javaClass.getDeclaredField("hasAutoDetectedCredentials").apply {
+            isAccessible = true
+            set(wizardWithAutoDetection, true)
+        }
+        wizardWithAutoDetection.javaClass.getDeclaredField("hasAutoDetectedSigning").apply {
+            isAccessible = true
+            set(wizardWithAutoDetection, true)
+        }
+        
+        mockPromptSystem.addResponse("y") // Use auto-detected project info
+        mockPromptSystem.addResponse("y") // Confirm configuration
+        mockPromptSystem.addResponse("y") // Test configuration
+        
+        // When
+        val result = wizardWithAutoDetection.runComplete()
+        
+        // Then - File list should NOT include gradle.properties
+        assertThat(result.filesGenerated).containsExactly(
+            "build.gradle.kts",
+            ".gitignore", 
+            ".github/workflows/publish.yml"
+        )
+        assertThat(result.filesGenerated).doesNotContain("gradle.properties")
+    }
 }
 
 /**

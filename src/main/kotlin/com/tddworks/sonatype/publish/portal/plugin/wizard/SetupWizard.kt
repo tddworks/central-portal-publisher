@@ -104,247 +104,12 @@ class SetupWizard(
         val validationErrors = mutableListOf<String>()
         
         when (step) {
-            WizardStep.WELCOME -> {
-                // Welcome step - just show detected info
-                // No validation needed
-            }
-            WizardStep.PROJECT_INFO -> {
-                // Show what was detected first
-                promptSystem.prompt("""
-                    Auto-detected project information:
-                    • Project: ${detectedInfo?.projectName ?: "not detected"}
-                    • URL: ${detectedInfo?.projectUrl ?: "not detected"}
-                    • Developers: ${detectedInfo?.developers?.map { "${it.name} <${it.email}>" }?.joinToString() ?: "not detected"}
-                    
-                    Press Enter to continue...
-                """.trimIndent())
-                
-                val confirmed = promptSystem.confirm("Use this auto-detected project information?")
-                if (!confirmed) {
-                    // Could prompt for manual input here in future
-                    promptSystem.prompt("Manual project setup not yet implemented. Using auto-detected values...")
-                }
-            }
-            WizardStep.CREDENTIALS -> {
-                // Check for existing environment variables
-                val envUsername = System.getenv("SONATYPE_USERNAME")
-                val envPassword = System.getenv("SONATYPE_PASSWORD")
-                val hasEnvCredentials = !envUsername.isNullOrBlank() && !envPassword.isNullOrBlank()
-                
-                // Check for existing global gradle.properties (only if enabled)
-                val globalGradleProps = if (enableGlobalGradlePropsDetection) {
-                    File(System.getProperty("user.home"), ".gradle/gradle.properties")
-                } else null
-                val globalUsername = if (globalGradleProps?.exists() == true) {
-                    globalGradleProps.readLines().find { it.startsWith("SONATYPE_USERNAME=") }?.substringAfter("=")?.trim()
-                } else null
-                val globalPassword = if (globalGradleProps?.exists() == true) {
-                    globalGradleProps.readLines().find { it.startsWith("SONATYPE_PASSWORD=") }?.substringAfter("=")?.trim()
-                } else null
-                val hasGlobalCredentials = !globalUsername.isNullOrBlank() && !globalPassword.isNullOrBlank()
-                
-                if (hasEnvCredentials) {
-                    promptSystem.prompt("""
-                        📋 CREDENTIALS SETUP - AUTO-DETECTED!
-                        ✅ Found existing environment variables:
-                        • SONATYPE_USERNAME: ${envUsername}
-                        • SONATYPE_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
-                        
-                        Using these existing credentials (environment variables take precedence).
-                        
-                        Press Enter to continue...
-                    """.trimIndent())
-                    
-                    // Use detected credentials
-                    wizardConfig = wizardConfig.copy(
-                        credentials = wizardConfig.credentials.copy(
-                            username = envUsername!!,
-                            password = envPassword
-                        )
-                    )
-                    hasAutoDetectedCredentials = true
-                } else if (hasGlobalCredentials) {
-                    promptSystem.prompt("""
-                        📋 CREDENTIALS SETUP - AUTO-DETECTED!
-                        ✅ Found existing global gradle.properties (~/.gradle/gradle.properties):
-                        • SONATYPE_USERNAME: ${globalUsername}
-                        • SONATYPE_PASSWORD: ${"*".repeat(globalPassword!!.length.coerceAtMost(8))}
-                        
-                        Using these existing credentials from global gradle.properties.
-                        
-                        Press Enter to continue...
-                    """.trimIndent())
-                    
-                    // Use detected credentials
-                    wizardConfig = wizardConfig.copy(
-                        credentials = wizardConfig.credentials.copy(
-                            username = globalUsername!!,
-                            password = globalPassword
-                        )
-                    )
-                    hasAutoDetectedCredentials = true
-                } else {
-                    // Show configuration options
-                    promptSystem.prompt("""
-                        📋 CREDENTIALS SETUP
-                        No environment variables or global gradle.properties credentials detected. Manual configuration needed.
-                        
-                        Configuration options (in order of preference):
-                        1. Environment variables (recommended for CI/CD):
-                           export SONATYPE_USERNAME=your-username
-                           export SONATYPE_PASSWORD=your-password
-                        
-                        2. Global gradle.properties (~/.gradle/gradle.properties):
-                           SONATYPE_USERNAME=your-username
-                           SONATYPE_PASSWORD=your-password
-                        
-                        3. Local gradle.properties (this project only - not recommended):
-                           Will be generated for you but should not be committed to git
-                        
-                        Press Enter to continue...
-                    """.trimIndent())
-                    
-                    val username = promptSystem.prompt("Enter your Sonatype username:")
-                    if (username.isEmpty()) {
-                        validationErrors.add("Username is required")
-                    } else {
-                        // Update wizard config with username
-                        wizardConfig = wizardConfig.copy(
-                            credentials = wizardConfig.credentials.copy(username = username)
-                        )
-                        
-                        val password = promptSystem.prompt("Enter your Sonatype password/token:")
-                        wizardConfig = wizardConfig.copy(
-                            credentials = wizardConfig.credentials.copy(password = password)
-                        )
-                    }
-                }
-            }
-            WizardStep.SIGNING -> {
-                // Check for existing environment variables
-                val envSigningKey = System.getenv("SIGNING_KEY")
-                val envSigningPassword = System.getenv("SIGNING_PASSWORD")
-                val hasEnvSigning = !envSigningKey.isNullOrBlank() && !envSigningPassword.isNullOrBlank()
-                
-                // Check for existing global gradle.properties (only if enabled)
-                val globalGradleProps = if (enableGlobalGradlePropsDetection) {
-                    File(System.getProperty("user.home"), ".gradle/gradle.properties")
-                } else null
-                val globalSigningKey = if (globalGradleProps?.exists() == true) {
-                    globalGradleProps.readLines().find { it.startsWith("SIGNING_KEY=") }?.substringAfter("=")?.trim()
-                } else null
-                val globalSigningPassword = if (globalGradleProps?.exists() == true) {
-                    globalGradleProps.readLines().find { it.startsWith("SIGNING_PASSWORD=") }?.substringAfter("=")?.trim()
-                } else null
-                val hasGlobalSigning = !globalSigningKey.isNullOrBlank() && !globalSigningPassword.isNullOrBlank()
-                
-                if (hasEnvSigning) {
-                    promptSystem.prompt("""
-                        🔐 GPG SIGNING SETUP - AUTO-DETECTED!
-                        ✅ Found existing environment variables:
-                        • SIGNING_KEY: ${if (envSigningKey!!.contains("BEGIN PGP")) "PGP private key found" else envSigningKey.take(20) + "..."}
-                        • SIGNING_PASSWORD: ${"*".repeat(envSigningPassword!!.length.coerceAtMost(8))}
-                        
-                        Using these existing signing credentials (environment variables take precedence).
-                        
-                        Press Enter to continue...
-                    """.trimIndent())
-                    
-                    // Use detected signing config - extract key ID if possible
-                    val keyId = if (envSigningKey.contains("BEGIN PGP")) "detected-from-env" else envSigningKey
-                    wizardConfig = wizardConfig.copy(
-                        signing = wizardConfig.signing.copy(
-                            keyId = keyId,
-                            password = envSigningPassword
-                        )
-                    )
-                    hasAutoDetectedSigning = true
-                } else if (hasGlobalSigning) {
-                    promptSystem.prompt("""
-                        🔐 GPG SIGNING SETUP - AUTO-DETECTED!
-                        ✅ Found existing global gradle.properties (~/.gradle/gradle.properties):
-                        • SIGNING_KEY: ${if (globalSigningKey!!.contains("BEGIN PGP")) "PGP private key found" else globalSigningKey.take(20) + "..."}
-                        • SIGNING_PASSWORD: ${"*".repeat(globalSigningPassword!!.length.coerceAtMost(8))}
-                        
-                        Using these existing signing credentials from global gradle.properties.
-                        
-                        Press Enter to continue...
-                    """.trimIndent())
-                    
-                    // Use detected signing config
-                    val keyId = if (globalSigningKey.contains("BEGIN PGP")) "detected-from-global" else globalSigningKey
-                    wizardConfig = wizardConfig.copy(
-                        signing = wizardConfig.signing.copy(
-                            keyId = keyId,
-                            password = globalSigningPassword
-                        )
-                    )
-                    hasAutoDetectedSigning = true
-                } else {
-                    // Show configuration options
-                    promptSystem.prompt("""
-                        🔐 GPG SIGNING SETUP
-                        Maven Central requires all artifacts to be cryptographically signed.
-                        No environment variables or global gradle.properties signing detected. Manual configuration needed.
-                        
-                        Configuration options (in order of preference):
-                        1. Environment variables (recommended for CI/CD):
-                           export SIGNING_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----..."
-                           export SIGNING_PASSWORD=your-gpg-password
-                        
-                        2. Global gradle.properties (~/.gradle/gradle.properties):
-                           SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----...
-                           SIGNING_PASSWORD=your-gpg-password
-                        
-                        3. Local gradle.properties (this project only - not recommended):
-                           Will be generated for you but should not be committed to git
-                        
-                        Note: You can generate GPG keys with: gpg --gen-key
-                        
-                        Press Enter to continue...
-                    """.trimIndent())
-                    
-                    val keyId = promptSystem.prompt("Enter your GPG Key ID (e.g. 1234567890ABCDEF):")
-                    wizardConfig = wizardConfig.copy(
-                        signing = wizardConfig.signing.copy(keyId = keyId)
-                    )
-                    
-                    val gpgPassword = promptSystem.prompt("Enter your GPG key password:")
-                    wizardConfig = wizardConfig.copy(
-                        signing = wizardConfig.signing.copy(password = gpgPassword)
-                    )
-                }
-            }
-            WizardStep.REVIEW -> {
-                // Review step - confirm configuration
-                val confirmed = promptSystem.confirm("Confirm configuration?")
-                if (!confirmed) {
-                    validationErrors.add("Configuration not confirmed")
-                }
-            }
-            WizardStep.TEST -> {
-                // Test step - validate configuration and test connection
-                val testConfig = promptSystem.confirm("Test configuration and validate setup?")
-                if (testConfig) {
-                    // Test basic requirements for publishing
-                    if (wizardConfig.credentials.username.isEmpty()) {
-                        validationErrors.add("Username is required for testing")
-                    }
-                    if (wizardConfig.credentials.password.isEmpty()) {
-                        validationErrors.add("Password is required for testing")
-                    }
-                    
-                    // Only validate full config if basic credentials are present
-                    if (validationErrors.isEmpty()) {
-                        try {
-                            val finalConfig = createFinalConfiguration()
-                            finalConfig.validate()
-                        } catch (e: Exception) {
-                            validationErrors.add("Configuration validation failed: ${e.message}")
-                        }
-                    }
-                }
-            }
+            WizardStep.WELCOME -> processWelcomeStep(validationErrors)
+            WizardStep.PROJECT_INFO -> processProjectInfoStep(validationErrors)
+            WizardStep.CREDENTIALS -> processCredentialsStep(validationErrors)
+            WizardStep.SIGNING -> processSigningStep(validationErrors)
+            WizardStep.REVIEW -> processReviewStep(validationErrors)
+            WizardStep.TEST -> processTestStep(validationErrors)
         }
         
         return WizardStepResult(
@@ -352,6 +117,253 @@ class SetupWizard(
             isValid = validationErrors.isEmpty(),
             validationErrors = validationErrors
         )
+    }
+    
+    private fun processWelcomeStep(validationErrors: MutableList<String>) {
+        // Welcome step - just show detected info
+        // No validation needed
+    }
+    
+    private fun processProjectInfoStep(validationErrors: MutableList<String>) {
+        // Show what was detected first
+        promptSystem.prompt("""
+            Auto-detected project information:
+            • Project: ${detectedInfo?.projectName ?: "not detected"}
+            • URL: ${detectedInfo?.projectUrl ?: "not detected"}
+            • Developers: ${detectedInfo?.developers?.map { "${it.name} <${it.email}>" }?.joinToString() ?: "not detected"}
+            
+            Press Enter to continue...
+        """.trimIndent())
+        
+        val confirmed = promptSystem.confirm("Use this auto-detected project information?")
+        if (!confirmed) {
+            // Could prompt for manual input here in future
+            promptSystem.prompt("Manual project setup not yet implemented. Using auto-detected values...")
+        }
+    }
+    
+    private fun processCredentialsStep(validationErrors: MutableList<String>) {
+        // Check for existing environment variables
+        val envUsername = System.getenv("SONATYPE_USERNAME")
+        val envPassword = System.getenv("SONATYPE_PASSWORD")
+        val hasEnvCredentials = !envUsername.isNullOrBlank() && !envPassword.isNullOrBlank()
+        
+        // Check for existing global gradle.properties (only if enabled)
+        val globalGradleProps = if (enableGlobalGradlePropsDetection) {
+            File(System.getProperty("user.home"), ".gradle/gradle.properties")
+        } else null
+        val globalUsername = if (globalGradleProps?.exists() == true) {
+            globalGradleProps.readLines().find { it.startsWith("SONATYPE_USERNAME=") }?.substringAfter("=")?.trim()
+        } else null
+        val globalPassword = if (globalGradleProps?.exists() == true) {
+            globalGradleProps.readLines().find { it.startsWith("SONATYPE_PASSWORD=") }?.substringAfter("=")?.trim()
+        } else null
+        val hasGlobalCredentials = !globalUsername.isNullOrBlank() && !globalPassword.isNullOrBlank()
+        
+        if (hasEnvCredentials) {
+            promptSystem.prompt("""
+                📋 CREDENTIALS SETUP - AUTO-DETECTED!
+                ✅ Found existing environment variables:
+                • SONATYPE_USERNAME: ${envUsername}
+                • SONATYPE_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
+                
+                Using these existing credentials (environment variables take precedence).
+                
+                Press Enter to continue...
+            """.trimIndent())
+            
+            // Use detected credentials
+            wizardConfig = wizardConfig.copy(
+                credentials = wizardConfig.credentials.copy(
+                    username = envUsername!!,
+                    password = envPassword
+                )
+            )
+            hasAutoDetectedCredentials = true
+        } else if (hasGlobalCredentials) {
+            promptSystem.prompt("""
+                📋 CREDENTIALS SETUP - AUTO-DETECTED!
+                ✅ Found existing global gradle.properties (~/.gradle/gradle.properties):
+                • SONATYPE_USERNAME: ${globalUsername}
+                • SONATYPE_PASSWORD: ${"*".repeat(globalPassword!!.length.coerceAtMost(8))}
+                
+                Using these existing credentials from global gradle.properties.
+                
+                Press Enter to continue...
+            """.trimIndent())
+            
+            // Use detected credentials
+            wizardConfig = wizardConfig.copy(
+                credentials = wizardConfig.credentials.copy(
+                    username = globalUsername!!,
+                    password = globalPassword
+                )
+            )
+            hasAutoDetectedCredentials = true
+        } else {
+            // Show configuration options
+            promptSystem.prompt("""
+                📋 CREDENTIALS SETUP
+                No environment variables or global gradle.properties credentials detected. Manual configuration needed.
+                
+                Configuration options (in order of preference):
+                1. Environment variables (recommended for CI/CD):
+                   export SONATYPE_USERNAME=your-username
+                   export SONATYPE_PASSWORD=your-password
+                
+                2. Global gradle.properties (~/.gradle/gradle.properties):
+                   SONATYPE_USERNAME=your-username
+                   SONATYPE_PASSWORD=your-password
+                
+                3. Local gradle.properties (this project only - not recommended):
+                   Will be generated for you but should not be committed to git
+                
+                Press Enter to continue...
+            """.trimIndent())
+            
+            val username = promptSystem.prompt("Enter your Sonatype username:")
+            if (username.isEmpty()) {
+                validationErrors.add("Username is required")
+            } else {
+                // Update wizard config with username
+                wizardConfig = wizardConfig.copy(
+                    credentials = wizardConfig.credentials.copy(username = username)
+                )
+                
+                val password = promptSystem.prompt("Enter your Sonatype password/token:")
+                wizardConfig = wizardConfig.copy(
+                    credentials = wizardConfig.credentials.copy(password = password)
+                )
+            }
+        }
+    }
+    
+    private fun processSigningStep(validationErrors: MutableList<String>) {
+        // Check for existing environment variables
+        val envSigningKey = System.getenv("SIGNING_KEY")
+        val envSigningPassword = System.getenv("SIGNING_PASSWORD")
+        val hasEnvSigning = !envSigningKey.isNullOrBlank() && !envSigningPassword.isNullOrBlank()
+        
+        // Check for existing global gradle.properties (only if enabled)
+        val globalGradleProps = if (enableGlobalGradlePropsDetection) {
+            File(System.getProperty("user.home"), ".gradle/gradle.properties")
+        } else null
+        val globalSigningKey = if (globalGradleProps?.exists() == true) {
+            globalGradleProps.readLines().find { it.startsWith("SIGNING_KEY=") }?.substringAfter("=")?.trim()
+        } else null
+        val globalSigningPassword = if (globalGradleProps?.exists() == true) {
+            globalGradleProps.readLines().find { it.startsWith("SIGNING_PASSWORD=") }?.substringAfter("=")?.trim()
+        } else null
+        val hasGlobalSigning = !globalSigningKey.isNullOrBlank() && !globalSigningPassword.isNullOrBlank()
+        
+        if (hasEnvSigning) {
+            promptSystem.prompt("""
+                🔐 GPG SIGNING SETUP - AUTO-DETECTED!
+                ✅ Found existing environment variables:
+                • SIGNING_KEY: ${if (envSigningKey!!.contains("BEGIN PGP")) "PGP private key found" else envSigningKey.take(20) + "..."}
+                • SIGNING_PASSWORD: ${"*".repeat(envSigningPassword!!.length.coerceAtMost(8))}
+                
+                Using these existing signing credentials (environment variables take precedence).
+                
+                Press Enter to continue...
+            """.trimIndent())
+            
+            // Use detected signing config - extract key ID if possible
+            val keyId = if (envSigningKey.contains("BEGIN PGP")) "detected-from-env" else envSigningKey
+            wizardConfig = wizardConfig.copy(
+                signing = wizardConfig.signing.copy(
+                    keyId = keyId,
+                    password = envSigningPassword
+                )
+            )
+            hasAutoDetectedSigning = true
+        } else if (hasGlobalSigning) {
+            promptSystem.prompt("""
+                🔐 GPG SIGNING SETUP - AUTO-DETECTED!
+                ✅ Found existing global gradle.properties (~/.gradle/gradle.properties):
+                • SIGNING_KEY: ${if (globalSigningKey!!.contains("BEGIN PGP")) "PGP private key found" else globalSigningKey.take(20) + "..."}
+                • SIGNING_PASSWORD: ${"*".repeat(globalSigningPassword!!.length.coerceAtMost(8))}
+                
+                Using these existing signing credentials from global gradle.properties.
+                
+                Press Enter to continue...
+            """.trimIndent())
+            
+            // Use detected signing config
+            val keyId = if (globalSigningKey.contains("BEGIN PGP")) "detected-from-global" else globalSigningKey
+            wizardConfig = wizardConfig.copy(
+                signing = wizardConfig.signing.copy(
+                    keyId = keyId,
+                    password = globalSigningPassword
+                )
+            )
+            hasAutoDetectedSigning = true
+        } else {
+            // Show configuration options
+            promptSystem.prompt("""
+                🔐 GPG SIGNING SETUP
+                Maven Central requires all artifacts to be cryptographically signed.
+                No environment variables or global gradle.properties signing detected. Manual configuration needed.
+                
+                Configuration options (in order of preference):
+                1. Environment variables (recommended for CI/CD):
+                   export SIGNING_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----..."
+                   export SIGNING_PASSWORD=your-gpg-password
+                
+                2. Global gradle.properties (~/.gradle/gradle.properties):
+                   SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----...
+                   SIGNING_PASSWORD=your-gpg-password
+                
+                3. Local gradle.properties (this project only - not recommended):
+                   Will be generated for you but should not be committed to git
+                
+                Note: You can generate GPG keys with: gpg --gen-key
+                
+                Press Enter to continue...
+            """.trimIndent())
+            
+            val keyId = promptSystem.prompt("Enter your GPG Key ID (e.g. 1234567890ABCDEF):")
+            wizardConfig = wizardConfig.copy(
+                signing = wizardConfig.signing.copy(keyId = keyId)
+            )
+            
+            val gpgPassword = promptSystem.prompt("Enter your GPG key password:")
+            wizardConfig = wizardConfig.copy(
+                signing = wizardConfig.signing.copy(password = gpgPassword)
+            )
+        }
+    }
+    
+    private fun processReviewStep(validationErrors: MutableList<String>) {
+        // Review step - confirm configuration
+        val confirmed = promptSystem.confirm("Confirm configuration?")
+        if (!confirmed) {
+            validationErrors.add("Configuration not confirmed")
+        }
+    }
+    
+    private fun processTestStep(validationErrors: MutableList<String>) {
+        // Test step - validate configuration and test connection
+        val testConfig = promptSystem.confirm("Test configuration and validate setup?")
+        if (testConfig) {
+            // Test basic requirements for publishing
+            if (wizardConfig.credentials.username.isEmpty()) {
+                validationErrors.add("Username is required for testing")
+            }
+            if (wizardConfig.credentials.password.isEmpty()) {
+                validationErrors.add("Password is required for testing")
+            }
+            
+            // Only validate full config if basic credentials are present
+            if (validationErrors.isEmpty()) {
+                try {
+                    val finalConfig = createFinalConfiguration()
+                    finalConfig.validate()
+                } catch (e: Exception) {
+                    validationErrors.add("Configuration validation failed: ${e.message}")
+                }
+            }
+        }
     }
     
     /**
