@@ -380,5 +380,38 @@ class SelectivePublishingTest {
         File(testUtilsDir, "build.gradle.kts").writeText("""
             plugins { kotlin("jvm") }
         """.trimIndent())
+        createModuleWithBuildFile("frontend-core", """
+            plugins { kotlin("jvm"); `maven-publish` }
+        """.trimIndent())
+        
+        // Frontend-ui - publishable, depends on frontend-core
+        createModuleWithBuildFile("frontend-ui", """
+            plugins { kotlin("jvm"); `maven-publish` }
+            dependencies { implementation(project(":frontend-core")) }
+        """.trimIndent())
+        
+        // Backend-core - publishable, no dependencies
+        createModuleWithBuildFile("backend-core", """
+            plugins { kotlin("jvm"); `maven-publish` }
+        """.trimIndent())
+        
+        // Backend-api - publishable, depends on backend-core
+        createModuleWithBuildFile("backend-api", """
+            plugins { kotlin("jvm"); `maven-publish` }
+            dependencies { implementation(project(":backend-core")) }
+        """.trimIndent())
+        
+        // Test-utils - not publishable
+        createModuleWithBuildFile("test-utils", """
+            plugins { kotlin("jvm") }
+        """.trimIndent())
+    }
+
+    /**
+     * Helper to create a module directory and write its build.gradle.kts file.
+     */
+    private fun createModuleWithBuildFile(moduleName: String, buildFileContent: String) {
+        val moduleDir = File(tempDir, moduleName).apply { mkdirs() }
+        File(moduleDir, "build.gradle.kts").writeText(buildFileContent)
     }
 }
