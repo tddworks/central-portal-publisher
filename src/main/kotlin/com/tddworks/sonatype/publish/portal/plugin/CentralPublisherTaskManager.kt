@@ -83,11 +83,8 @@ class CentralPublisherTaskManager(
             group = PLUGIN_GROUP
             description = "📦 Prepare your artifacts for publishing (signs, validates, bundles)"
             
-            // Setup publishing task dependencies for multi-module support
-            setupPublishingTaskDependencies()
-            
-            // Also ensure signing tasks run if signing is configured across all projects
-            setupSigningTaskDependencies()
+            // Simple, clear dependencies - bundle depends on publishing all artifacts to LocalRepo
+            setupBundleTaskDependencies()
             
             doLast {
                 val executor = BundleArtifactsTaskExecutor(project, config)
@@ -97,60 +94,26 @@ class CentralPublisherTaskManager(
     }
     
     /**
-     * Sets up dependencies on publishing tasks for both single and multi-module projects.
-     * Uses regex matching to find all publication tasks, similar to original plugin approach.
+     * Sets up clear, simple dependencies for the bundle task.
+     * Developer mental model: "Bundle needs all artifacts published to LocalRepo first"
      */
-    private fun org.gradle.api.Task.setupPublishingTaskDependencies() {
-        // For root project - check if it has maven-publish and add its publish tasks
+    private fun org.gradle.api.Task.setupBundleTaskDependencies() {
+        // Root project: depend on its publish task if it has publications
         if (project.plugins.hasPlugin("maven-publish")) {
-            val rootPublishTasks = project.tasks.matching { task ->
-                task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
-            }
-            if (rootPublishTasks.isNotEmpty()) {
-                dependsOn(rootPublishTasks)
-                project.logger.quiet("📦 Added dependency on root project publish tasks")
+            dependsOn("publishAllPublicationsToLocalRepoRepository")
+            project.logger.quiet("📦 Bundle will wait for root project publishing")
+        }
+        
+        // All subprojects: depend on their publish tasks  
+        project.subprojects.forEach { subproject ->
+            if (subproject.plugins.hasPlugin("maven-publish")) {
+                dependsOn("${subproject.path}:publishAllPublicationsToLocalRepoRepository") 
+                project.logger.quiet("📦 Bundle will wait for ${subproject.name} publishing")
             }
         }
         
-        // For multi-module support, depend on all subproject publish tasks to LocalRepo
-        project.allprojects.forEach { subproject ->
-            if (subproject != project && subproject.plugins.hasPlugin("maven-publish")) {
-                val subprojectPublishTasks = subproject.tasks.matching { task ->
-                    task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
-                }
-                if (subprojectPublishTasks.isNotEmpty()) {
-                    dependsOn(subprojectPublishTasks)
-                    project.logger.quiet("📦 Added dependency on ${subproject.name} publish tasks")
-                }
-            }
-        }
-    }
-    
-    /**
-     * Sets up dependencies on signing tasks across all projects that have signing configured.
-     */
-    private fun org.gradle.api.Task.setupSigningTaskDependencies() {
-        // Check root project for signing tasks
-        val rootSigningTasks = project.tasks.matching { task ->
-            task.name.startsWith("sign") && task.name.endsWith("Publication")
-        }
-        if (rootSigningTasks.isNotEmpty()) {
-            dependsOn(rootSigningTasks)
-            project.logger.quiet("🔐 Added dependency on root project signing tasks")
-        }
-        
-        // Check all subprojects for signing tasks
-        project.allprojects.forEach { subproject ->
-            if (subproject != project) {
-                val signingTasks = subproject.tasks.matching { task ->
-                    task.name.startsWith("sign") && task.name.endsWith("Publication")
-                }
-                if (signingTasks.isNotEmpty()) {
-                    dependsOn(signingTasks)
-                    project.logger.quiet("🔐 Added dependency on ${subproject.name} signing tasks")
-                }
-            }
-        }
+        // Signing tasks will run automatically as part of publishing tasks above
+        // No need to explicitly depend on signing tasks - publishing handles it
     }
     
     private fun createSetupPublishingTask() {
