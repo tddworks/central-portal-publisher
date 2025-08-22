@@ -171,7 +171,7 @@ class CentralPublisherPluginTest {
             val task = project.tasks.findByName(taskName)
             task?.group == "Central Publishing"
         }
-        assertThat(centralTaskNames).hasSize(5) // publishToCentral, bundleArtifacts, validatePublishing, setupPublishing, publishToLocalRepo
+        assertThat(centralTaskNames).hasSize(4) // publishToCentral, bundleArtifacts, validatePublishing, setupPublishing
     }
     
     @Test
@@ -228,10 +228,10 @@ class CentralPublisherPluginTest {
         val localRepo = publishing.repositories.findByName("LocalRepo")
         assertThat(localRepo).isNotNull()
         
-        // Should have publishToLocalRepo task
-        val publishTask = project.tasks.findByName("publishToLocalRepo")
+        // Should have standard Gradle publishAllPublicationsToLocalRepoRepository task
+        val publishTask = project.tasks.findByName("publishAllPublicationsToLocalRepoRepository")
         assertThat(publishTask).isNotNull()
-        assertThat(publishTask!!.group).isEqualTo("Central Publishing")
+        assertThat(publishTask!!.group).isEqualTo("publishing")
     }
     
     @Test
@@ -256,7 +256,7 @@ class CentralPublisherPluginTest {
         assertThat(bundleTask).isNotNull()
         
         val dependencies = bundleTask!!.dependsOn
-        assertThat(dependencies).contains("publishToLocalRepo")
+        assertThat(dependencies).contains("publishAllPublicationsToLocalRepoRepository")
     }
     
     @Test
