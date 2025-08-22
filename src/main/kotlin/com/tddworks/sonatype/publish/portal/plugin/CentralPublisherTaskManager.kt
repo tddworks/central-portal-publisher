@@ -53,7 +53,7 @@ class CentralPublisherTaskManager(
     private fun createPublishToCentralTask(config: CentralPublisherConfig) {
         project.tasks.register(TASK_PUBLISH_TO_CENTRAL) {
             group = PLUGIN_GROUP
-            description = "Publishes all artifacts to Maven Central"
+            description = "🚀 Publish your artifacts to Maven Central (creates bundle and uploads)"
             
             // Make sure bundle is created first
             dependsOn(TASK_BUNDLE_ARTIFACTS)
@@ -68,7 +68,7 @@ class CentralPublisherTaskManager(
     private fun createValidatePublishingTask(config: CentralPublisherConfig) {
         project.tasks.register(TASK_VALIDATE_PUBLISHING) {
             group = PLUGIN_GROUP
-            description = "Validates publishing configuration without publishing"
+            description = "✅ Check if your project is ready to publish (no upload, safe to run)"
             
             doLast {
                 // Task execution logic will be implemented later
@@ -80,7 +80,7 @@ class CentralPublisherTaskManager(
     private fun createBundleArtifactsTask(config: CentralPublisherConfig) {
         project.tasks.register(TASK_BUNDLE_ARTIFACTS) {
             group = PLUGIN_GROUP
-            description = "Creates deployment bundle for Maven Central"
+            description = "📦 Prepare your artifacts for publishing (signs, validates, bundles)"
             
             // Bundle depends on local repo publishing
             dependsOn(TASK_PUBLISH_TO_LOCAL_REPO)
@@ -95,7 +95,7 @@ class CentralPublisherTaskManager(
     private fun createSetupPublishingTask() {
         project.tasks.register(TASK_SETUP_PUBLISHING) {
             group = PLUGIN_GROUP
-            description = "Interactive setup wizard for Maven Central publishing"
+            description = "🧙 Set up your project for Maven Central publishing (interactive guide)"
             
             doLast {
                 // Task execution logic will be implemented later
@@ -107,7 +107,7 @@ class CentralPublisherTaskManager(
     private fun createPublishToLocalRepoTask(config: CentralPublisherConfig) {
         project.tasks.register(TASK_PUBLISH_TO_LOCAL_REPO) {
             group = PLUGIN_GROUP
-            description = "Publishes to local repository for bundle creation"
+            description = "📁 Build artifacts locally (internal step for bundle creation)"
             
             doLast {
                 // Task execution logic will be implemented later

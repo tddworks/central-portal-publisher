@@ -88,19 +88,19 @@ class CentralPublisherPluginTest {
         // Then
         val publishTask = project.tasks.findByName("publishToCentral")!!
         assertThat(publishTask.group).isEqualTo("Central Publishing")
-        assertThat(publishTask.description).isEqualTo("Publishes all artifacts to Maven Central")
+        assertThat(publishTask.description).isEqualTo("🚀 Publish your artifacts to Maven Central (creates bundle and uploads)")
         
         val validateTask = project.tasks.findByName("validatePublishing")!!
         assertThat(validateTask.group).isEqualTo("Central Publishing")
-        assertThat(validateTask.description).contains("Validates publishing configuration")
+        assertThat(validateTask.description).contains("Check if your project is ready to publish")
         
         val bundleTask = project.tasks.findByName("bundleArtifacts")!!
         assertThat(bundleTask.group).isEqualTo("Central Publishing")
-        assertThat(bundleTask.description).contains("Creates deployment bundle")
+        assertThat(bundleTask.description).contains("Prepare your artifacts for publishing")
         
         val setupTask = project.tasks.findByName("setupPublishing")!!
         assertThat(setupTask.group).isEqualTo("Central Publishing")
-        assertThat(setupTask.description).contains("Interactive setup wizard")
+        assertThat(setupTask.description).contains("Set up your project for Maven Central publishing")
     }
     
     @Test

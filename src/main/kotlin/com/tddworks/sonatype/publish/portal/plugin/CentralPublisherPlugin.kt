@@ -49,6 +49,7 @@ class CentralPublisherPlugin : Plugin<Project> {
         // Check if developer wants to publish (mental model: "Should I set up publishing?")
         if (!configurationManager.shouldSetupPublishing()) {
             project.logger.quiet("🔧 No explicit configuration detected - use './gradlew setupPublishing' to configure interactively")
+            project.logger.quiet("   Or add centralPublisher {} block to your build.gradle file")
             
             // Always create setup wizard task even without configuration
             val taskManager = CentralPublisherTaskManager(project)
@@ -61,12 +62,13 @@ class CentralPublisherPlugin : Plugin<Project> {
         val validationResult = configurationManager.validateConfiguration()
         
         if (!validationResult.isValid) {
-            project.logger.error("Configuration validation failed:")
+            project.logger.error("❌ Configuration validation failed:")
             project.logger.error(validationResult.formatReport())
-            project.logger.warn("Publishing tasks may fail due to configuration errors above")
+            project.logger.warn("💡 Fix the errors above, then run './gradlew validatePublishing' to check your fixes")
         } else if (validationResult.warningCount > 0) {
-            project.logger.warn("Configuration warnings:")
+            project.logger.warn("⚠️ Configuration warnings:")
             project.logger.warn(validationResult.formatReport())
+            project.logger.quiet("💡 Warnings won't prevent publishing, but consider addressing them")
         } else {
             project.logger.quiet("✅ Central Publisher configuration validated successfully")
         }
@@ -77,6 +79,7 @@ class CentralPublisherPlugin : Plugin<Project> {
         
         if (!publicationResult.isConfigured) {
             project.logger.warn("⚠️ ${publicationResult.reason}")
+            project.logger.quiet("💡 Apply java-library or kotlin plugins to enable automatic publication setup")
         }
         
         // Create tasks (mental model: "Give me commands to run")
