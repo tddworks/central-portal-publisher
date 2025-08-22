@@ -3,6 +3,8 @@ package com.tddworks.sonatype.publish.portal.plugin.publication
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.kotlin.dsl.configure
+import org.gradle.plugins.signing.SigningExtension
 
 /**
  * Configures POM metadata for Maven publications using the provided configuration.
@@ -43,6 +45,46 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
             connection.set(config.projectInfo.scm.connection)
             developerConnection.set(config.projectInfo.scm.developerConnection)
             url.set(config.projectInfo.scm.url)
+        }
+    }
+}
+
+/**
+ * Configures signing for this Maven publication if signing credentials are available.
+ * 
+ * This is the simplest and most intuitive approach - signing happens right where the publication is created.
+ * 
+ * @param project The Gradle project
+ * @param config The Central Publisher configuration containing signing credentials
+ */
+fun MavenPublication.configureSigningIfAvailable(project: Project, config: CentralPublisherConfig) {
+    project.plugins.withId("signing") {
+        // Check for in-memory keys first
+        val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
+        val signingPassword = project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+        
+        when {
+            !signingKey.isNullOrBlank() -> {
+                project.logger.quiet("🔐 Using in-memory GPG keys for signing")
+                project.configure<SigningExtension> {
+                    useInMemoryPgpKeys(signingKey, signingPassword ?: "")
+                }
+                val signing = project.extensions.getByType(SigningExtension::class.java)
+                signing.sign(this@configureSigningIfAvailable)
+            }
+            config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() -> {
+                project.logger.quiet("🔐 Using file-based signing with keyId: ${config.signing.keyId}")
+                val signing = project.extensions.getByType(SigningExtension::class.java)
+                signing.sign(this@configureSigningIfAvailable)
+            }
+            config.signing.keyId.isNotBlank() -> {
+                project.logger.quiet("🔐 Using keyId-based signing: ${config.signing.keyId}")
+                val signing = project.extensions.getByType(SigningExtension::class.java)
+                signing.sign(this@configureSigningIfAvailable)
+            }
+            else -> {
+                project.logger.quiet("⚠️ No signing configuration found - artifacts will be unsigned")
+            }
         }
     }
 }

@@ -2,7 +2,7 @@ package com.tddworks.sonatype.publish.portal.plugin.publication.strategies
 
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import com.tddworks.sonatype.publish.portal.plugin.publication.PluginConfigurationStrategy
-import com.tddworks.sonatype.publish.portal.plugin.publication.SigningConfigurator
+import com.tddworks.sonatype.publish.portal.plugin.publication.configureSigningIfAvailable
 import com.tddworks.sonatype.publish.portal.plugin.publication.configurePom
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
@@ -53,12 +53,12 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
                         from(project.components["java"])
                         artifact(javadocJar)
                         configurePom(project, config)
+                        
+                        // Configure signing right here inside the publication - perfect!
+                        configureSigningIfAvailable(project, config)
                     }
                 }
             }
-            
-            // Configure signing if signing plugin is applied
-            SigningConfigurator.configureSigningIfAvailable(project, config)
             
             project.logger.quiet("Configured Kotlin JVM project for publishing using ${getPluginType()} strategy")
         } catch (e: Exception) {

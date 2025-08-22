@@ -2,7 +2,7 @@ package com.tddworks.sonatype.publish.portal.plugin.publication.strategies
 
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import com.tddworks.sonatype.publish.portal.plugin.publication.PluginConfigurationStrategy
-import com.tddworks.sonatype.publish.portal.plugin.publication.SigningConfigurator
+import com.tddworks.sonatype.publish.portal.plugin.publication.configureSigningIfAvailable
 import com.tddworks.sonatype.publish.portal.plugin.publication.configurePom
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
@@ -55,16 +55,16 @@ class KotlinMultiplatformConfigurationStrategy : PluginConfigurationStrategy {
                 project.logger.debug("KMP extension not yet available - will be configured when plugin is fully applied")
             }
             
-            // Configure POM metadata for all KMP publications
+            // Configure POM metadata and signing for all KMP publications
             // This is our core responsibility - setting up Maven Central metadata
             project.extensions.configure<PublishingExtension> {
                 publications.withType<MavenPublication> {
                     configurePom(project, config)
+                    
+                    // Configure signing for each KMP publication individually - lower cognitive load!
+                    configureSigningIfAvailable(project, config)
                 }
             }
-            
-            // Configure signing if signing plugin is applied
-            SigningConfigurator.configureSigningIfAvailable(project, config)
             
             // TODO: Configure dokka for multiplatform documentation
             project.logger.quiet("Configured Kotlin Multiplatform project for publishing using ${getPluginType()} strategy")
