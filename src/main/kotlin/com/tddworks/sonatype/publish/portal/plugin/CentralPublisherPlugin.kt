@@ -6,6 +6,7 @@ import com.tddworks.sonatype.publish.portal.api.PublicationType
 import com.tddworks.sonatype.publish.portal.api.SonatypePortalPublisher
 import com.tddworks.sonatype.publish.portal.plugin.dsl.CentralPublisherExtension
 import com.tddworks.sonatype.publish.portal.plugin.publication.PublicationProviderRegistry
+import com.tddworks.sonatype.publish.portal.plugin.publication.PluginConfigurationRegistry
 import com.tddworks.sonatype.publish.portal.plugin.validation.ValidationEngine
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -102,13 +103,24 @@ class CentralPublisherPlugin : Plugin<Project> {
         // Auto-configure publications for root project and all subprojects
         configurePublications(config)
         
-        // Configure all subprojects that have maven-publish
+        // Configure all subprojects using the new plugin detection system
         subprojects {
             afterEvaluate {
                 if (plugins.hasPlugin("maven-publish")) {
-                    // Configure publications for this subproject
-                    val publicationRegistry = PublicationProviderRegistry()
-                    publicationRegistry.configurePublications(this, config)
+                    // Use the new OCP-compliant plugin detection system for subprojects
+                    val pluginConfigurator = PluginConfigurationRegistry.createWithStandardStrategies()
+                    val configurationResult = pluginConfigurator.configureBasedOnAppliedPlugins(this, config)
+                    
+                    if (configurationResult.isConfigured) {
+                        logger.quiet("✅ Subproject ${this.path}: Auto-configured for ${configurationResult.detectedPluginType}")
+                    } else {
+                        logger.warn("⚠️ Subproject ${this.path}: ${configurationResult.reason}")
+                        logger.warn("   Using fallback publication configuration")
+                        
+                        // Fallback to existing system for compatibility
+                        val publicationRegistry = PublicationProviderRegistry()
+                        publicationRegistry.configurePublications(this, config)
+                    }
                     
                     // Configure LocalRepo repository for this subproject
                     extensions.configure<PublishingExtension> {
@@ -145,9 +157,20 @@ class CentralPublisherPlugin : Plugin<Project> {
     }
     
     private fun Project.configurePublications(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
-        // Use the publication provider registry to auto-configure publications
-        val publicationRegistry = PublicationProviderRegistry()
-        publicationRegistry.configurePublications(this, config)
+        // Use the new OCP-compliant plugin detection system
+        val pluginConfigurator = PluginConfigurationRegistry.createWithStandardStrategies()
+        val configurationResult = pluginConfigurator.configureBasedOnAppliedPlugins(this, config)
+        
+        if (configurationResult.isConfigured) {
+            logger.quiet("✅ Auto-configured for ${configurationResult.detectedPluginType} project")
+        } else {
+            logger.warn("⚠️ ${configurationResult.reason}")
+            logger.warn("   Using fallback publication configuration")
+            
+            // Fallback to existing system for compatibility
+            val publicationRegistry = PublicationProviderRegistry()
+            publicationRegistry.configurePublications(this, config)
+        }
         
         // Create a local repository for deployment bundle (generates checksums automatically)
         // Only configure if maven-publish plugin is applied to root project
@@ -192,7 +215,7 @@ class CentralPublisherPlugin : Plugin<Project> {
             }
         }
         
-        logger.quiet("🔧 Publications auto-configured based on project type")
+        logger.quiet("🔧 Publications configured using OCP-compliant plugin detection system")
     }
     
     private fun Project.createPublishingTasks(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
@@ -302,7 +325,7 @@ class CentralPublisherPlugin : Plugin<Project> {
 
     /**
      * Creates a deployment bundle ZIP file containing all published artifacts with proper Maven repository layout.
-     * Uses the vanniktech plugin approach: publish to local repo (generates checksums) then ZIP it up.
+     * Uses plugin approach: publish to local repo (generates checksums) then ZIP it up.
      */
     private fun createDeploymentBundle(project: Project): File {
         val bundleDir = project.layout.buildDirectory.dir("central-portal").get().asFile
@@ -327,7 +350,7 @@ class CentralPublisherPlugin : Plugin<Project> {
         }
 
         // Create ZIP bundle with all files from the repository (includes checksums and signatures)
-        // This follows the vanniktech pattern: rely on Gradle's publishing to generate everything
+        // This follows the pattern: rely on Gradle's publishing to generate everything
         // For KMP projects, this includes all platform-specific publications
         ZipOutputStream(bundleFile.outputStream()).use { zip ->
             groupDir.walkTopDown()
