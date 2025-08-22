@@ -713,4 +713,8 @@ class ConsolePromptSystem : PromptSystem {
             options.firstOrNull { it.equals(input, ignoreCase = true) } ?: options.first()
         }
     }
+    
+    override fun display(message: String) {
+        println(message)
+    }
 }
