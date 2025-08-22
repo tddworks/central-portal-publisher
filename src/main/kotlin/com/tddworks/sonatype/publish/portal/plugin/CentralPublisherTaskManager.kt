@@ -98,8 +98,29 @@ class CentralPublisherTaskManager(
             description = "🧙 Set up your project for Maven Central publishing (interactive guide)"
             
             doLast {
-                // Task execution logic will be implemented later
-                project.logger.quiet("🧙 Starting setup wizard...")
+                try {
+                    project.logger.quiet("🧙 Starting setup wizard...")
+                    
+                    val wizard = com.tddworks.sonatype.publish.portal.plugin.wizard.RefactoredSetupWizard(project)
+                    val result = wizard.runComplete()
+                    
+                    if (result.isComplete) {
+                        project.logger.quiet("✅ Setup wizard completed successfully!")
+                        project.logger.quiet("📝 Generated files:")
+                        result.filesGenerated.forEach { file ->
+                            project.logger.quiet("   - $file")
+                        }
+                        project.logger.quiet("💡 Next steps:")
+                        project.logger.quiet("   1. Review the generated configuration")
+                        project.logger.quiet("   2. Run './gradlew validatePublishing' to check your setup")
+                        project.logger.quiet("   3. Run './gradlew publishToCentral' when ready to publish")
+                    } else {
+                        project.logger.warn("⚠️ Setup was not completed successfully")
+                    }
+                } catch (e: Exception) {
+                    project.logger.error("❌ Setup wizard failed: ${e.message}")
+                    throw e
+                }
             }
         }
     }
