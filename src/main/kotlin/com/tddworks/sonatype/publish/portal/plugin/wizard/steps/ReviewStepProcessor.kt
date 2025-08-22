@@ -68,7 +68,8 @@ class ReviewStepProcessor : WizardStepProcessor {
             appendLine("• Release repository: https://central.sonatype.com/") // Default release repo
         }
         
-        promptSystem.prompt(reviewSummary)
+        // Display the review summary without waiting for input
+        println(reviewSummary)
         
         val confirmed = promptSystem.confirm("Does this configuration look correct? Proceed with setup?")
         

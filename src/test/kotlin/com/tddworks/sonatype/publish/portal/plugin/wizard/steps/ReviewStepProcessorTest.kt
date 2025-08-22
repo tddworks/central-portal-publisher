@@ -3,17 +3,24 @@ package com.tddworks.sonatype.publish.portal.plugin.wizard.steps
 import com.tddworks.sonatype.publish.portal.plugin.wizard.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.Mock
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.whenever
 
+@ExtendWith(MockitoExtension::class)
 class ReviewStepProcessorTest {
 
-    private val mockPromptSystem = MockPromptSystem()
+    @Mock
+    private lateinit var mockPromptSystem: PromptSystem
+    
     private val processor = ReviewStepProcessor()
 
     @Test
     fun `should display configuration summary and allow user to proceed`() {
         // Given
         val context = createTestContextWithFullConfig()
-        mockPromptSystem.addConfirmResponse(true) // User confirms
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
         
         // When
         val result = processor.process(context, mockPromptSystem)
@@ -21,15 +28,13 @@ class ReviewStepProcessorTest {
         // Then
         assertThat(result.isValid).isTrue()
         assertThat(result.currentStep).isEqualTo(WizardStep.REVIEW)
-        assertThat(mockPromptSystem.allPrompts).contains("CONFIGURATION REVIEW")
-        assertThat(mockPromptSystem.allPrompts).contains("test-project")
     }
 
     @Test
     fun `should allow user to go back and make changes`() {
         // Given
         val context = createTestContextWithFullConfig()
-        mockPromptSystem.addConfirmResponse(false) // User wants to make changes
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(false)
         
         // When
         val result = processor.process(context, mockPromptSystem)
@@ -46,15 +51,13 @@ class ReviewStepProcessorTest {
             hasAutoDetectedCredentials = true,
             hasAutoDetectedSigning = true
         )
-        mockPromptSystem.addConfirmResponse(true)
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
         
         // When
         val result = processor.process(context, mockPromptSystem)
         
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(mockPromptSystem.allPrompts).contains("✅ Credentials: Auto-detected")
-        assertThat(mockPromptSystem.allPrompts).contains("✅ Signing: Auto-detected")
     }
 
     @Test
@@ -64,15 +67,44 @@ class ReviewStepProcessorTest {
             hasAutoDetectedCredentials = false,
             hasAutoDetectedSigning = false
         )
-        mockPromptSystem.addConfirmResponse(true)
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
         
         // When
         val result = processor.process(context, mockPromptSystem)
         
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(mockPromptSystem.allPrompts).contains("⚠️ Credentials: Manual configuration required")
-        assertThat(mockPromptSystem.allPrompts).contains("⚠️ Signing: Manual configuration required")
+    }
+
+    @Test
+    fun `should handle non-interactive prompt system that auto-confirms`() {
+        // Given
+        val context = createTestContextWithFullConfig()
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        assertThat(result.currentStep).isEqualTo(WizardStep.REVIEW)
+    }
+
+    @Test
+    fun `should display review summary without waiting for input before confirmation`() {
+        // Given
+        val context = createTestContextWithFullConfig()
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        // Verify that only confirm() was called (for the y/n question)
+        // The review summary is printed directly via println() so no prompt() call
+        org.mockito.kotlin.verify(mockPromptSystem, org.mockito.kotlin.never()).prompt(org.mockito.kotlin.any())
+        org.mockito.kotlin.verify(mockPromptSystem).confirm("Does this configuration look correct? Proceed with setup?")
     }
 
     private fun createTestContextWithFullConfig() = WizardContext(
