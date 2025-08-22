@@ -10,7 +10,9 @@ import org.junit.jupiter.api.io.TempDir
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 import uk.org.webcompere.systemstubs.jupiter.SystemStub
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension
@@ -145,5 +147,105 @@ class CredentialsStepProcessorTest {
         } finally {
             gradleProps.delete()
         }
+    }
+
+    @Test
+    fun `should show step progress indicator when auto-detecting environment variables`() {
+        // Given
+        environmentVariables.set("SONATYPE_USERNAME", "test-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "test-password")
+        `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
+
+        // When
+        val result = processor.process(context, mockPromptSystem)
+
+        // Then
+        assertThat(result.isValid).isTrue()
+        verify(mockPromptSystem).confirm(argThat { message ->
+            message.contains("CREDENTIALS SETUP - AUTO-DETECTED! (Step 3 of 6)")
+        })
+    }
+
+    @Test
+    fun `should mask password properly in environment variable confirmation`() {
+        // Given
+        environmentVariables.set("SONATYPE_USERNAME", "test-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "very-long-password-should-be-masked")
+        `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
+
+        // When
+        val result = processor.process(context, mockPromptSystem)
+
+        // Then
+        assertThat(result.isValid).isTrue()
+        verify(mockPromptSystem).confirm(argThat { message ->
+            message.contains("• SONATYPE_PASSWORD: ********")
+        })
+    }
+
+    @Test
+    fun `should prefer environment variables over global properties when both exist`() {
+        // Given
+        environmentVariables.set("SONATYPE_USERNAME", "env-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "env-password")
+        
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SONATYPE_USERNAME=global-user
+            SONATYPE_PASSWORD=global-password
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("env-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("env-password")
+            // Should show environment variables prompt, not global properties
+            verify(mockPromptSystem).confirm(argThat { message ->
+                message.contains("Found existing environment variables:")
+            })
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should validate empty password when username is provided`() {
+        // Given - username but empty password
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("test-user", "")
+
+        // When
+        val result = processor.process(context, mockPromptSystem)
+
+        // Then - should still be valid (password can be empty)
+        assertThat(result.isValid).isTrue()
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("test-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("")
+    }
+
+    @Test
+    fun `should show manual input message when user rejects auto-detection`() {
+        // Given
+        environmentVariables.set("SONATYPE_USERNAME", "auto-user")
+        environmentVariables.set("SONATYPE_PASSWORD", "auto-password")
+        `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+
+        // When
+        val result = processor.process(context, mockPromptSystem)
+
+        // Then
+        assertThat(result.isValid).isTrue()
+        verify(mockPromptSystem).display(argThat { message ->
+            message.contains("You chose to configure credentials manually.")
+        })
     }
 }
