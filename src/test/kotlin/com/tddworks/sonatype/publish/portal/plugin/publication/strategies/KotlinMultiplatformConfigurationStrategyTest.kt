@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -211,5 +212,127 @@ class KotlinMultiplatformConfigurationStrategyTest {
         // Then - Should complete without error
         assertThat(publishing.publications).isEmpty() // Still no publications created
         // This is expected - KMP plugin creates publications later in the build lifecycle
+    }
+    
+    @Test
+    fun `should create javadoc JAR task for JVM publications`() {
+        // Given - Apply maven-publish with JVM publication
+        project.pluginManager.apply("maven-publish")
+        
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        publishing.publications.create("jvm", MavenPublication::class.java)
+        
+        // When
+        strategy.configure(project, config)
+        
+        // Then - Should create jvm-specific javadoc JAR task
+        val javadocTask = project.tasks.findByName("jvmJavadocJar")
+        assertThat(javadocTask).isNotNull()
+        assertThat(javadocTask).isInstanceOf(Jar::class.java)
+        
+        val jarTask = javadocTask as Jar
+        assertThat(jarTask.archiveClassifier.get()).isEqualTo("javadoc")
+        assertThat(jarTask.description).isEqualTo("Creates javadoc JAR for jvm publication")
+    }
+    
+    @Test
+    fun `should create javadoc JAR task for mixed case JVM publications`() {
+        // Given - Apply maven-publish with mixed case JVM publication name
+        project.pluginManager.apply("maven-publish")
+        
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        publishing.publications.create("JVM", MavenPublication::class.java)
+        
+        // When
+        strategy.configure(project, config)
+        
+        // Then - Should create JVM-specific javadoc JAR task (case insensitive)
+        val javadocTask = project.tasks.findByName("JVMJavadocJar")
+        assertThat(javadocTask).isNotNull()
+        assertThat(javadocTask).isInstanceOf(Jar::class.java)
+    }
+    
+    @Test
+    fun `should not create javadoc JAR task for non-JVM publications`() {
+        // Given - Apply maven-publish with non-JVM publications
+        project.pluginManager.apply("maven-publish")
+        
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        publishing.publications.create("js", MavenPublication::class.java)
+        publishing.publications.create("native", MavenPublication::class.java)
+        publishing.publications.create("linuxX64", MavenPublication::class.java)
+        
+        // When
+        strategy.configure(project, config)
+        
+        // Then - Should not create javadoc JAR tasks for non-JVM publications
+        assertThat(project.tasks.findByName("jsJavadocJar")).isNull()
+        assertThat(project.tasks.findByName("nativeJavadocJar")).isNull()
+        assertThat(project.tasks.findByName("linuxX64JavadocJar")).isNull()
+    }
+    
+    @Test
+    fun `should create separate javadoc JAR tasks for multiple JVM publications`() {
+        // Given - Apply maven-publish with multiple JVM-related publications
+        project.pluginManager.apply("maven-publish")
+        
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        publishing.publications.create("jvm", MavenPublication::class.java)
+        publishing.publications.create("jvmTest", MavenPublication::class.java)
+        publishing.publications.create("js", MavenPublication::class.java) // non-JVM for comparison
+        
+        // When
+        strategy.configure(project, config)
+        
+        // Then - Should create separate javadoc JAR tasks for each JVM publication
+        assertThat(project.tasks.findByName("jvmJavadocJar")).isNotNull()
+        assertThat(project.tasks.findByName("jvmTestJavadocJar")).isNotNull()
+        assertThat(project.tasks.findByName("jsJavadocJar")).isNull()
+        
+        // Verify each task is properly configured
+        val jvmTask = project.tasks.getByName("jvmJavadocJar") as Jar
+        val jvmTestTask = project.tasks.getByName("jvmTestJavadocJar") as Jar
+        
+        assertThat(jvmTask.archiveClassifier.get()).isEqualTo("javadoc")
+        assertThat(jvmTestTask.archiveClassifier.get()).isEqualTo("javadoc")
+        assertThat(jvmTask.description).contains("jvm publication")
+        assertThat(jvmTestTask.description).contains("jvmTest publication")
+    }
+    
+    @Test
+    fun `should add javadoc artifact only to JVM publications`() {
+        // Given - Apply maven-publish with mixed publications
+        project.pluginManager.apply("maven-publish")
+        
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        publishing.publications.create("jvm", MavenPublication::class.java)
+        publishing.publications.create("js", MavenPublication::class.java)
+        publishing.publications.create("native", MavenPublication::class.java)
+        
+        // When
+        strategy.configure(project, config)
+        
+        // Then - Only JVM publication should have javadoc artifact added
+        // Note: We can't easily test artifacts directly in unit tests due to Gradle's internal handling
+        // but we can verify the tasks were created for the right publications
+        assertThat(project.tasks.findByName("jvmJavadocJar")).isNotNull()
+        assertThat(project.tasks.findByName("jsJavadocJar")).isNull()
+        assertThat(project.tasks.findByName("nativeJavadocJar")).isNull()
+    }
+    
+    @Test
+    fun `javadoc JAR task should use correct duplicates strategy`() {
+        // Given - Apply maven-publish with JVM publication
+        project.pluginManager.apply("maven-publish")
+        
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        publishing.publications.create("jvm", MavenPublication::class.java)
+        
+        // When
+        strategy.configure(project, config)
+        
+        // Then - Javadoc JAR task should have WARN duplicates strategy
+        val javadocTask = project.tasks.getByName("jvmJavadocJar") as Jar
+        assertThat(javadocTask.duplicatesStrategy.name).isEqualTo("WARN")
     }
 }
