@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.example.multimodule"
+    group = "com.tddworks.example.multimodule"
     version = "1.0.0"
     
     repositories {
