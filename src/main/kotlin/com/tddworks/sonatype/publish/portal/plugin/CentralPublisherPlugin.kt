@@ -99,11 +99,36 @@ class CentralPublisherPlugin : Plugin<Project> {
             logger.quiet("🔧 No explicit configuration detected - use './gradlew setupPublishing' to configure interactively")
         }
         
-        // Auto-configure publications
+        // Auto-configure publications for root project and all subprojects
         configurePublications(config)
+        
+        // Configure all subprojects that have maven-publish (following OCP)
+        configurePublishingSubprojects(config)
         
         // Create publishing tasks
         createPublishingTasks(config)
+    }
+    
+    private fun Project.configurePublishingSubprojects(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
+        subprojects {
+            afterEvaluate {
+                if (plugins.hasPlugin("maven-publish")) {
+                    // Configure publications for this subproject
+                    val publicationRegistry = PublicationProviderRegistry()
+                    publicationRegistry.configurePublications(this, config)
+                    
+                    // Configure LocalRepo repository for this subproject
+                    extensions.configure<PublishingExtension> {
+                        repositories {
+                            maven {
+                                name = "LocalRepo"
+                                setUrl(rootProject.layout.buildDirectory.dir("maven-repo").get().asFile)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     private fun Project.configurePublications(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
@@ -121,13 +146,14 @@ class CentralPublisherPlugin : Plugin<Project> {
             }
         }
         
+        
         // Create publish task that generates checksums and signatures
         tasks.register("publishToLocalRepo") {
             group = PLUGIN_GROUP
             description = "Publishes to local repository (generates checksums and signatures)"
             
             val publishTasks = tasks.matching { task ->
-                task.name.matches(Regex("publish.+PublicationToLocalRepoRepository"))
+                task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
             }
             
             // Also ensure signing tasks run if signing is configured

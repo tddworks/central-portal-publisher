@@ -71,9 +71,10 @@ class JvmPublicationProvider : PublicationProvider {
     }
     
     private fun configureJavaProject(project: Project, config: CentralPublisherConfig) {
-        // Auto-apply maven-publish plugin if not already applied
+        // Only configure publishing if maven-publish plugin is already applied
         if (!project.plugins.hasPlugin("maven-publish")) {
-            project.plugins.apply("maven-publish")
+            project.logger.debug("Skipping publication configuration for ${project.path} - maven-publish plugin not applied")
+            return
         }
         
         // Configure sources jar
@@ -97,9 +98,10 @@ class JvmPublicationProvider : PublicationProvider {
     }
     
     private fun configureKotlinJvmProject(project: Project, config: CentralPublisherConfig) {
-        // Auto-apply maven-publish plugin if not already applied
+        // Only configure publishing if maven-publish plugin is already applied
         if (!project.plugins.hasPlugin("maven-publish")) {
-            project.plugins.apply("maven-publish")
+            project.logger.debug("Skipping publication configuration for ${project.path} - maven-publish plugin not applied")
+            return
         }
         
         // Configure sources jar - Kotlin JVM projects need explicit configuration
