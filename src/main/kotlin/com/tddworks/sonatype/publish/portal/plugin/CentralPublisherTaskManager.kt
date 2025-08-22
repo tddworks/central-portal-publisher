@@ -24,6 +24,7 @@ class CentralPublisherTaskManager(
         // Task names - simple and memorable
         const val TASK_PUBLISH_TO_CENTRAL = "publishToCentral"
         const val TASK_BUNDLE_ARTIFACTS = "bundleArtifacts" 
+        const val TASK_PUBLISH_TO_LOCAL_REPO = "publishToLocalRepo"
         const val TASK_VALIDATE_PUBLISHING = "validatePublishing"
         const val TASK_SETUP_PUBLISHING = "setupPublishing"
     }
@@ -41,9 +42,11 @@ class CentralPublisherTaskManager(
             return
         }
         
+        setupLocalRepository()
+        createPublishToLocalRepoTask(config)
+        createBundleArtifactsTask(config)
         createPublishToCentralTask(config)
         createValidatePublishingTask(config)
-        createBundleArtifactsTask(config)
         createSetupPublishingTask()
     }
     
@@ -79,6 +82,9 @@ class CentralPublisherTaskManager(
             group = PLUGIN_GROUP
             description = "Creates deployment bundle for Maven Central"
             
+            // Bundle depends on local repo publishing
+            dependsOn(TASK_PUBLISH_TO_LOCAL_REPO)
+            
             doLast {
                 // Task execution logic will be implemented later
                 project.logger.quiet("📦 Creating deployment bundle...")
@@ -95,6 +101,42 @@ class CentralPublisherTaskManager(
                 // Task execution logic will be implemented later
                 project.logger.quiet("🧙 Starting setup wizard...")
             }
+        }
+    }
+    
+    private fun createPublishToLocalRepoTask(config: CentralPublisherConfig) {
+        project.tasks.register(TASK_PUBLISH_TO_LOCAL_REPO) {
+            group = PLUGIN_GROUP
+            description = "Publishes to local repository for bundle creation"
+            
+            doLast {
+                // Task execution logic will be implemented later
+                project.logger.quiet("📁 Publishing to local repository...")
+            }
+        }
+    }
+    
+    private fun setupLocalRepository() {
+        // Apply maven-publish plugin if not already applied
+        project.plugins.apply("maven-publish")
+        
+        // Configure the LocalRepo repository for checksum generation
+        project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java).apply {
+            repositories {
+                maven {
+                    name = "LocalRepo"
+                    url = project.uri("build/repo")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Creates only the setup task (for when no configuration is provided).
+     */
+    fun createSetupTask() {
+        if (project.tasks.findByName(TASK_SETUP_PUBLISHING) == null) {
+            createSetupPublishingTask()
         }
     }
 }

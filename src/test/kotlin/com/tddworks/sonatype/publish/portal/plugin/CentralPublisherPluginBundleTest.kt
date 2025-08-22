@@ -43,12 +43,8 @@ class CentralPublisherPluginBundleTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - Bundle task should exist and be properly configured
         val bundleTask = project.tasks.findByName("bundleArtifacts")
@@ -104,12 +100,8 @@ class CentralPublisherPluginBundleTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - Task dependency chain should be correct
         val publishToCentral = project.tasks.findByName("publishToCentral")!!

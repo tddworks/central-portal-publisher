@@ -58,13 +58,8 @@ class CentralPublisherPluginTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        // Use reflection to call private configurePlugin method
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - All main tasks should be registered
         assertThat(project.tasks.findByName("publishToCentral")).isNotNull()
@@ -87,13 +82,8 @@ class CentralPublisherPluginTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        // Use reflection to call private configurePlugin method
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then
         val publishTask = project.tasks.findByName("publishToCentral")!!
@@ -161,13 +151,12 @@ class CentralPublisherPluginTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
+        // Manually create tasks using the managers directly (test-friendly approach)
         val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        // Use reflection to call private configurePlugin method
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        val configurationManager = CentralPublisherConfigurationManager(project, extension)
+        val config = configurationManager.resolveConfiguration()
+        val taskManager = CentralPublisherTaskManager(project)
+        taskManager.createPublishingTasks(config)
         
         // Then - Should have simple, memorable task names
         assertThat(project.tasks.names).contains(
@@ -178,8 +167,11 @@ class CentralPublisherPluginTest {
         )
         
         // Tasks should be easy to discover
-        val centralTasks = project.tasks.matching { it.group == "Central Publishing" }
-        assertThat(centralTasks).hasSize(5) // publishToCentral, bundleArtifacts, validatePublishing, setupPublishing, publishToLocalRepo
+        val centralTaskNames = project.tasks.names.filter { taskName ->
+            val task = project.tasks.findByName(taskName)
+            task?.group == "Central Publishing"
+        }
+        assertThat(centralTaskNames).hasSize(5) // publishToCentral, bundleArtifacts, validatePublishing, setupPublishing, publishToLocalRepo
     }
     
     @Test
@@ -226,12 +218,8 @@ class CentralPublisherPluginTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - Should have configured publishing extension with local repository
         val publishing = project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java)
@@ -260,12 +248,8 @@ class CentralPublisherPluginTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - bundleArtifacts should depend on publishToLocalRepo
         val bundleTask = project.tasks.findByName("bundleArtifacts")
@@ -290,12 +274,12 @@ class CentralPublisherPluginTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
+        // Manually create tasks and publications using managers directly (test-friendly approach)
         val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        val configurationManager = CentralPublisherConfigurationManager(project, extension)
+        val config = configurationManager.resolveConfiguration()
+        val publicationManager = CentralPublisherPublicationManager(project)
+        publicationManager.configurePublications(config)
         
         // Then - maven-publish plugin should be applied
         assertThat(project.plugins.hasPlugin("maven-publish")).isTrue()

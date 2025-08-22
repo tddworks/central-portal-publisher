@@ -59,33 +59,23 @@ class CentralPublisherPublicationManager(
     }
     
     private fun setupLocalRepositoryAndTasks() {
-        // Create a local repository for deployment bundle (generates checksums automatically)
-        // Only configure if maven-publish plugin is applied
+        // Only configure task dependencies - LocalRepo repository is set up by TaskManager
         if (project.plugins.hasPlugin("maven-publish")) {
-            project.extensions.configure<PublishingExtension> {
-                repositories {
-                    maven {
-                        name = "LocalRepo"
-                        setUrl(project.layout.buildDirectory.dir("maven-repo").get().asFile)
+            // Set up task dependencies for publishToLocalRepo task if it exists
+            project.afterEvaluate {
+                val publishToLocalRepo = project.tasks.findByName("publishToLocalRepo")
+                if (publishToLocalRepo != null) {
+                    val publishTasks = project.tasks.matching { task ->
+                        task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
                     }
+                    
+                    // Also ensure signing tasks run if signing is configured
+                    val signingTasks = project.tasks.matching { task ->
+                        task.name.startsWith("sign") && task.name.endsWith("Publication")
+                    }
+                    
+                    publishToLocalRepo.dependsOn(publishTasks + signingTasks)
                 }
-            }
-            
-            // Create publish task that generates checksums and signatures
-            project.tasks.register("publishToLocalRepo") {
-                group = PLUGIN_GROUP
-                description = "Publishes to local repository (generates checksums and signatures)"
-                
-                val publishTasks = project.tasks.matching { task ->
-                    task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
-                }
-                
-                // Also ensure signing tasks run if signing is configured
-                val signingTasks = project.tasks.matching { task ->
-                    task.name.startsWith("sign") && task.name.endsWith("Publication")
-                }
-                
-                dependsOn(publishTasks + signingTasks)
             }
         }
     }
