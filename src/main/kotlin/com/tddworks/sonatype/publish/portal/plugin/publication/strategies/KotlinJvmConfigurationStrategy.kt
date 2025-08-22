@@ -70,9 +70,6 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
     private fun configureSigning(project: Project, config: CentralPublisherConfig) {
         project.plugins.withId("signing") {
             project.extensions.configure<SigningExtension> {
-                val publishing = project.extensions.getByType(PublishingExtension::class.java)
-                sign(publishing.publications)
-                
                 // Use in-memory PGP keys if available (following original pattern)
                 val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
                 val signingPassword = project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
@@ -80,12 +77,21 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
                 if (!signingKey.isNullOrBlank()) {
                     project.logger.quiet("🔐 Using in-memory GPG keys for signing")
                     useInMemoryPgpKeys(signingKey, signingPassword ?: "")
+                    
+                    // Only sign publications when we have signing keys
+                    val publishing = project.extensions.getByType(PublishingExtension::class.java)
+                    sign(publishing.publications)
                 } else if (config.signing.keyId.isNotBlank()) {
                     // Fall back to file-based signing if configured
                     project.logger.quiet("🔐 Using file-based signing with keyId: ${config.signing.keyId}")
+                    
+                    // Only sign publications when we have signing configuration
+                    val publishing = project.extensions.getByType(PublishingExtension::class.java)
+                    sign(publishing.publications)
                 } else {
-                    project.logger.warn("⚠️ Signing plugin applied but no signing configuration found")
-                    project.logger.warn("   Set SIGNING_KEY and SIGNING_PASSWORD or configure signing block")
+                    project.logger.quiet("⚠️ No signing configuration found - artifacts will be unsigned")
+                    project.logger.quiet("   Set SIGNING_KEY and SIGNING_PASSWORD or configure signing block to enable signing")
+                    // Do NOT call sign() when there's no configuration
                 }
             }
         }
