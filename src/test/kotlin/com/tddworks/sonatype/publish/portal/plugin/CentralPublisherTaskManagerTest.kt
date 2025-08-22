@@ -72,10 +72,10 @@ class CentralPublisherTaskManagerTest {
         val bundleTask = project.tasks.getByName("bundleArtifacts")
         val setupTask = project.tasks.getByName("setupPublishing")
         
-        assertThat(publishTask.description).isEqualTo("Publishes all artifacts to Maven Central")
-        assertThat(validateTask.description).isEqualTo("Validates publishing configuration without publishing")
-        assertThat(bundleTask.description).isEqualTo("Creates deployment bundle for Maven Central")
-        assertThat(setupTask.description).isEqualTo("Interactive setup wizard for Maven Central publishing")
+        assertThat(publishTask.description).isEqualTo("🚀 Publish your artifacts to Maven Central (creates bundle and uploads)")
+        assertThat(validateTask.description).isEqualTo("✅ Check if your project is ready to publish (no upload, safe to run)")
+        assertThat(bundleTask.description).isEqualTo("📦 Prepare your artifacts for publishing (signs, validates, bundles)")
+        assertThat(setupTask.description).isEqualTo("🧙 Set up your project for Maven Central publishing (interactive guide)")
     }
     
     @Test
