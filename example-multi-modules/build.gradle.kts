@@ -1,16 +1,5 @@
 plugins {
-    id("com.tddworks.central-portal-publisher") version "0.0.5"
-}
-
-sonatypePortalPublisher {
-    authentication {
-        username = "some-username"
-        password = "some-password"
-    }
-    settings {
-        autoPublish = false
-        aggregation = true
-    }
+    id("com.tddworks.central-publisher") version "0.2.0-alpha"
 }
 
 version = "0.0.1"
