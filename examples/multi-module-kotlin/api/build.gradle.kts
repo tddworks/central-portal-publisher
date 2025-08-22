@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm")
-    `maven-publish`
+    `maven-publish` // Opt-in to publishing for this module
 }
 
 dependencies {
@@ -8,15 +8,4 @@ dependencies {
     implementation(kotlin("stdlib"))
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            
-            pom {
-                name.set("${rootProject.name}-api")
-                description.set("API interfaces for the multi-module example")
-            }
-        }
-    }
-}
+// Central Publisher plugin auto-configures publishing based on root project settings
