@@ -63,7 +63,7 @@ If you prefer manual setup, you can configure the plugin directly:
 #### build.gradle.kts
 ```kotlin
 plugins {
-    id("com.tddworks.central-publisher") version "0.0.6"
+    id("com.tddworks.central-portal-publisher") version "0.2.0-alpha"
 }
 
 centralPublisher {
