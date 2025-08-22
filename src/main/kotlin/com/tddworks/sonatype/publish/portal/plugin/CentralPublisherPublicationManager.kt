@@ -5,28 +5,23 @@ import com.tddworks.sonatype.publish.portal.plugin.publication.ConfigurationResu
 import com.tddworks.sonatype.publish.portal.plugin.publication.PluginConfigurationRegistry
 import com.tddworks.sonatype.publish.portal.plugin.publication.PublicationProviderRegistry
 import org.gradle.api.Project
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.kotlin.dsl.configure
 
 /**
  * Manages publication configuration for Central Publisher plugin.
  * 
  * Responsibilities:
- * - Configure publications based on detected project types
- * - Set up local repositories for deployment bundle generation
- * - Create publication-related tasks
- * - Leverage existing strategy pattern architecture
+ * - Configure publications based on detected project types using strategy pattern
+ * - Leverage existing OCP-compliant plugin detection system
+ * - Provide fallback configuration for unsupported project types
  * 
  * This class encapsulates the publication logic that was previously in the main plugin,
  * following the developer mental model: "Configure the artifacts to publish"
+ * 
+ * Note: Local repository setup and task creation is handled by CentralPublisherTaskManager
  */
 class CentralPublisherPublicationManager(
     private val project: Project
 ) {
-    
-    companion object {
-        const val PLUGIN_GROUP = "Central Publishing"
-    }
     
     /**
      * Configures publications based on the project's applied plugins.
@@ -43,9 +38,6 @@ class CentralPublisherPublicationManager(
         
         if (configurationResult.isConfigured) {
             project.logger.quiet("✅ Auto-configured for ${configurationResult.detectedPluginType} project")
-            
-            // Set up local repository and tasks if maven-publish is available
-            setupLocalRepositoryAndTasks()
         } else {
             project.logger.warn("⚠️ ${configurationResult.reason}")
             project.logger.warn("   Using fallback publication configuration")
@@ -58,25 +50,4 @@ class CentralPublisherPublicationManager(
         return configurationResult
     }
     
-    private fun setupLocalRepositoryAndTasks() {
-        // Only configure task dependencies - LocalRepo repository is set up by TaskManager
-        if (project.plugins.hasPlugin("maven-publish")) {
-            // Set up task dependencies for publishToLocalRepo task if it exists
-            project.afterEvaluate {
-                val publishToLocalRepo = project.tasks.findByName("publishToLocalRepo")
-                if (publishToLocalRepo != null) {
-                    val publishTasks = project.tasks.matching { task ->
-                        task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
-                    }
-                    
-                    // Also ensure signing tasks run if signing is configured
-                    val signingTasks = project.tasks.matching { task ->
-                        task.name.startsWith("sign") && task.name.endsWith("Publication")
-                    }
-                    
-                    publishToLocalRepo.dependsOn(publishTasks + signingTasks)
-                }
-            }
-        }
-    }
 }
