@@ -52,14 +52,26 @@ class KotlinMultiplatformConfigurationStrategyTest {
     
     @Test
     fun `should detect Kotlin Multiplatform projects`() {
-        // Given - Mock the plugin presence since KMP plugin isn't available in test environment
-        // We'll test the logic without actually applying the plugin
+        // Given - Project without KMP plugin applied
+        // (KMP plugin isn't included in test classpath due to complex dependencies)
         
-        // When - Test with a project that doesn't have the plugin
+        // When - Test detection logic
         val canHandle = strategy.canHandle(project)
         
-        // Then
+        // Then - Should correctly identify that this is NOT a KMP project
         assertThat(canHandle).isFalse()
+    }
+    
+    @Test
+    fun `should detect projects with KMP plugin applied`() {
+        // Given - Try to apply KMP plugin (will fail in test environment due to missing dependencies)
+
+        project.pluginManager.apply("org.jetbrains.kotlin.multiplatform")
+        // When - KMP plugin successfully applied
+        val canHandle = strategy.canHandle(project)
+
+        // Then - Should correctly identify this as a KMP project
+        assertThat(canHandle).isTrue()
     }
     
     @Test
