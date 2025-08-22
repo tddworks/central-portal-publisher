@@ -52,7 +52,7 @@ class CentralPublisherPluginBundleTest {
         assertThat(bundleTask!!.description).contains("Prepare your artifacts for publishing")
         
         // Should depend on local repo publishing (not maven local)
-        assertThat(bundleTask.dependsOn).contains("publishToLocalRepo")
+        assertThat(bundleTask.dependsOn).contains("publishAllPublicationsToLocalRepoRepository")
         
         // Local repo should be configured for checksum generation
         val publishing = project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java)
@@ -106,15 +106,15 @@ class CentralPublisherPluginBundleTest {
         // Then - Task dependency chain should be correct
         val publishToCentral = project.tasks.findByName("publishToCentral")!!
         val bundleArtifacts = project.tasks.findByName("bundleArtifacts")!!
-        val publishToLocalRepo = project.tasks.findByName("publishToLocalRepo")!!
+        val publishToLocalRepo = project.tasks.findByName("publishAllPublicationsToLocalRepoRepository")!!
         
         // publishToCentral depends on bundleArtifacts
         assertThat(publishToCentral.dependsOn).contains("bundleArtifacts")
         
-        // bundleArtifacts depends on publishToLocalRepo
-        assertThat(bundleArtifacts.dependsOn).contains("publishToLocalRepo")
+        // bundleArtifacts depends on publishAllPublicationsToLocalRepoRepository
+        assertThat(bundleArtifacts.dependsOn).contains("publishAllPublicationsToLocalRepoRepository")
         
-        // This creates the correct flow: publishToLocalRepo -> bundleArtifacts -> publishToCentral
+        // This creates the correct flow: publishAllPublicationsToLocalRepoRepository -> bundleArtifacts -> publishToCentral
     }
     
     @Test
