@@ -49,7 +49,7 @@ class CentralPublisherPluginBundleTest {
         // Then - Bundle task should exist and be properly configured
         val bundleTask = project.tasks.findByName("bundleArtifacts")
         assertThat(bundleTask).isNotNull()
-        assertThat(bundleTask!!.description).contains("Creates deployment bundle")
+        assertThat(bundleTask!!.description).contains("Prepare your artifacts for publishing")
         
         // Should depend on local repo publishing (not maven local)
         assertThat(bundleTask.dependsOn).contains("publishToLocalRepo")
