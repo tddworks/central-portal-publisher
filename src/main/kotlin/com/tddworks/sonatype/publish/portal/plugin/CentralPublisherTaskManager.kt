@@ -133,21 +133,14 @@ class CentralPublisherTaskManager(
     }
     
     private fun setupLocalRepository() {
-        // Apply maven-publish plugin if not already applied
-        project.plugins.apply("maven-publish")
-        
         // Configure repositories for both signed and unsigned artifacts
+        // Note: maven-publish plugin is already applied by publication strategies
         project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java).apply {
             repositories {
                 // Repository for signed artifacts (preferred by Maven Central)
                 maven {
                     name = "LocalRepo"
                     url = project.uri("build/maven-repo")
-                }
-                // Fallback repository for unsigned artifacts
-                maven {
-                    name = "UnsignedRepo"
-                    url = project.uri("build/repo")
                 }
             }
         }

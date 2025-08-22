@@ -16,6 +16,8 @@ class CentralPublisherTaskManagerTest {
     @BeforeEach
     fun setUp() {
         project = ProjectBuilder.builder().build()
+        // Apply maven-publish plugin needed for repository setup
+        project.pluginManager.apply("maven-publish")
         manager = CentralPublisherTaskManager(project)
         
         // Create a minimal valid configuration for testing
