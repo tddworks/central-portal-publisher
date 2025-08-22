@@ -1,5 +1,9 @@
 package com.tddworks.sonatype.publish.portal.plugin.tasks
 
+import com.tddworks.sonatype.publish.portal.api.Authentication
+import com.tddworks.sonatype.publish.portal.api.DeploymentBundle
+import com.tddworks.sonatype.publish.portal.api.PublicationType
+import com.tddworks.sonatype.publish.portal.api.SonatypePortalPublisher
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import org.gradle.api.Project
 import org.gradle.api.GradleException
@@ -39,10 +43,8 @@ class PublishToCentralTaskExecutor(
                 project.logger.quiet("📦 Bundle: ${bundleFile.absolutePath}")
                 project.logger.quiet("📊 Bundle size: ${bundleFile.length()} bytes")
                 project.logger.quiet("🎯 Target: https://central.sonatype.com/")
-                
-                // TODO: Implement actual upload using SonatypePortalPublisher
-                // For now, simulate successful upload
-                simulateUpload(bundleFile)
+
+                publishToSonatypePortal(bundleFile, config)
                 
                 project.logger.quiet("✅ Upload completed successfully!")
                 project.logger.quiet("🔗 Check your deployment status at: https://central.sonatype.com/")
@@ -75,5 +77,43 @@ class PublishToCentralTaskExecutor(
         project.logger.quiet("🔐 Authenticating with Sonatype Central Portal...")
         project.logger.quiet("📤 Uploading ${bundleFile.length()} bytes...")
         project.logger.quiet("✅ Upload successful!")
+    }
+
+    /**
+     * Publishes the deployment bundle to Sonatype Central Portal.
+     */
+    private fun publishToSonatypePortal(bundleFile: File, config: CentralPublisherConfig): String {
+        // Create authentication
+        val auth = Authentication(
+            username = config.credentials.username.ifBlank { null },
+            password = config.credentials.password.ifBlank { null }
+        )
+
+        if (auth.username.isNullOrBlank() || auth.password.isNullOrBlank()) {
+            throw IllegalStateException("Username and password are required for publishing. Configure them in gradle.properties or environment variables.")
+        }
+
+        // Determine publication type based on auto-publish setting
+        val publicationType = if (config.publishing.autoPublish) {
+            PublicationType.AUTOMATIC
+        } else {
+            PublicationType.USER_MANAGED
+        }
+
+        // Create deployment bundle
+        val deploymentBundle = DeploymentBundle(
+            file = bundleFile,
+            publicationType = publicationType
+        )
+
+        // Publish to Sonatype
+        val publisher = SonatypePortalPublisher.default()
+        val deploy = publisher.deploy(auth, deploymentBundle)
+
+        project.logger.quiet("🔐 Authenticating with Sonatype Central Portal...")
+        project.logger.quiet("📤 Uploading ${bundleFile.length()} bytes...")
+        project.logger.quiet("✅ Upload successful with deployment ID: $deploy")
+
+        return deploy
     }
 }
