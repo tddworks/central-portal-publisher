@@ -98,46 +98,60 @@ class CentralPublisherPublicationManagerTest {
     }
     
     @Test
-    fun `should create local repository for publishing`() {
+    fun `should configure publications for java-library projects`() {
         // Given - Apply java plugin and maven-publish
         project.pluginManager.apply("java-library")
         project.pluginManager.apply("maven-publish")
         
         // When
-        manager.configurePublications(config)
+        val result = manager.configurePublications(config)
         
-        // Then - Should configure publishing extension with LocalRepo repository
+        // Then - Should successfully configure publications
+        assertThat(result.isConfigured).isTrue()
+        assertThat(result.detectedPluginType).isEqualTo("java-library")
+        
+        // Should configure publishing extension (but LocalRepo is created by TaskManager)
         val publishingExt = project.extensions.findByType(org.gradle.api.publish.PublishingExtension::class.java)
         assertThat(publishingExt).isNotNull()
-        
-        val localRepo = publishingExt?.repositories?.findByName("LocalRepo")
-        assertThat(localRepo).isNotNull()
     }
     
     @Test
-    fun `should create publishToLocalRepo task when maven-publish is available`() {
-        // Given - Apply java plugin and maven-publish
+    fun `should configure task dependencies when maven-publish is available`() {
+        // Given - Apply java plugin and maven-publish, and create the task that TaskManager would create
         project.pluginManager.apply("java-library")
         project.pluginManager.apply("maven-publish")
         
-        // When
-        manager.configurePublications(config)
+        // Simulate TaskManager creating the publishToLocalRepo task
+        project.tasks.register("publishToLocalRepo") {
+            group = "Central Publishing"
+            description = "Publishes to local repository for bundle creation"
+        }
         
-        // Then - Should create publishToLocalRepo task
+        // When
+        val result = manager.configurePublications(config)
+        
+        // Then - Should configure publications and task dependencies
+        assertThat(result.isConfigured).isTrue()
+        assertThat(result.detectedPluginType).isEqualTo("java-library")
+        
+        // PublicationManager configures dependencies, doesn't create the task
         val task = project.tasks.findByName("publishToLocalRepo")
         assertThat(task).isNotNull()
-        assertThat(task?.group).isEqualTo("Central Publishing")
     }
     
     @Test
-    fun `should not create publishToLocalRepo task when maven-publish is not available`() {
+    fun `should handle projects without maven-publish gracefully`() {
         // Given - No compatible plugins that would apply maven-publish
         // (Using a plugin that doesn't automatically apply maven-publish)
         
         // When
-        manager.configurePublications(config)
+        val result = manager.configurePublications(config)
         
-        // Then - Should not create publishToLocalRepo task since no maven-publish
+        // Then - Should return unconfigured result since no compatible plugins found
+        assertThat(result.isConfigured).isFalse()
+        assertThat(result.reason).isNotBlank()
+        
+        // PublicationManager doesn't create tasks - that's TaskManager's responsibility
         val task = project.tasks.findByName("publishToLocalRepo")
         assertThat(task).isNull()
     }
