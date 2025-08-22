@@ -298,4 +298,142 @@ class SigningStepProcessorTest {
             message.contains("No signing credentials detected. Manual configuration needed.")
         })
     }
+
+    @Test
+    fun `should handle missing global gradle properties file`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        // Ensure no global gradle.properties file exists
+        val gradleProps = File(System.getProperty("user.home"), ".gradle/gradle.properties")
+        if (gradleProps.exists()) {
+            gradleProps.delete()
+        }
+        
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
+
+        // When
+        val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+        // Then
+        assertThat(result.isValid).isTrue()
+        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
+        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+    }
+
+    @Test
+    fun `should handle global properties file with missing signing key`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            # Missing SIGNING_KEY
+            SIGNING_PASSWORD=global-password
+            OTHER_PROPERTY=value
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
+            assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should handle global properties file with missing signing password`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SIGNING_KEY=global-key
+            # Missing SIGNING_PASSWORD
+            OTHER_PROPERTY=value
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
+            assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should handle global properties file with empty values`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SIGNING_KEY=
+            SIGNING_PASSWORD=
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
+            assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should handle user rejecting global properties auto-detection`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SIGNING_KEY=global-key
+            SIGNING_PASSWORD=global-password
+        """.trimIndent())
+        
+        try {
+            // Mock user rejecting global properties, then providing manual input
+            `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
+            assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
+            assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
+            verify(mockPromptSystem).display(argThat { message ->
+                message.contains("You chose to configure signing credentials manually.")
+            })
+        } finally {
+            gradleProps.delete()
+        }
+    }
 }

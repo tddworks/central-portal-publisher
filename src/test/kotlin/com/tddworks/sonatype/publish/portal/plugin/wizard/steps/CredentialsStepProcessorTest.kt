@@ -248,4 +248,142 @@ class CredentialsStepProcessorTest {
             message.contains("You chose to configure credentials manually.")
         })
     }
+
+    @Test
+    fun `should handle missing global gradle properties file`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        // Ensure no global gradle.properties file exists
+        val gradleProps = File(System.getProperty("user.home"), ".gradle/gradle.properties")
+        if (gradleProps.exists()) {
+            gradleProps.delete()
+        }
+        
+        `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+
+        // When
+        val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+        // Then
+        assertThat(result.isValid).isTrue()
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
+    }
+
+    @Test
+    fun `should handle global properties file with missing username`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            # Missing SONATYPE_USERNAME
+            SONATYPE_PASSWORD=global-password
+            OTHER_PROPERTY=value
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should handle global properties file with missing password`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SONATYPE_USERNAME=global-user
+            # Missing SONATYPE_PASSWORD
+            OTHER_PROPERTY=value
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should handle global properties file with empty values`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SONATYPE_USERNAME=
+            SONATYPE_PASSWORD=
+        """.trimIndent())
+        
+        try {
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
+        } finally {
+            gradleProps.delete()
+        }
+    }
+
+    @Test
+    fun `should handle user rejecting global properties auto-detection`() {
+        // Given
+        val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
+        val gradleDir = File(System.getProperty("user.home"), ".gradle")
+        gradleDir.mkdirs()
+        val gradleProps = File(gradleDir, "gradle.properties")
+        gradleProps.writeText("""
+            SONATYPE_USERNAME=global-user
+            SONATYPE_PASSWORD=global-password
+        """.trimIndent())
+        
+        try {
+            // Mock user rejecting global properties, then providing manual input
+            `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
+            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+
+            // When
+            val result = processor.process(contextWithGlobal, mockPromptSystem)
+
+            // Then
+            assertThat(result.isValid).isTrue()
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+            assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
+            verify(mockPromptSystem).display(argThat { message ->
+                message.contains("You chose to configure credentials manually.")
+            })
+        } finally {
+            gradleProps.delete()
+        }
+    }
 }
