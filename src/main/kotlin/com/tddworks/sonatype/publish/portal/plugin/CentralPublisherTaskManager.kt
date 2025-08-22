@@ -1,6 +1,9 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
+import com.tddworks.sonatype.publish.portal.plugin.tasks.ValidatePublishingTaskExecutor
+import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleArtifactsTaskExecutor
+import com.tddworks.sonatype.publish.portal.plugin.tasks.PublishToCentralTaskExecutor
 import org.gradle.api.Project
 
 /**
@@ -59,8 +62,8 @@ class CentralPublisherTaskManager(
             dependsOn(TASK_BUNDLE_ARTIFACTS)
             
             doLast {
-                // Task execution logic will be implemented later
-                project.logger.quiet("🚀 Publishing to Maven Central...")
+                val executor = PublishToCentralTaskExecutor(project, config)
+                executor.execute()
             }
         }
     }
@@ -71,8 +74,8 @@ class CentralPublisherTaskManager(
             description = "✅ Check if your project is ready to publish (no upload, safe to run)"
             
             doLast {
-                // Task execution logic will be implemented later
-                project.logger.quiet("✅ Validating publishing configuration...")
+                val executor = ValidatePublishingTaskExecutor(project, config)
+                executor.execute()
             }
         }
     }
@@ -86,8 +89,8 @@ class CentralPublisherTaskManager(
             dependsOn(TASK_PUBLISH_TO_LOCAL_REPO)
             
             doLast {
-                // Task execution logic will be implemented later
-                project.logger.quiet("📦 Creating deployment bundle...")
+                val executor = BundleArtifactsTaskExecutor(project, config)
+                executor.execute()
             }
         }
     }
