@@ -33,7 +33,7 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
         try {
             // Apply required plugins
             project.plugins.apply("maven-publish")
-            project.plugins.apply("signing")
+            // Note: signing plugin should be applied by user if they want signing
             
             // Configure sources jar - Kotlin JVM projects need explicit configuration
             project.extensions.configure<JavaPluginExtension> {

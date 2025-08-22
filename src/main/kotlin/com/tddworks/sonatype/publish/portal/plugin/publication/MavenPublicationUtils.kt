@@ -58,10 +58,24 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
  * @param config The Central Publisher configuration containing signing credentials
  */
 fun MavenPublication.configureSigningIfAvailable(project: Project, config: CentralPublisherConfig) {
-    project.plugins.withId("signing") {
-        // Check for in-memory keys first
-        val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
-        val signingPassword = project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+    // Check for in-memory keys first
+    val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
+    val signingPassword = project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+    
+    // Check if any signing credentials are available
+    val hasSigningCredentials = when {
+        !signingKey.isNullOrBlank() -> true
+        config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() -> true
+        config.signing.keyId.isNotBlank() -> true
+        else -> false
+    }
+    
+    // Only apply and configure signing if we have credentials
+    if (hasSigningCredentials) {
+        // Apply signing plugin if not already applied
+        if (!project.plugins.hasPlugin("signing")) {
+            project.plugins.apply("signing")
+        }
         
         when {
             !signingKey.isNullOrBlank() -> {

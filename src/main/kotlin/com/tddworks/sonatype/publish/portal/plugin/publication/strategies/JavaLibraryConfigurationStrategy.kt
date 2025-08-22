@@ -31,7 +31,7 @@ class JavaLibraryConfigurationStrategy : PluginConfigurationStrategy {
         try {
             // Apply required plugins
             project.plugins.apply("maven-publish")
-            project.plugins.apply("signing")
+            // Note: signing plugin should be applied by user if they want signing
             
             // Configure sources jar
             project.extensions.configure<JavaPluginExtension> {

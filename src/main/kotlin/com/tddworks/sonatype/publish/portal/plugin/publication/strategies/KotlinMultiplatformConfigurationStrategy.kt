@@ -35,7 +35,7 @@ class KotlinMultiplatformConfigurationStrategy : PluginConfigurationStrategy {
         try {
             // Apply required plugins (though KMP usually applies maven-publish)
             project.plugins.apply("maven-publish")
-            project.plugins.apply("signing")
+            // Note: signing plugin should be applied by user if they want signing
             
             // Configure KMP-specific settings using the more idiomatic approach
             // Only attempt if the extension exists (avoids warnings in test environments)
