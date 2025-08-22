@@ -107,6 +107,17 @@ class CentralPublisherPlugin : Plugin<Project> {
                     } else {
                         subproject.logger.warn("⚠️ Subproject ${subproject.path}: ${result.reason}")
                     }
+                    
+                    // Configure subproject to publish to root project's repository
+                    subproject.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java).apply {
+                        repositories {
+                            maven {
+                                name = "LocalRepo"
+                                url = project.uri("build/maven-repo") // Root project's repository
+                            }
+                        }
+                    }
+                    subproject.logger.quiet("📦 Configured ${subproject.path} to publish to root project repository")
                 }
             }
         }

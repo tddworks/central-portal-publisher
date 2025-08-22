@@ -83,18 +83,72 @@ class CentralPublisherTaskManager(
             group = PLUGIN_GROUP
             description = "📦 Prepare your artifacts for publishing (signs, validates, bundles)"
             
-            // Bundle depends directly on Gradle publishing and signing tasks
-            dependsOn("publishAllPublicationsToLocalRepoRepository")
+            // Setup publishing task dependencies for multi-module support
+            setupPublishingTaskDependencies()
             
-            // Also ensure signing tasks run if signing is configured
-            val signingTasks = project.tasks.matching { task ->
-                task.name.startsWith("sign") && task.name.endsWith("Publication")
-            }
-            dependsOn(signingTasks)
+            // Also ensure signing tasks run if signing is configured across all projects
+            setupSigningTaskDependencies()
             
             doLast {
                 val executor = BundleArtifactsTaskExecutor(project, config)
                 executor.execute()
+            }
+        }
+    }
+    
+    /**
+     * Sets up dependencies on publishing tasks for both single and multi-module projects.
+     * Uses regex matching to find all publication tasks, similar to original plugin approach.
+     */
+    private fun org.gradle.api.Task.setupPublishingTaskDependencies() {
+        // For root project - check if it has maven-publish and add its publish tasks
+        if (project.plugins.hasPlugin("maven-publish")) {
+            val rootPublishTasks = project.tasks.matching { task ->
+                task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
+            }
+            if (rootPublishTasks.isNotEmpty()) {
+                dependsOn(rootPublishTasks)
+                project.logger.quiet("📦 Added dependency on root project publish tasks")
+            }
+        }
+        
+        // For multi-module support, depend on all subproject publish tasks to LocalRepo
+        project.allprojects.forEach { subproject ->
+            if (subproject != project && subproject.plugins.hasPlugin("maven-publish")) {
+                val subprojectPublishTasks = subproject.tasks.matching { task ->
+                    task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
+                }
+                if (subprojectPublishTasks.isNotEmpty()) {
+                    dependsOn(subprojectPublishTasks)
+                    project.logger.quiet("📦 Added dependency on ${subproject.name} publish tasks")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Sets up dependencies on signing tasks across all projects that have signing configured.
+     */
+    private fun org.gradle.api.Task.setupSigningTaskDependencies() {
+        // Check root project for signing tasks
+        val rootSigningTasks = project.tasks.matching { task ->
+            task.name.startsWith("sign") && task.name.endsWith("Publication")
+        }
+        if (rootSigningTasks.isNotEmpty()) {
+            dependsOn(rootSigningTasks)
+            project.logger.quiet("🔐 Added dependency on root project signing tasks")
+        }
+        
+        // Check all subprojects for signing tasks
+        project.allprojects.forEach { subproject ->
+            if (subproject != project) {
+                val signingTasks = subproject.tasks.matching { task ->
+                    task.name.startsWith("sign") && task.name.endsWith("Publication")
+                }
+                if (signingTasks.isNotEmpty()) {
+                    dependsOn(signingTasks)
+                    project.logger.quiet("🔐 Added dependency on ${subproject.name} signing tasks")
+                }
             }
         }
     }
@@ -135,12 +189,17 @@ class CentralPublisherTaskManager(
     private fun setupLocalRepository() {
         // Configure repositories for both signed and unsigned artifacts
         // Note: maven-publish plugin is already applied by publication strategies
-        project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java).apply {
-            repositories {
-                // Repository for signed artifacts (preferred by Maven Central)
-                maven {
-                    name = "LocalRepo"
-                    url = project.uri("build/maven-repo")
+        // Note: Subprojects are configured in CentralPublisherPlugin.configureSubprojects()
+        
+        // Configure root project repository
+        if (project.plugins.hasPlugin("maven-publish")) {
+            project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java).apply {
+                repositories {
+                    // Repository for signed artifacts (preferred by Maven Central)
+                    maven {
+                        name = "LocalRepo"
+                        url = project.uri("build/maven-repo")
+                    }
                 }
             }
         }

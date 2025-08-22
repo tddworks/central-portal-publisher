@@ -26,26 +26,9 @@ class BundleArtifactsTaskExecutor(
             val publishingExtension = project.extensions.findByType(PublishingExtension::class.java)
                 ?: throw GradleException("maven-publish plugin not applied. Please apply 'maven-publish' plugin.")
             
-            // Look for local repository artifacts - prefer signed artifacts from maven-repo if available
-            val signedRepoDir = File(project.buildDir, "maven-repo")
-            val unsignedRepoDir = File(project.buildDir, "repo")
-            
-            val localRepoDir = when {
-                signedRepoDir.exists() && signedRepoDir.listFiles()?.isNotEmpty() == true -> {
-                    project.logger.quiet("📝 Using signed artifacts from maven-repo")
-                    signedRepoDir
-                }
-                unsignedRepoDir.exists() && unsignedRepoDir.listFiles()?.isNotEmpty() == true -> {
-                    project.logger.warn("⚠️ Using unsigned artifacts from repo")
-                    project.logger.warn("⚠️ Maven Central requires signed artifacts")
-                    project.logger.warn("⚠️ Please configure signing credentials and re-run the build")
-                    project.logger.warn("💡 See SIGNING_SETUP.md for signing configuration instructions")
-                    unsignedRepoDir
-                }
-                else -> {
-                    throw GradleException("No artifacts found to bundle. Please run publishToLocalRepo task first.")
-                }
-            }
+            // Look for local repository artifacts - check current project and all submodules
+            val localRepoDir = findLocalRepositoryWithArtifacts()
+                ?: throw GradleException("No artifacts found to bundle. Please run publishToLocalRepo task first.")
             
             // Create bundle directory
             val bundleDir = File(project.buildDir, "central-portal")
@@ -69,6 +52,40 @@ class BundleArtifactsTaskExecutor(
             }
             project.logger.error("❌ Bundle creation failed: ${e.message}")
             throw GradleException("Bundle creation error: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * Finds local repository directory with artifacts.
+     * In multi-module projects, all artifacts are published to the root project's repository.
+     */
+    private fun findLocalRepositoryWithArtifacts(): File? {
+        // Always check root project's repository first - this is where artifacts are published
+        val rootProject = project.rootProject
+        val signedRepoDir = File(rootProject.buildDir, "maven-repo")
+        val unsignedRepoDir = File(rootProject.buildDir, "repo")
+        
+        project.logger.quiet("🔍 Looking for artifacts in root project repository: ${signedRepoDir.absolutePath}")
+        
+        when {
+            signedRepoDir.exists() && signedRepoDir.listFiles()?.isNotEmpty() == true -> {
+                project.logger.quiet("📝 Found signed artifacts in root project at maven-repo")
+                return signedRepoDir
+            }
+            unsignedRepoDir.exists() && unsignedRepoDir.listFiles()?.isNotEmpty() == true -> {
+                project.logger.warn("⚠️ Found unsigned artifacts in root project at repo")
+                project.logger.warn("⚠️ Maven Central requires signed artifacts")
+                project.logger.warn("⚠️ Please configure signing credentials and re-run the build")
+                project.logger.warn("💡 See SIGNING_SETUP.md for signing configuration instructions")
+                return unsignedRepoDir
+            }
+            else -> {
+                project.logger.quiet("🔍 No artifacts found in root project repository")
+                project.logger.quiet("📂 Checked directories:")
+                project.logger.quiet("   - ${signedRepoDir.absolutePath} (exists: ${signedRepoDir.exists()})")
+                project.logger.quiet("   - ${unsignedRepoDir.absolutePath} (exists: ${unsignedRepoDir.exists()})")
+                return null
+            }
         }
     }
     
