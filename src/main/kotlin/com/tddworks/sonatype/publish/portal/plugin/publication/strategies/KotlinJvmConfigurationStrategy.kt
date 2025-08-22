@@ -13,6 +13,7 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.register
+import org.gradle.plugins.signing.SigningExtension
 
 /**
  * Configuration strategy for Kotlin JVM projects.
@@ -56,10 +57,37 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
                 }
             }
             
+            // Configure signing if signing plugin is applied
+            configureSigning(project, config)
+            
             project.logger.quiet("Configured Kotlin JVM project for publishing using ${getPluginType()} strategy")
         } catch (e: Exception) {
             project.logger.error("Failed to configure Kotlin JVM project: ${e.message}", e)
             throw e
+        }
+    }
+    
+    private fun configureSigning(project: Project, config: CentralPublisherConfig) {
+        project.plugins.withId("signing") {
+            project.extensions.configure<SigningExtension> {
+                val publishing = project.extensions.getByType(PublishingExtension::class.java)
+                sign(publishing.publications)
+                
+                // Use in-memory PGP keys if available (following original pattern)
+                val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
+                val signingPassword = project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+                
+                if (!signingKey.isNullOrBlank()) {
+                    project.logger.quiet("🔐 Using in-memory GPG keys for signing")
+                    useInMemoryPgpKeys(signingKey, signingPassword ?: "")
+                } else if (config.signing.keyId.isNotBlank()) {
+                    // Fall back to file-based signing if configured
+                    project.logger.quiet("🔐 Using file-based signing with keyId: ${config.signing.keyId}")
+                } else {
+                    project.logger.warn("⚠️ Signing plugin applied but no signing configuration found")
+                    project.logger.warn("   Set SIGNING_KEY and SIGNING_PASSWORD or configure signing block")
+                }
+            }
         }
     }
     
