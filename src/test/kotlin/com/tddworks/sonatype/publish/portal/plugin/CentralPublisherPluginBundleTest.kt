@@ -32,6 +32,7 @@ class CentralPublisherPluginBundleTest {
         // Given
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure plugin
@@ -68,6 +69,7 @@ class CentralPublisherPluginBundleTest {
         // Given - Invalid namespace
         project.group = "com.example"  // Maven Central doesn't allow example namespaces
         project.version = "1.0.0"
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure plugin
@@ -91,6 +93,7 @@ class CentralPublisherPluginBundleTest {
         // Given
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure plugin
@@ -127,6 +130,7 @@ class CentralPublisherPluginBundleTest {
         // Given
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure with dry run
@@ -156,6 +160,7 @@ class CentralPublisherPluginBundleTest {
         // Given
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure with signing

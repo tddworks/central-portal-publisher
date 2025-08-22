@@ -59,15 +59,6 @@ class JvmPublicationProvider : PublicationProvider {
                 return
             }
         }
-        
-        // Configure signing if signing information is provided (check multiple sources)
-        val hasSigningConfig = config.signing.keyId.isNotBlank() || 
-                               project.get("SIGNING_KEY") != "SIGNING_KEY not found" ||
-                               project.findProperty("signing.keyId") != null
-        
-        if (hasSigningConfig) {
-            configureSigning(project, config)
-        }
     }
     
     private fun configureJavaProject(project: Project, config: CentralPublisherConfig) {
@@ -94,6 +85,15 @@ class JvmPublicationProvider : PublicationProvider {
             publishing.publications.withType<MavenPublication>().named("maven").configure {
                 configurePom(project, config)
             }
+        }
+        
+        // Configure signing if signing information is provided (check multiple sources)
+        val hasSigningConfig = config.signing.keyId.isNotBlank() || 
+                               project.get("SIGNING_KEY") != "SIGNING_KEY not found" ||
+                               project.findProperty("signing.keyId") != null
+        
+        if (hasSigningConfig) {
+            configureSigning(project, config)
         }
     }
     
@@ -130,6 +130,15 @@ class JvmPublicationProvider : PublicationProvider {
                 artifact(javadocJar)
                 configurePom(project, config)
             }
+        }
+        
+        // Configure signing if signing information is provided (check multiple sources)
+        val hasSigningConfig = config.signing.keyId.isNotBlank() || 
+                               project.get("SIGNING_KEY") != "SIGNING_KEY not found" ||
+                               project.findProperty("signing.keyId") != null
+        
+        if (hasSigningConfig) {
+            configureSigning(project, config)
         }
     }
     
@@ -209,9 +218,10 @@ class KotlinMultiplatformPublicationProvider : PublicationProvider {
     override fun configurePublications(project: Project, config: CentralPublisherConfig) {
         // Only configure if Kotlin Multiplatform plugin is applied
         if (project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
-            // Auto-apply maven-publish plugin for KMP projects
+            // Only configure publishing if maven-publish plugin is already applied (opt-in behavior)
             if (!project.plugins.hasPlugin("maven-publish")) {
-                project.plugins.apply("maven-publish")
+                project.logger.debug("Skipping publication configuration for ${project.path} - maven-publish plugin not applied")
+                return
             }
             
             configureKotlinMultiplatformProject(project, config)
@@ -344,11 +354,9 @@ class PublicationProviderRegistry {
             project.plugins.hasPlugin("org.jetbrains.kotlin.jvm") -> {
                 jvmProvider.configurePublications(project, config)
             }
-            // For projects with no recognized plugins, apply basic maven-publish
+            // For projects with no recognized plugins, skip configuration (opt-in behavior)
             else -> {
-                if (!project.plugins.hasPlugin("maven-publish")) {
-                    project.plugins.apply("maven-publish")
-                }
+                project.logger.debug("Skipping publication configuration for ${project.path} - no recognized plugins or maven-publish not applied")
             }
         }
     }

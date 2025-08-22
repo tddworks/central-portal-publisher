@@ -47,6 +47,7 @@ class CentralPublisherPluginTest {
     @Test
     fun `should register all publishing tasks`() {
         // When
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // Configure minimal extension to trigger afterEvaluate
@@ -75,6 +76,7 @@ class CentralPublisherPluginTest {
     @Test
     fun `should set correct task group and descriptions`() {
         // When
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // Configure minimal extension to trigger afterEvaluate
@@ -148,6 +150,7 @@ class CentralPublisherPluginTest {
     @Test
     fun `should provide clean task names compared to old plugin`() {
         // When
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // Configure minimal extension to trigger afterEvaluate
@@ -212,6 +215,7 @@ class CentralPublisherPluginTest {
     @Test
     fun `should configure local repository for bundle creation`() {
         // Given
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure minimal extension to trigger afterEvaluate
@@ -245,6 +249,7 @@ class CentralPublisherPluginTest {
     @Test
     fun `should create bundleArtifacts task with correct dependencies`() {
         // Given
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure minimal extension to trigger afterEvaluate
@@ -271,9 +276,10 @@ class CentralPublisherPluginTest {
     }
     
     @Test
-    fun `should apply maven-publish plugin and configure publications automatically`() {
-        // Given - Apply java plugin which is available in test environment
+    fun `should configure publications when maven-publish plugin is applied`() {
+        // Given - Apply java and maven-publish plugins for opt-in behavior
         project.pluginManager.apply("java")
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure minimal extension to trigger afterEvaluate
@@ -302,6 +308,7 @@ class CentralPublisherPluginTest {
     @Test
     fun `should handle dry run mode properly`() {
         // Given
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure with dry run enabled
@@ -326,6 +333,7 @@ class CentralPublisherPluginTest {
     fun `should handle namespace validation for bundle creation`() {
         // Given
         project.group = "com.example"  // Invalid namespace for Maven Central
+        project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
         
         // When - Configure minimal extension to trigger afterEvaluate

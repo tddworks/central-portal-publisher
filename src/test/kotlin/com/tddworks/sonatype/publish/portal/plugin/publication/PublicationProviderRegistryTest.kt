@@ -30,8 +30,9 @@ class PublicationProviderRegistryTest {
 
     @Test
     fun `should apply all applicable publication providers`() {
-        // Given: A project with Java plugin
+        // Given: A project with Java and maven-publish plugins (opt-in behavior)
         project.plugins.apply("java")
+        project.plugins.apply("maven-publish")
 
         val registry = PublicationProviderRegistry()
 
@@ -56,11 +57,9 @@ class PublicationProviderRegistryTest {
         // When: Configure publications via registry
         registry.configurePublications(project, config)
 
-        // Then: Should complete without error and apply maven-publish
-        Assertions.assertThat(project.plugins.hasPlugin("maven-publish")).isEqualTo(true)
-        val publishing = project.extensions.getByType<PublishingExtension>()
-        // No publications should be created since no JVM/KMP plugins are applied
-        Assertions.assertThat(publishing.publications.size).isEqualTo(0)
+        // Then: Should complete without error and NOT apply maven-publish (opt-in behavior)
+        Assertions.assertThat(project.plugins.hasPlugin("maven-publish")).isEqualTo(false)
+        // No publishing extension should exist since no maven-publish plugin was applied
     }
 
     @Test

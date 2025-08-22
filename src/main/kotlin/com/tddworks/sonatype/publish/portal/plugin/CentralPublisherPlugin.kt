@@ -102,14 +102,7 @@ class CentralPublisherPlugin : Plugin<Project> {
         // Auto-configure publications for root project and all subprojects
         configurePublications(config)
         
-        // Configure all subprojects that have maven-publish (following OCP)
-        configurePublishingSubprojects(config)
-        
-        // Create publishing tasks
-        createPublishingTasks(config)
-    }
-    
-    private fun Project.configurePublishingSubprojects(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
+        // Configure all subprojects that have maven-publish
         subprojects {
             afterEvaluate {
                 if (plugins.hasPlugin("maven-publish")) {
@@ -126,9 +119,29 @@ class CentralPublisherPlugin : Plugin<Project> {
                             }
                         }
                     }
+                    
+                    // Create publishToLocalRepo task for this subproject
+                    tasks.register("publishToLocalRepo") {
+                        group = "Central Publishing"
+                        description = "Publishes to local repository (generates checksums and signatures)"
+                        
+                        val publishTasks = tasks.matching { task ->
+                            task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
+                        }
+                        
+                        // Also ensure signing tasks run if signing is configured
+                        val signingTasks = tasks.matching { task ->
+                            task.name.startsWith("sign") && task.name.endsWith("Publication")
+                        }
+                        
+                        dependsOn(publishTasks + signingTasks)
+                    }
                 }
             }
         }
+        
+        // Create publishing tasks
+        createPublishingTasks(config)
     }
     
     private fun Project.configurePublications(config: com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig) {
@@ -137,31 +150,46 @@ class CentralPublisherPlugin : Plugin<Project> {
         publicationRegistry.configurePublications(this, config)
         
         // Create a local repository for deployment bundle (generates checksums automatically)
-        extensions.configure<PublishingExtension> {
-            repositories {
-                maven {
-                    name = "LocalRepo"
-                    setUrl(layout.buildDirectory.dir("maven-repo").get().asFile)
+        // Only configure if maven-publish plugin is applied to root project
+        if (plugins.hasPlugin("maven-publish")) {
+            extensions.configure<PublishingExtension> {
+                repositories {
+                    maven {
+                        name = "LocalRepo"
+                        setUrl(layout.buildDirectory.dir("maven-repo").get().asFile)
+                    }
                 }
             }
         }
         
         
-        // Create publish task that generates checksums and signatures
-        tasks.register("publishToLocalRepo") {
-            group = PLUGIN_GROUP
-            description = "Publishes to local repository (generates checksums and signatures)"
-            
-            val publishTasks = tasks.matching { task ->
-                task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
+        // Create publish task that generates checksums and signatures (only if maven-publish is available)
+        if (plugins.hasPlugin("maven-publish")) {
+            tasks.register("publishToLocalRepo") {
+                group = PLUGIN_GROUP
+                description = "Publishes to local repository (generates checksums and signatures)"
+                
+                val publishTasks = tasks.matching { task ->
+                    task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
+                }
+                
+                // Also ensure signing tasks run if signing is configured
+                val signingTasks = tasks.matching { task ->
+                    task.name.startsWith("sign") && task.name.endsWith("Publication")
+                }
+                
+                dependsOn(publishTasks + signingTasks)
+                
+                // For multi-module support, depend on all subproject publish tasks to LocalRepo
+                allprojects.forEach { subproject ->
+                    if (subproject != project && subproject.plugins.hasPlugin("maven-publish")) {
+                        val subprojectPublishTasks = subproject.tasks.matching { task ->
+                            task.name.matches(Regex("publish.+Publication[s]?ToLocalRepoRepository"))
+                        }
+                        dependsOn(subprojectPublishTasks)
+                    }
+                }
             }
-            
-            // Also ensure signing tasks run if signing is configured
-            val signingTasks = tasks.matching { task ->
-                task.name.startsWith("sign") && task.name.endsWith("Publication")
-            }
-            
-            dependsOn(publishTasks + signingTasks)
         }
         
         logger.quiet("🔧 Publications auto-configured based on project type")
@@ -220,7 +248,10 @@ class CentralPublisherPlugin : Plugin<Project> {
             description = "Creates deployment bundle for Maven Central"
             
             // Use local repository that generates checksums and signatures automatically
-            dependsOn("publishToLocalRepo")
+            // Only depend on publishToLocalRepo if it exists (i.e., maven-publish plugin is applied)
+            if (project.plugins.hasPlugin("maven-publish")) {
+                dependsOn("publishToLocalRepo")
+            }
             
             doLast {
                 logger.quiet("📦 Creating deployment bundle...")

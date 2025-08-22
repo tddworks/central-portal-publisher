@@ -94,8 +94,8 @@ class PublicationProviderTest {
     }
     
     @Test
-    fun `should apply maven-publish plugin automatically when missing`() {
-        // Given: A project with Java plugin but no maven-publish
+    fun `should skip configuration when maven-publish plugin is missing`() {
+        // Given: A project with Java plugin but no maven-publish (opt-in behavior)
         project.plugins.apply("java")
         
         val provider = JvmPublicationProvider()
@@ -103,8 +103,8 @@ class PublicationProviderTest {
         // When: Configure publications
         provider.configurePublications(project, config)
         
-        // Then: maven-publish plugin should be applied
-        Assertions.assertThat(project.plugins.hasPlugin("maven-publish")).isEqualTo(true)
+        // Then: maven-publish plugin should NOT be applied (opt-in behavior)
+        Assertions.assertThat(project.plugins.hasPlugin("maven-publish")).isEqualTo(false)
     }
     
     @Test
@@ -161,23 +161,28 @@ class PublicationProviderTest {
     }
     
     @Test
-    fun `should apply maven-publish plugin automatically`() {
-        // Given: A project without maven-publish plugin
+    fun `should configure publications when maven-publish plugin exists`() {
+        // Given: A project with both java and maven-publish plugins (opt-in behavior)
         project.plugins.apply("java")
+        project.plugins.apply("maven-publish")
         
         val provider = JvmPublicationProvider()
         
         // When: Configure publications
         provider.configurePublications(project, config)
         
-        // Then: maven-publish plugin should be applied
+        // Then: maven-publish plugin should be applied and publications configured
         Assertions.assertThat(project.plugins.hasPlugin("maven-publish")).isEqualTo(true)
+        
+        val publishing = project.extensions.getByType<PublishingExtension>()
+        Assertions.assertThat(publishing.publications).isNotEmpty()
     }
     
     @Test
     fun `should use publication provider registry to configure multiple providers`() {
-        // Given: A project with Java plugin
+        // Given: A project with Java and maven-publish plugins (opt-in behavior)
         project.plugins.apply("java")
+        project.plugins.apply("maven-publish")
         
         val registry = PublicationProviderRegistry()
         
