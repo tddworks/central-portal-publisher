@@ -27,7 +27,6 @@ class CentralPublisherTaskManager(
         // Task names - simple and memorable
         const val TASK_PUBLISH_TO_CENTRAL = "publishToCentral"
         const val TASK_BUNDLE_ARTIFACTS = "bundleArtifacts" 
-        const val TASK_PUBLISH_TO_LOCAL_REPO = "publishToLocalRepo"
         const val TASK_VALIDATE_PUBLISHING = "validatePublishing"
         const val TASK_SETUP_PUBLISHING = "setupPublishing"
     }
@@ -46,7 +45,6 @@ class CentralPublisherTaskManager(
         }
         
         setupLocalRepository()
-        createPublishToLocalRepoTask(config)
         createBundleArtifactsTask(config)
         createPublishToCentralTask(config)
         createValidatePublishingTask(config)
@@ -85,8 +83,14 @@ class CentralPublisherTaskManager(
             group = PLUGIN_GROUP
             description = "📦 Prepare your artifacts for publishing (signs, validates, bundles)"
             
-            // Bundle depends on local repo publishing
-            dependsOn(TASK_PUBLISH_TO_LOCAL_REPO)
+            // Bundle depends directly on Gradle publishing and signing tasks
+            dependsOn("publishAllPublicationsToLocalRepoRepository")
+            
+            // Also ensure signing tasks run if signing is configured
+            val signingTasks = project.tasks.matching { task ->
+                task.name.startsWith("sign") && task.name.endsWith("Publication")
+            }
+            dependsOn(signingTasks)
             
             doLast {
                 val executor = BundleArtifactsTaskExecutor(project, config)
@@ -128,29 +132,21 @@ class CentralPublisherTaskManager(
         }
     }
     
-    private fun createPublishToLocalRepoTask(config: CentralPublisherConfig) {
-        project.tasks.register(TASK_PUBLISH_TO_LOCAL_REPO) {
-            group = PLUGIN_GROUP
-            description = "📁 Build artifacts locally (internal step for bundle creation)"
-            
-            // Depend on the actual Maven publishing task
-            dependsOn("publishAllPublicationsToLocalRepoRepository")
-            
-            doLast {
-                project.logger.quiet("📁 Publishing to local repository...")
-            }
-        }
-    }
-    
     private fun setupLocalRepository() {
         // Apply maven-publish plugin if not already applied
         project.plugins.apply("maven-publish")
         
-        // Configure the LocalRepo repository for checksum generation
+        // Configure repositories for both signed and unsigned artifacts
         project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java).apply {
             repositories {
+                // Repository for signed artifacts (preferred by Maven Central)
                 maven {
                     name = "LocalRepo"
+                    url = project.uri("build/maven-repo")
+                }
+                // Fallback repository for unsigned artifacts
+                maven {
+                    name = "UnsignedRepo"
                     url = project.uri("build/repo")
                 }
             }
