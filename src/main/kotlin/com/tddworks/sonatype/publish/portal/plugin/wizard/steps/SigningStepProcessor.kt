@@ -35,8 +35,10 @@ class SigningStepProcessor : WizardStepProcessor {
         
         when {
             hasEnvSigning -> {
+                val totalSteps = WizardStep.values().size
+                val currentStepIndex = WizardStep.values().indexOf(step) + 1
                 val useAutoDetected = promptSystem.confirm("""
-                    🔐 SIGNING SETUP - AUTO-DETECTED!
+                    🔐 SIGNING SETUP - AUTO-DETECTED! (Step $currentStepIndex of $totalSteps)
                     ✅ Found existing environment variables:
                     • SIGNING_KEY: ${maskKey(envKey!!)}
                     • SIGNING_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
@@ -108,8 +110,10 @@ class SigningStepProcessor : WizardStepProcessor {
             "No signing credentials detected. Manual configuration needed."
         }
         
-        println("""
-            🔐 SIGNING SETUP - MANUAL INPUT
+        val totalSteps = WizardStep.values().size
+        val currentStepIndex = WizardStep.values().indexOf(step) + 1
+        promptSystem.display("""
+            🔐 SIGNING SETUP - MANUAL INPUT (Step $currentStepIndex of $totalSteps)
             $message
             
             Configuration options (in order of preference):

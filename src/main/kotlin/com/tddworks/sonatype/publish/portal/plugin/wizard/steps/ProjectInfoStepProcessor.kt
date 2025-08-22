@@ -27,6 +27,11 @@ class ProjectInfoStepProcessor : WizardStepProcessor {
     ): WizardStepResult {
         val detectedInfo = context.detectedInfo!!
         
+        // Show step header
+        val totalSteps = WizardStep.values().size
+        val currentStepIndex = WizardStep.values().indexOf(step) + 1
+        promptSystem.display("📝 PROJECT INFO (Step $currentStepIndex of $totalSteps)\n${"=".repeat(50)}\n")
+        
         // Start with the base config and update as we go
         var configBuilder = context.wizardConfig.projectInfo
         
@@ -123,6 +128,11 @@ class ProjectInfoStepProcessor : WizardStepProcessor {
     
     private fun handleManualInput(context: WizardContext, promptSystem: PromptSystem): WizardStepResult {
         val validationErrors = mutableListOf<String>()
+        
+        // Show step header
+        val totalSteps = WizardStep.values().size
+        val currentStepIndex = WizardStep.values().indexOf(step) + 1
+        promptSystem.display("📝 PROJECT INFO (Step $currentStepIndex of $totalSteps)\n${"=".repeat(50)}\n")
         
         // Prompt for project information
         val projectName = promptSystem.prompt("Enter project name:")?.trim() ?: ""

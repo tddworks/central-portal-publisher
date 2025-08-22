@@ -15,8 +15,11 @@ class TestStepProcessor : WizardStepProcessor {
         val validationErrors = mutableListOf<String>()
         
         val testResults = buildString {
-            appendLine("🧪 CONFIGURATION TEST")
-            appendLine("=".repeat(50))
+            // Add progress indicator
+            val totalSteps = WizardStep.values().size
+            val currentStepIndex = WizardStep.values().indexOf(step) + 1
+            appendLine("🧪 CONFIGURATION TEST (Step $currentStepIndex of $totalSteps)")
+            appendLine("=".repeat(60))
             appendLine()
             appendLine("Running validation tests...")
             appendLine()
@@ -67,12 +70,10 @@ class TestStepProcessor : WizardStepProcessor {
             } else {
                 appendLine("❌ Configuration validation failed. Please review the errors above.")
             }
-            
-            appendLine()
-            appendLine("Press Enter to continue...")
         }
         
-        promptSystem.prompt(testResults)
+        // Display test results without waiting for input
+        promptSystem.display(testResults)
         
         return WizardStepResult(
             currentStep = step,

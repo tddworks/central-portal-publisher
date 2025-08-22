@@ -25,4 +25,9 @@ interface PromptSystem {
      * Present user with options to select from
      */
     fun select(message: String, options: List<String>): String
+    
+    /**
+     * Display a message without waiting for input
+     */
+    fun display(message: String)
 }

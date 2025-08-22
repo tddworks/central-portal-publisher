@@ -35,8 +35,10 @@ class CredentialsStepProcessor : WizardStepProcessor {
         
         when {
             hasEnvCredentials -> {
+                val totalSteps = WizardStep.values().size
+                val currentStepIndex = WizardStep.values().indexOf(step) + 1
                 val useAutoDetected = promptSystem.confirm("""
-                    📋 CREDENTIALS SETUP - AUTO-DETECTED!
+                    📋 CREDENTIALS SETUP - AUTO-DETECTED! (Step $currentStepIndex of $totalSteps)
                     ✅ Found existing environment variables:
                     • SONATYPE_USERNAME: $envUsername
                     • SONATYPE_PASSWORD: ${"*".repeat(envPassword!!.length.coerceAtMost(8))}
@@ -108,8 +110,10 @@ class CredentialsStepProcessor : WizardStepProcessor {
             "No credentials detected. Manual configuration needed."
         }
         
-        println("""
-            📋 CREDENTIALS SETUP - MANUAL INPUT
+        val totalSteps = WizardStep.values().size
+        val currentStepIndex = WizardStep.values().indexOf(step) + 1
+        promptSystem.display("""
+            📋 CREDENTIALS SETUP - MANUAL INPUT (Step $currentStepIndex of $totalSteps)
             $message
             
             Configuration options (in order of preference):

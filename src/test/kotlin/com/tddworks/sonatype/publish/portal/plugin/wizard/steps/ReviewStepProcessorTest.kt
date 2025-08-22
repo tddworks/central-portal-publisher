@@ -1,11 +1,19 @@
 package com.tddworks.sonatype.publish.portal.plugin.wizard.steps
 
-import com.tddworks.sonatype.publish.portal.plugin.wizard.*
+import com.tddworks.sonatype.publish.portal.plugin.wizard.DetectedDeveloper
+import com.tddworks.sonatype.publish.portal.plugin.wizard.DetectedProjectInfo
+import com.tddworks.sonatype.publish.portal.plugin.wizard.PromptSystem
+import com.tddworks.sonatype.publish.portal.plugin.wizard.TestConfigBuilder
+import com.tddworks.sonatype.publish.portal.plugin.wizard.TestProjectBuilder
+import com.tddworks.sonatype.publish.portal.plugin.wizard.WizardContext
+import com.tddworks.sonatype.publish.portal.plugin.wizard.WizardStep
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @ExtendWith(MockitoExtension::class)
@@ -101,10 +109,120 @@ class ReviewStepProcessorTest {
         
         // Then
         assertThat(result.isValid).isTrue()
-        // Verify that only confirm() was called (for the y/n question)
-        // The review summary is printed directly via println() so no prompt() call
-        org.mockito.kotlin.verify(mockPromptSystem, org.mockito.kotlin.never()).prompt(org.mockito.kotlin.any())
-        org.mockito.kotlin.verify(mockPromptSystem).confirm("Does this configuration look correct? Proceed with setup?")
+        // Verify that display() was called for the review summary (no waiting for input)
+        // and confirm() was called for the y/n question (waits for input)
+        verify(mockPromptSystem).display(argThat { message ->
+            message.contains("📋 CONFIGURATION REVIEW") 
+        })
+        verify(mockPromptSystem).confirm("Does this configuration look correct? Proceed with setup?")
+    }
+
+    @Test
+    fun `should show progress indicator in review summary`() {
+        // Given
+        val context = createTestContextWithFullConfig()
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        verify(mockPromptSystem).display(argThat { message ->
+            message.contains("📋 CONFIGURATION REVIEW (Step 5 of 6)") 
+        })
+    }
+
+    @Test
+    fun `should display security status correctly for configured credentials and signing`() {
+        // Given
+        val context = createTestContextWithFullConfig().copy(
+            hasAutoDetectedCredentials = false,
+            hasAutoDetectedSigning = false,
+            wizardConfig = TestConfigBuilder.createConfig().copy(
+                credentials = TestConfigBuilder.createConfig().credentials.copy(
+                    username = "test-user",
+                    password = "test-pass"
+                ),
+                signing = TestConfigBuilder.createConfig().signing.copy(
+                    keyId = "test-key",
+                    password = "test-key-pass"
+                )
+            )
+        )
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        verify(mockPromptSystem).display(argThat { message ->
+            message.contains("✅ Credentials: Configured") && message.contains("✅ Signing: Configured")
+        })
+    }
+
+    @Test
+    fun `should display security status correctly for missing credentials and signing`() {
+        // Given
+        val context = createTestContextWithFullConfig().copy(
+            hasAutoDetectedCredentials = false,
+            hasAutoDetectedSigning = false,
+            wizardConfig = TestConfigBuilder.createConfig().copy(
+                credentials = TestConfigBuilder.createConfig().credentials.copy(
+                    username = "",
+                    password = ""
+                ),
+                signing = TestConfigBuilder.createConfig().signing.copy(
+                    keyId = "",
+                    password = ""
+                )
+            )
+        )
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        verify(mockPromptSystem).display(argThat { message ->
+            message.contains("⚠️ Credentials: Manual configuration required") && 
+            message.contains("⚠️ Signing: Manual configuration required")
+        })
+    }
+
+    @Test
+    fun `should display project information correctly when missing some fields`() {
+        // Given
+        val context = createTestContextWithFullConfig().copy(
+            detectedInfo = DetectedProjectInfo(
+                projectName = "test-project",
+                projectUrl = "", // Missing URL
+                developers = emptyList() // No developers
+            ),
+            wizardConfig = TestConfigBuilder.createConfig().copy(
+                projectInfo = TestConfigBuilder.createConfig().projectInfo.copy(
+                    url = "", // Missing URL in config too
+                    description = "", // Missing description
+                    license = TestConfigBuilder.createConfig().projectInfo.license.copy(
+                        name = "" // Missing license
+                    )
+                )
+            )
+        )
+        whenever(mockPromptSystem.confirm("Does this configuration look correct? Proceed with setup?")).thenReturn(true)
+        
+        // When
+        val result = processor.process(context, mockPromptSystem)
+        
+        // Then
+        assertThat(result.isValid).isTrue()
+        // Verify that display was called with project information
+        verify(mockPromptSystem).display(argThat { message ->
+            message.contains("📋 CONFIGURATION REVIEW") && 
+            message.contains("• Name: test-project")
+        })
     }
 
     private fun createTestContextWithFullConfig() = WizardContext(

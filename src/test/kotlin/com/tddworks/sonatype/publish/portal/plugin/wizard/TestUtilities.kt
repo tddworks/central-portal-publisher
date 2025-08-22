@@ -17,6 +17,7 @@ class MockPromptSystem : PromptSystem {
     val prompts = mutableListOf<String>()
     var lastPrompt: String = ""
     var allPrompts: String = "" // Concatenates all prompts for easier testing
+    val displayMessages = mutableListOf<String>() // Track display() calls
 
     fun addResponse(response: String) {
         responses.add(response)
@@ -68,6 +69,10 @@ class MockPromptSystem : PromptSystem {
         } else {
             options.first() // Default to first option
         }
+    }
+
+    override fun display(message: String) {
+        displayMessages.add(message)
     }
 
     private fun toBooleanResponse(response: String): Boolean {

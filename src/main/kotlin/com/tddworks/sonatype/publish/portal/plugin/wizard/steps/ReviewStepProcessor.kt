@@ -16,8 +16,11 @@ class ReviewStepProcessor : WizardStepProcessor {
         val detectedInfo = context.detectedInfo
         
         val reviewSummary = buildString {
-            appendLine("📋 CONFIGURATION REVIEW")
-            appendLine("=".repeat(50))
+            // Add progress indicator
+            val totalSteps = WizardStep.values().size
+            val currentStepIndex = WizardStep.values().indexOf(step) + 1
+            appendLine("📋 CONFIGURATION REVIEW (Step $currentStepIndex of $totalSteps)")
+            appendLine("=".repeat(60))
             appendLine()
             
             appendLine("Project Information:")
@@ -48,16 +51,24 @@ class ReviewStepProcessor : WizardStepProcessor {
             
             appendLine()
             appendLine("Security Configuration:")
+            // Check if credentials are actually configured (not just auto-detected)
+            val hasCredentials = config.credentials.username.isNotBlank() && config.credentials.password.isNotBlank()
             when {
-                context.hasAutoDetectedCredentials -> 
+                context.hasAutoDetectedCredentials && hasCredentials -> 
                     appendLine("✅ Credentials: Auto-detected from ${getCredentialsSource()}")
+                hasCredentials -> 
+                    appendLine("✅ Credentials: Configured")
                 else -> 
                     appendLine("⚠️ Credentials: Manual configuration required")
             }
             
+            // Check if signing is actually configured (not just auto-detected)
+            val hasSigning = config.signing.keyId.isNotBlank() && config.signing.password.isNotBlank()
             when {
-                context.hasAutoDetectedSigning -> 
+                context.hasAutoDetectedSigning && hasSigning -> 
                     appendLine("✅ Signing: Auto-detected from ${getSigningSource()}")
+                hasSigning -> 
+                    appendLine("✅ Signing: Configured")
                 else -> 
                     appendLine("⚠️ Signing: Manual configuration required")
             }
@@ -69,7 +80,7 @@ class ReviewStepProcessor : WizardStepProcessor {
         }
         
         // Display the review summary without waiting for input
-        println(reviewSummary)
+        promptSystem.display(reviewSummary)
         
         val confirmed = promptSystem.confirm("Does this configuration look correct? Proceed with setup?")
         
