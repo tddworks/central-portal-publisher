@@ -134,7 +134,8 @@ class CentralPublisherTaskExecutionTest {
     
     @Test
     fun `bundleArtifacts should fail when no artifacts are available`() {
-        // Given - No publications are configured
+        // Given - Maven-publish plugin applied but no artifacts are configured
+        project.plugins.apply("maven-publish")
         manager.createPublishingTasks(config)
         val bundleTask = project.tasks.getByName("bundleArtifacts")
         
@@ -155,9 +156,39 @@ class CentralPublisherTaskExecutionTest {
     
     @Test
     fun `publishToCentral should upload bundle to Sonatype Central Portal`() {
-        // Given - Bundle exists (simulate by creating a dummy file)
+        // Given - Use dry run config to avoid actual network calls
+        val mockConfig = CentralPublisherConfigBuilder()
+            .credentials {
+                username = "test-user"
+                password = "test-password"
+            }
+            .projectInfo {
+                name = "test-project"
+                description = "Test project description"
+                url = "https://github.com/test/project"
+                license {
+                    name = "Apache-2.0"
+                    url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                }
+                developer {
+                    id = "test-dev"
+                    name = "Test Developer"
+                    email = "test@example.com"
+                }
+                scm {
+                    url = "https://github.com/test/project"
+                    connection = "scm:git:git://github.com/test/project.git"
+                    developerConnection = "scm:git:ssh://github.com/test/project.git"
+                }
+            }
+            .publishing {
+                dryRun = true // This prevents actual network calls
+            }
+            .build()
+        
+        // Create mock bundle file
         project.plugins.apply("maven-publish")
-        manager.createPublishingTasks(config)
+        manager.createPublishingTasks(mockConfig)
         
         val bundleDir = File(project.layout.buildDirectory.get().asFile, "central-portal")
         bundleDir.mkdirs()
@@ -166,7 +197,7 @@ class CentralPublisherTaskExecutionTest {
         
         val publishTask = project.tasks.getByName("publishToCentral")
         
-        // When/Then - Task should execute successfully
+        // When/Then - Task should execute in dry run mode (no actual upload)
         var executedSuccessfully = false
         try {
             publishTask.actions.forEach { action ->
@@ -174,11 +205,11 @@ class CentralPublisherTaskExecutionTest {
             }
             executedSuccessfully = true
         } catch (e: Exception) {
-            // Should not throw for valid setup
+            // Should not throw in dry run mode
             throw e
         }
         
-        // Should execute upload logic successfully
+        // Should successfully simulate upload without network calls
         assertThat(executedSuccessfully).isTrue()
     }
     
