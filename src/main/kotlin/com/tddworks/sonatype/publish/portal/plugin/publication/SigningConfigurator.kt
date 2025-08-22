@@ -34,8 +34,15 @@ object SigningConfigurator {
                     }
                     signAllPublications(project)
                 }
-                config.signing.keyId.isNotBlank() -> {
+                config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() -> {
                     project.logger.quiet("🔐 Using file-based signing with keyId: ${config.signing.keyId}")
+                    // File-based signing uses gradle.properties or system properties
+                    // The signing plugin will automatically detect these settings
+                    signAllPublications(project)
+                }
+                config.signing.keyId.isNotBlank() -> {
+                    project.logger.quiet("🔐 Using keyId-based signing: ${config.signing.keyId}")
+                    // Key ID based signing (could be GPG agent or other methods)
                     signAllPublications(project)
                 }
                 else -> {

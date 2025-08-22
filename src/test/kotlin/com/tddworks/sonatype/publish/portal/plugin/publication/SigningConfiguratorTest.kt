@@ -61,6 +61,32 @@ class SigningConfiguratorTest {
     }
     
     @Test
+    fun `should configure signing when secretKeyRingFile is available`() {
+        // Given - Configure file-based signing
+        val fileBasedConfig = CentralPublisherConfigBuilder()
+            .signing {
+                keyId = "test-key-id"
+                password = "test-password"
+                secretKeyRingFile = "/path/to/secret-key-ring.gpg"
+            }
+            .build()
+        
+        // Create a test publication
+        project.extensions.configure(PublishingExtension::class.java, object : Action<PublishingExtension> {
+            override fun execute(publishing: PublishingExtension) {
+                publishing.publications.create("maven", MavenPublication::class.java)
+            }
+        })
+        
+        // When
+        SigningConfigurator.configureSigningIfAvailable(project, fileBasedConfig)
+        
+        // Then - Should configure signing without throwing
+        val signing = project.extensions.getByType(SigningExtension::class.java)
+        assertThat(signing).isNotNull()
+    }
+    
+    @Test
     fun `should handle missing signing plugin gracefully`() {
         // Given - Project without signing plugin
         val projectWithoutSigning = ProjectBuilder.builder().build()
