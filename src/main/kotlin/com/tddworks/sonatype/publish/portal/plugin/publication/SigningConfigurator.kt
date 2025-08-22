@@ -1,11 +1,11 @@
 package com.tddworks.sonatype.publish.portal.plugin.publication
 
 import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
-import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.SigningExtension
 
 /**
@@ -58,23 +58,10 @@ object SigningConfigurator {
      */
     private fun signAllPublications(project: Project) {
         val signing = project.extensions.getByType(SigningExtension::class.java)
-        project.mavenPublications(object : Action<MavenPublication> {
-            override fun execute(publication: MavenPublication) {
-                signing.sign(publication)
+        project.configure<PublishingExtension> {
+            publications.withType<MavenPublication> {
+                signing.sign(this)
             }
-        })
+        }
     }
-    
-    /**
-     * Extension function following exact pattern.
-     */
-    private fun Project.mavenPublications(action: Action<MavenPublication>) {
-        gradlePublishing.publications.withType(MavenPublication::class.java).configureEach(action)
-    }
-    
-    /**
-     * Extension property following exact pattern.
-     */
-    private val Project.gradlePublishing: PublishingExtension
-        get() = extensions.getByType(PublishingExtension::class.java)
 }
