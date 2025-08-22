@@ -33,8 +33,9 @@ class KotlinMultiplatformConfigurationStrategy : PluginConfigurationStrategy {
     
     override fun configure(project: Project, config: CentralPublisherConfig) {
         try {
-            // Apply maven-publish plugin if not already applied (though KMP usually applies it)
+            // Apply required plugins (though KMP usually applies maven-publish)
             project.plugins.apply("maven-publish")
+            project.plugins.apply("signing")
             
             // Configure KMP-specific settings using the more idiomatic approach
             // Only attempt if the extension exists (avoids warnings in test environments)

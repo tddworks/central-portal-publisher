@@ -95,7 +95,7 @@ class CentralPublisherTaskManager(
     
     /**
      * Sets up clear, simple dependencies for the bundle task.
-     * Developer mental model: "Bundle needs all artifacts published to LocalRepo first"
+     * Developer mental model: "Bundle needs all artifacts signed and published to LocalRepo first"
      */
     private fun org.gradle.api.Task.setupBundleTaskDependencies() {
         // Root project: depend on its publish task if it has publications
@@ -112,8 +112,38 @@ class CentralPublisherTaskManager(
             }
         }
         
-        // Signing tasks will run automatically as part of publishing tasks above
-        // No need to explicitly depend on signing tasks - publishing handles it
+        // Ensure signing tasks run before publishing (Maven Central requires signatures)
+        ensureSigningTasksRunFirst()
+    }
+    
+    /**
+     * Ensures signing tasks run before publishing tasks.
+     * Maven Central requires all artifacts to be signed.
+     */
+    private fun org.gradle.api.Task.ensureSigningTasksRunFirst() {
+        // Root project signing tasks
+        if (project.plugins.hasPlugin("signing")) {
+            val rootSigningTasks = project.tasks.matching { task ->
+                task.name.startsWith("sign") && task.name.endsWith("Publication")
+            }
+            if (rootSigningTasks.isNotEmpty()) {
+                dependsOn(rootSigningTasks)
+                project.logger.quiet("🔐 Bundle will wait for root project signing")
+            }
+        }
+        
+        // All subproject signing tasks
+        project.subprojects.forEach { subproject ->
+            if (subproject.plugins.hasPlugin("signing")) {
+                val signingTasks = subproject.tasks.matching { task ->
+                    task.name.startsWith("sign") && task.name.endsWith("Publication")
+                }
+                if (signingTasks.isNotEmpty()) {
+                    dependsOn(signingTasks)
+                    project.logger.quiet("🔐 Bundle will wait for ${subproject.name} signing")
+                }
+            }
+        }
     }
     
     private fun createSetupPublishingTask() {
