@@ -11,7 +11,7 @@ import java.io.File
 
 /**
  * Tests for bundle creation functionality.
- * These tests verify the vanniktech-style approach of publishing to local repo then creating ZIP bundles.
+ * These tests verify of publishing to local repo then creating ZIP bundles.
  */
 class CentralPublisherPluginBundleTest {
     
@@ -28,7 +28,7 @@ class CentralPublisherPluginBundleTest {
     }
     
     @Test
-    fun `should create bundle creation logic following vanniktech pattern`() {
+    fun `should create bundle creation logic`() {
         // Given
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
