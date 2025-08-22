@@ -26,10 +26,25 @@ class BundleArtifactsTaskExecutor(
             val publishingExtension = project.extensions.findByType(PublishingExtension::class.java)
                 ?: throw GradleException("maven-publish plugin not applied. Please apply 'maven-publish' plugin.")
             
-            // Look for local repository artifacts
-            val localRepoDir = File(project.buildDir, "repo")
-            if (!localRepoDir.exists() || localRepoDir.listFiles()?.isEmpty() == true) {
-                throw GradleException("No artifacts found to bundle. Please run publishToLocalRepo task first.")
+            // Look for local repository artifacts - prefer signed artifacts from maven-repo if available
+            val signedRepoDir = File(project.buildDir, "maven-repo")
+            val unsignedRepoDir = File(project.buildDir, "repo")
+            
+            val localRepoDir = when {
+                signedRepoDir.exists() && signedRepoDir.listFiles()?.isNotEmpty() == true -> {
+                    project.logger.quiet("📝 Using signed artifacts from maven-repo")
+                    signedRepoDir
+                }
+                unsignedRepoDir.exists() && unsignedRepoDir.listFiles()?.isNotEmpty() == true -> {
+                    project.logger.warn("⚠️ Using unsigned artifacts from repo")
+                    project.logger.warn("⚠️ Maven Central requires signed artifacts")
+                    project.logger.warn("⚠️ Please configure signing credentials and re-run the build")
+                    project.logger.warn("💡 See SIGNING_SETUP.md for signing configuration instructions")
+                    unsignedRepoDir
+                }
+                else -> {
+                    throw GradleException("No artifacts found to bundle. Please run publishToLocalRepo task first.")
+                }
             }
             
             // Create bundle directory

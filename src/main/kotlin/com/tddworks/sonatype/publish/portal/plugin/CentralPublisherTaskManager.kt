@@ -133,8 +133,10 @@ class CentralPublisherTaskManager(
             group = PLUGIN_GROUP
             description = "📁 Build artifacts locally (internal step for bundle creation)"
             
+            // Depend on the actual Maven publishing task
+            dependsOn("publishAllPublicationsToLocalRepoRepository")
+            
             doLast {
-                // Task execution logic will be implemented later
                 project.logger.quiet("📁 Publishing to local repository...")
             }
         }
