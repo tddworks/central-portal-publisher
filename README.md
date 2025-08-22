@@ -14,7 +14,7 @@ The easiest way to get started is with the interactive setup wizard:
 
 ```kotlin
 plugins {
-    id("com.tddworks.central-publisher") version "0.0.6"
+    id("com.tddworks.central-publisher") version "0.2.0-alpha"
 }
 ```
 
@@ -63,7 +63,7 @@ If you prefer manual setup, you can configure the plugin directly:
 #### build.gradle.kts
 ```kotlin
 plugins {
-    id("com.tddworks.central-portal-publisher") version "0.2.0-alpha"
+    id("com.tddworks.central-publisher") version "0.2.0-alpha"
 }
 
 centralPublisher {
