@@ -1,6 +1,6 @@
 # Single-Module Kotlin Example
 
-This example demonstrates how to use the Central Portal Publisher plugin with a simple single-module Kotlin library project.
+This example shows how to use the Central Portal Publisher plugin with a simple Kotlin library. The plugin provides zero-configuration publishing to Maven Central with an interactive setup wizard.
 
 ## Project Structure
 
@@ -8,162 +8,211 @@ This example demonstrates how to use the Central Portal Publisher plugin with a 
 single-module-kotlin/
 ├── build.gradle.kts          # Build configuration with Central Publisher plugin
 ├── settings.gradle.kts       # Project settings
-├── gradle.properties         # Properties for credentials (git-ignored)
 ├── src/
-│   ├── main/
-│   │   └── kotlin/
-│   │       └── com/example/
-│   │           └── StringUtils.kt    # Example library code
-│   └── test/
-│       └── kotlin/
-│           └── com/example/
-│               └── StringUtilsTest.kt # Unit tests
+│   ├── main/kotlin/          # Library source code
+│   │   └── com/example/StringUtils.kt
+│   └── test/kotlin/          # Unit tests
+│       └── com/example/StringUtilsTest.kt
 └── README.md
 ```
 
-## Features Demonstrated
+## Quick Start
 
-1. **Simple DSL Configuration** - Shows the new simplified DSL for configuring publishing
-2. **Auto-Detection** - Many fields can be auto-detected from git and project settings
-3. **Smart Defaults** - Sensible defaults reduce configuration boilerplate
-4. **Credential Management** - Safe handling of credentials via properties or environment variables
-5. **Task Aliases** - Simplified task names for better discoverability
+### 1. Run Setup Wizard (Recommended)
 
-## Setup
+```bash
+./gradlew setupPublishing
+```
 
-### 1. Local Plugin Testing (Optional)
+The wizard will guide you through:
+- Setting up your Sonatype credentials 
+- Configuring project information (auto-detected from git)
+- Setting up GPG signing (optional)
+- Generating configuration files
 
-If you want to test with the local plugin development version:
+### 2. Manual Setup
 
-1. Uncomment the line in `settings.gradle.kts`:
-   ```kotlin
-   includeBuild("../..")
-   ```
-
-2. Build the main plugin first:
-   ```bash
-   cd ../..
-   ./gradlew publishToMavenLocal
-   cd examples/single-module-kotlin
-   ```
-
-### 2. Configure Credentials
-
-Add your Sonatype credentials to `~/.gradle/gradle.properties` (NOT in the project):
+If you prefer manual setup, add your credentials to `~/.gradle/gradle.properties`:
 
 ```properties
 SONATYPE_USERNAME=your-username
-SONATYPE_PASSWORD=your-password
-SIGNING_KEY_ID=your-key-id
+SONATYPE_PASSWORD=your-token
+```
+
+For signed releases (optional):
+```properties
+SIGNING_KEY=-----BEGIN PGP PRIVATE KEY BLOCK-----
+...your key here...
+-----END PGP PRIVATE KEY BLOCK-----
 SIGNING_PASSWORD=your-signing-password
-SIGNING_SECRET_KEY_RING_FILE=/path/to/secring.gpg
 ```
 
-Or set them as environment variables:
+### 3. Build and Test
 
 ```bash
-export SONATYPE_USERNAME=your-username
-export SONATYPE_PASSWORD=your-password
-export SIGNING_KEY_ID=your-key-id
-export SIGNING_PASSWORD=your-signing-password
-```
-
-### 3. Build the Project
-
-```bash
+# Build the library
 ./gradlew build
-```
 
-### 4. Run Tests
-
-```bash
+# Run tests
 ./gradlew test
-```
 
-### 5. Validate Publishing Configuration
-
-```bash
+# Validate configuration
 ./gradlew validatePublishing
 ```
 
-### 6. Publish to Central Portal
+### 4. Publish to Maven Central
 
-#### Dry Run (Test without publishing)
 ```bash
-./gradlew publishDryRun
-```
+# Test bundle creation
+./gradlew bundleArtifacts
 
-#### Actual Publishing
-```bash
+# Publish to Maven Central
 ./gradlew publishToCentral
 ```
 
-## Key Configuration Points
+## How It Works
 
-### Minimal Configuration
+### Zero-Configuration Publishing
 
-The plugin uses smart defaults and auto-detection to minimize configuration:
+The plugin automatically configures everything needed for Maven Central:
 
 ```kotlin
+plugins {
+    kotlin("jvm")
+    id("com.tddworks.central-publisher")
+}
+
 centralPublisher {
-    // Most fields are auto-detected or use smart defaults
-    projectInfo {
-        description = "Your library description"
-        // name, url, scm info can be auto-detected
-    }
-    
-    // Credentials from properties/environment
     credentials {
         username = project.findProperty("SONATYPE_USERNAME")?.toString() ?: ""
         password = project.findProperty("SONATYPE_PASSWORD")?.toString() ?: ""
     }
+    
+    projectInfo {
+        name = project.name                    // Auto-detected
+        description = "A useful Kotlin library"
+        url = "https://github.com/yourorg/yourproject"  // Auto-detected from git
+        
+        license {
+            name = "Apache License 2.0"
+            url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+        
+        developer {
+            id = "yourid"
+            name = "Your Name"              // Auto-detected from git
+            email = "your.email@example.com"
+        }
+        
+        scm {
+            url = "https://github.com/yourorg/yourproject"  // Auto-detected
+            connection = "scm:git:git://github.com/yourorg/yourproject.git"
+            developerConnection = "scm:git:ssh://github.com/yourorg/yourproject.git"
+        }
+    }
 }
 ```
 
+### What Gets Auto-Configured
+
+The plugin automatically sets up:
+- ✅ Maven publication with JAR, sources, and javadoc
+- ✅ POM file with all required Maven Central metadata
+- ✅ GPG signing (if credentials provided)
+- ✅ Deployment bundle creation
+- ✅ Integration with Sonatype Central Portal
+
 ### Auto-Detection Features
 
-The plugin automatically detects:
+The setup wizard automatically detects:
 - Project name from `settings.gradle.kts`
-- SCM URLs from git remote configuration
-- Developer information from git config
-- License from LICENSE file (if present)
+- Git repository URLs for SCM configuration
+- Developer name and email from git config
+- Existing environment variables for credentials
 
-### Smart Defaults
+## Available Tasks
 
-The plugin provides sensible defaults for:
-- License (Apache 2.0)
-- Publishing options (manual approval, aggregation enabled)
-- Signing configuration (standard GPG paths)
+- `./gradlew setupPublishing` - Interactive setup wizard
+- `./gradlew validatePublishing` - Validate configuration
+- `./gradlew bundleArtifacts` - Create deployment bundle
+- `./gradlew publishToCentral` - Publish to Maven Central
+
+## Configuration Options
+
+### Security Best Practices
+
+The setup wizard prefers environment variables for credentials:
+
+```bash
+export SONATYPE_USERNAME=your-username
+export SONATYPE_PASSWORD=your-token
+export SIGNING_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----..."
+export SIGNING_PASSWORD=your-signing-password
+```
+
+### Publishing Options
+
+```kotlin
+centralPublisher {
+    publishing {
+        autoPublish = false  // Manual approval (safer)
+        dryRun = false      // Set true to test without publishing
+    }
+}
+```
 
 ## Troubleshooting
 
+### Invalid Group ID
+
+Update your group ID to use your own domain:
+
+```kotlin
+group = "com.yourcompany.yourproject"  // Not com.example
+version = "1.0.0"
+```
+
 ### Missing Credentials
 
-If you see errors about missing credentials:
-1. Check that credentials are in `~/.gradle/gradle.properties` or environment variables
-2. Never commit credentials to the project repository
-3. Use the setup wizard: `./gradlew setupPublishing`
+If you see credential errors:
+1. Run the setup wizard: `./gradlew setupPublishing`
+2. Ensure credentials are in `~/.gradle/gradle.properties` or environment variables
+3. Never commit credentials to git
 
 ### Validation Errors
 
-Run validation to check configuration:
+Run validation to see detailed error messages:
 ```bash
 ./gradlew validatePublishing
 ```
 
-The plugin provides detailed error messages with suggested fixes.
+The plugin provides actionable feedback for any configuration issues.
 
-### Dry Run Mode
+### Bundle Creation Issues
 
-Always test with dry run first:
+Test bundle creation before publishing:
 ```bash
-./gradlew publishDryRun
+./gradlew bundleArtifacts
 ```
 
-This simulates the publishing process without actually uploading artifacts.
+This creates a ZIP file in `build/central-portal/` that would be uploaded to Maven Central.
 
-## Additional Resources
+## CI/CD Integration
 
-- [Central Portal Publisher Documentation](https://github.com/tddworks/central-portal-publisher)
-- [Maven Central Portal](https://central.sonatype.com/)
-- [Gradle Publishing Documentation](https://docs.gradle.org/current/userguide/publishing_maven.html)
+For GitHub Actions:
+
+```yaml
+- name: Publish to Maven Central
+  env:
+    SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+    SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+    SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+    SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+  run: ./gradlew publishToCentral
+```
+
+## Learn More
+
+- [Plugin Documentation](https://github.com/tddworks/central-portal-publisher)
+- [Maven Central Guide](https://central.sonatype.org/publish/publish-guide/)
+- [Setting up GPG](https://central.sonatype.org/publish/requirements/gpg/)
