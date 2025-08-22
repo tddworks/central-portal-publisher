@@ -1,18 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin)
-    id("com.tddworks.central-portal-publisher") version "0.0.5"
+    id("com.tddworks.central-publisher") version "0.2.0-alpha"
     `maven-publish`
-    signing
-}
-
-sonatypePortalPublisher {
-    authentication {
-        username = "some-username"
-        password = "some-password"
-    }
-    settings {
-        autoPublish = false
-    }
 }
 
 version = "0.0.1"
