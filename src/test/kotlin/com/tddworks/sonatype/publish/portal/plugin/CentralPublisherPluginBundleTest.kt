@@ -11,7 +11,7 @@ import java.io.File
 
 /**
  * Tests for bundle creation functionality.
- * These tests verify the vanniktech-style approach of publishing to local repo then creating ZIP bundles.
+ * These tests verify of publishing to local repo then creating ZIP bundles.
  */
 class CentralPublisherPluginBundleTest {
     
@@ -28,7 +28,7 @@ class CentralPublisherPluginBundleTest {
     }
     
     @Test
-    fun `should create bundle creation logic following vanniktech pattern`() {
+    fun `should create bundle creation logic`() {
         // Given
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
@@ -43,20 +43,16 @@ class CentralPublisherPluginBundleTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - Bundle task should exist and be properly configured
         val bundleTask = project.tasks.findByName("bundleArtifacts")
         assertThat(bundleTask).isNotNull()
-        assertThat(bundleTask!!.description).contains("Creates deployment bundle")
+        assertThat(bundleTask!!.description).contains("Prepare your artifacts for publishing")
         
         // Should depend on local repo publishing (not maven local)
-        assertThat(bundleTask.dependsOn).contains("publishToLocalRepo")
+        assertThat(bundleTask.dependsOn).contains("publishAllPublicationsToLocalRepoRepository")
         
         // Local repo should be configured for checksum generation
         val publishing = project.extensions.getByType(org.gradle.api.publish.PublishingExtension::class.java)
@@ -104,25 +100,21 @@ class CentralPublisherPluginBundleTest {
             }
         }
         
-        // Manually trigger the plugin configuration that would happen in afterEvaluate
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val plugin = CentralPublisherPlugin()
-        val configureMethod = CentralPublisherPlugin::class.java.getDeclaredMethod("configurePlugin", Project::class.java, CentralPublisherExtension::class.java)
-        configureMethod.isAccessible = true
-        configureMethod.invoke(plugin, project, extension)
+        // Trigger afterEvaluate to simulate actual plugin behavior
+        project.getTasksByName("tasks", false) // This triggers project evaluation
         
         // Then - Task dependency chain should be correct
         val publishToCentral = project.tasks.findByName("publishToCentral")!!
         val bundleArtifacts = project.tasks.findByName("bundleArtifacts")!!
-        val publishToLocalRepo = project.tasks.findByName("publishToLocalRepo")!!
+        val publishToLocalRepo = project.tasks.findByName("publishAllPublicationsToLocalRepoRepository")!!
         
         // publishToCentral depends on bundleArtifacts
         assertThat(publishToCentral.dependsOn).contains("bundleArtifacts")
         
-        // bundleArtifacts depends on publishToLocalRepo
-        assertThat(bundleArtifacts.dependsOn).contains("publishToLocalRepo")
+        // bundleArtifacts depends on publishAllPublicationsToLocalRepoRepository
+        assertThat(bundleArtifacts.dependsOn).contains("publishAllPublicationsToLocalRepoRepository")
         
-        // This creates the correct flow: publishToLocalRepo -> bundleArtifacts -> publishToCentral
+        // This creates the correct flow: publishAllPublicationsToLocalRepoRepository -> bundleArtifacts -> publishToCentral
     }
     
     @Test

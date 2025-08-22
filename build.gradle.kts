@@ -38,6 +38,7 @@ dependencies {
     compileOnly(libs.kotlin.plugin)
 
     testImplementation(libs.bundles.jvm.test)
+    testImplementation(libs.kotlin.plugin)
     testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
