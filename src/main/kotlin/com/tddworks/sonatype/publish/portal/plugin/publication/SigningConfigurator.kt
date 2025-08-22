@@ -9,7 +9,7 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.plugins.signing.SigningExtension
 
 /**
- * Simple signing configurator following VanNikTech's clean approach.
+ * Simple signing configurator following clean approach.
  * 
  * Handles signing configuration for all publication strategies using a unified approach.
  */
@@ -18,7 +18,7 @@ object SigningConfigurator {
     /**
      * Configures signing for all Maven publications if signing credentials are available.
      * 
-     * Uses VanNikTech's simple pattern but adapted to our existing approach.
+     * Uses simple pattern but adapted to our existing approach.
      */
     fun configureSigningIfAvailable(project: Project, config: CentralPublisherConfig) {
         project.plugins.withId("signing") {
@@ -54,7 +54,7 @@ object SigningConfigurator {
     }
     
     /**
-     * Signs all Maven publications using VanNikTech's pattern adapted to our codebase.
+     * Signs all Maven publications using pattern adapted to our codebase.
      */
     private fun signAllPublications(project: Project) {
         val signing = project.extensions.getByType(SigningExtension::class.java)
@@ -66,14 +66,14 @@ object SigningConfigurator {
     }
     
     /**
-     * Extension function following VanNikTech's exact pattern.
+     * Extension function following exact pattern.
      */
     private fun Project.mavenPublications(action: Action<MavenPublication>) {
         gradlePublishing.publications.withType(MavenPublication::class.java).configureEach(action)
     }
     
     /**
-     * Extension property following VanNikTech's exact pattern.
+     * Extension property following exact pattern.
      */
     private val Project.gradlePublishing: PublishingExtension
         get() = extensions.getByType(PublishingExtension::class.java)
