@@ -33,7 +33,7 @@ class BundleArtifactsTaskExecutor(
             val localRepoDir =
                 findLocalRepositoryWithArtifacts()
                     ?: throw GradleException(
-                        "No artifacts found to bundle. Please run publishToLocalRepo task first."
+                        "No artifacts found to bundle."
                     )
 
             // Create bundle directory
