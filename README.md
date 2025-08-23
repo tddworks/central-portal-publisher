@@ -3,6 +3,15 @@
 
 ![CI](https://github.com/tddworks/central-portal-publisher/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/tddworks/central-portal-publisher/graph/badge.svg?token=izDBfMwLY0)](https://codecov.io/gh/tddworks/central-portal-publisher)
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/com.tddworks.central-publisher?label=Plugin%20Portal&logo=gradle)](https://plugins.gradle.org/plugin/com.tddworks.central-publisher)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.2.10-blue.svg?logo=kotlin)](https://kotlinlang.org)
+[![Gradle](https://img.shields.io/badge/gradle-9.0.0+-blue.svg?logo=gradle)](https://gradle.org)
+[![License](https://img.shields.io/github/license/tddworks/central-portal-publisher?color=blue)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/tddworks/central-portal-publisher?include_prereleases&label=Latest%20Release)](https://github.com/tddworks/central-portal-publisher/releases)
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg?logo=materialformkdocs)](https://tddworks.github.io/central-portal-publisher)
+[![API Docs](https://img.shields.io/badge/API-documentation-blue.svg?logo=kotlin)](https://tddworks.github.io/central-portal-publisher/api/)
+[![Issues](https://img.shields.io/github/issues/tddworks/central-portal-publisher?color=blue)](https://github.com/tddworks/central-portal-publisher/issues)
+[![Stars](https://img.shields.io/github/stars/tddworks/central-portal-publisher?style=social)](https://github.com/tddworks/central-portal-publisher/stargazers)
 
 A modern Gradle plugin for publishing to Maven Central via the Sonatype Central Portal. Features intelligent auto-detection, type-safe configuration, and an interactive setup wizard.
 
