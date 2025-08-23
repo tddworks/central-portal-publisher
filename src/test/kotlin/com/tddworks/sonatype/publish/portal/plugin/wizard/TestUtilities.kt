@@ -5,9 +5,7 @@ import com.tddworks.sonatype.publish.portal.plugin.config.CentralPublisherConfig
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
-/**
- * Enhanced mock prompt system for testing refactored wizard
- */
+/** Enhanced mock prompt system for testing refactored wizard */
 class MockPromptSystem : PromptSystem {
     private val responses = mutableListOf<String>()
     private val confirmResponses = mutableListOf<Boolean>()
@@ -54,11 +52,12 @@ class MockPromptSystem : PromptSystem {
         }
 
         // Fall back to converting string responses to boolean (for compatibility)
-        val response = if (currentIndex < responses.size) {
-            responses[currentIndex++]
-        } else {
-            ""
-        }
+        val response =
+            if (currentIndex < responses.size) {
+                responses[currentIndex++]
+            } else {
+                ""
+            }
         return toBooleanResponse(response)
     }
 
@@ -80,20 +79,14 @@ class MockPromptSystem : PromptSystem {
     }
 }
 
-/**
- * Test project builder utility
- */
+/** Test project builder utility */
 object TestProjectBuilder {
     fun createProject(name: String = "test-project"): Project {
-        return ProjectBuilder.builder()
-            .withName(name)
-            .build()
+        return ProjectBuilder.builder().withName(name).build()
     }
 }
 
-/**
- * Test configuration builder utility
- */
+/** Test configuration builder utility */
 object TestConfigBuilder {
     fun createConfig(): CentralPublisherConfig {
         return CentralPublisherConfigBuilder()

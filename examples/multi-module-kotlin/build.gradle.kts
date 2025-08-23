@@ -10,29 +10,23 @@ plugins {
 allprojects {
     group = "com.tddworks.example.multimodule"
     version = "1.0.0"
-    
-    repositories {
-        mavenCentral()
-    }
+
+    repositories { mavenCentral() }
 }
 
 subprojects {
     apply(plugin = "kotlin")
     // Note: maven-publish and signing plugins are now applied per-module as needed
     // Central Publisher plugin will auto-configure them when present
-    
-    configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-        jvmToolchain(21)
-    }
-    
+
+    configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> { jvmToolchain(21) }
+
     dependencies {
         "implementation"(kotlin("stdlib"))
         "testImplementation"(kotlin("test"))
         "testImplementation"("org.junit.jupiter:junit-jupiter:5.10.0")
         "testImplementation"("org.assertj:assertj-core:3.24.2")
     }
-    
-    tasks.withType<Test> {
-        useJUnitPlatform()
-    }
+
+    tasks.withType<Test> { useJUnitPlatform() }
 }

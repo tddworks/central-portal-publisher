@@ -1,18 +1,17 @@
 package com.tddworks.sonatype.publish.portal.plugin.wizard
 
 import com.tddworks.sonatype.publish.portal.plugin.config.*
+import java.io.File
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
-import java.nio.file.Path
 
 class DefaultWizardFileGeneratorTest {
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     private lateinit var generator: DefaultWizardFileGenerator
     private lateinit var context: WizardContext
@@ -21,29 +20,29 @@ class DefaultWizardFileGeneratorTest {
     @BeforeEach
     fun setup() {
         generator = DefaultWizardFileGenerator()
-        
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
-            
-        context = WizardContext(
-            project = project,
-            detectedInfo = DetectedProjectInfo("test-project"),
-            wizardConfig = createTestConfig(),
-            enableGlobalGradlePropsDetection = false
-        )
-        
+
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
+
+        context =
+            WizardContext(
+                project = project,
+                detectedInfo = DetectedProjectInfo("test-project"),
+                wizardConfig = createTestConfig(),
+                enableGlobalGradlePropsDetection = false,
+            )
+
         config = createTestConfig()
     }
 
     @Test
     fun `should not generate gradle properties when credentials are auto-detected`() {
         // Given - context with auto-detected credentials
-        val contextWithAutoDetected = context.copy(
-            hasAutoDetectedCredentials = true,
-            hasAutoDetectedSigning = true
-        )
+        val contextWithAutoDetected =
+            context.copy(hasAutoDetectedCredentials = true, hasAutoDetectedSigning = true)
 
         // When
         val generatedFiles = generator.generateFiles(contextWithAutoDetected, config)
@@ -61,21 +60,22 @@ class DefaultWizardFileGeneratorTest {
         globalGradleDir.mkdirs()
         val globalGradleProps = File(globalGradleDir, "gradle.properties")
         val originalContent = if (globalGradleProps.exists()) globalGradleProps.readText() else null
-        
+
         try {
-            globalGradleProps.writeText("""
+            globalGradleProps.writeText(
+                """
                 SONATYPE_USERNAME=global-user
                 SONATYPE_PASSWORD=global-password
                 SIGNING_KEY=global-key
                 SIGNING_PASSWORD=global-key-password
-            """.trimIndent())
+            """
+                    .trimIndent()
+            )
 
             // Context with manual credentials (user explicitly chose manual input)
             // Even though global credentials exist, we should respect user's explicit choice
-            val contextWithManual = context.copy(
-                hasAutoDetectedCredentials = false,
-                hasAutoDetectedSigning = false
-            )
+            val contextWithManual =
+                context.copy(hasAutoDetectedCredentials = false, hasAutoDetectedSigning = false)
 
             // When
             val generatedFiles = generator.generateFiles(contextWithManual, config)
@@ -83,7 +83,6 @@ class DefaultWizardFileGeneratorTest {
             // Then - should generate both files (user chose manual input, so respect their choice)
             assertThat(generatedFiles).containsExactly("gradle.properties", "build.gradle.kts")
             assertThat(File(tempDir.toFile(), "gradle.properties")).exists()
-            
         } finally {
             // Cleanup - restore original content or delete
             if (originalContent != null) {
@@ -97,22 +96,22 @@ class DefaultWizardFileGeneratorTest {
     @Test
     fun `should generate gradle properties when manual credentials and no global setup`() {
         // Given - context with manual credentials and no global setup
-        val contextWithManual = context.copy(
-            hasAutoDetectedCredentials = false,
-            hasAutoDetectedSigning = false
-        )
+        val contextWithManual =
+            context.copy(hasAutoDetectedCredentials = false, hasAutoDetectedSigning = false)
 
         // Ensure no global gradle.properties with credentials
         val userHome = System.getProperty("user.home")
         val globalGradleProps = File(userHome, ".gradle/gradle.properties")
         val originalContent = if (globalGradleProps.exists()) globalGradleProps.readText() else null
-        
+
         try {
             // Remove or clear global credentials for this test
             if (globalGradleProps.exists()) {
-                val contentWithoutCreds = originalContent?.lines()?.filter { 
-                    !it.startsWith("SONATYPE_") && !it.startsWith("SIGNING_")
-                }?.joinToString("\n") ?: ""
+                val contentWithoutCreds =
+                    originalContent
+                        ?.lines()
+                        ?.filter { !it.startsWith("SONATYPE_") && !it.startsWith("SIGNING_") }
+                        ?.joinToString("\n") ?: ""
                 globalGradleProps.writeText(contentWithoutCreds)
             }
 
@@ -120,17 +119,17 @@ class DefaultWizardFileGeneratorTest {
             val generatedFiles = generator.generateFiles(contextWithManual, config)
 
             // Then - should generate both files
-            assertThat(generatedFiles).containsExactlyInAnyOrder("build.gradle.kts", "gradle.properties")
-            
+            assertThat(generatedFiles)
+                .containsExactlyInAnyOrder("build.gradle.kts", "gradle.properties")
+
             val gradlePropsFile = File(tempDir.toFile(), "gradle.properties")
             assertThat(gradlePropsFile).exists()
-            
+
             val content = gradlePropsFile.readText()
             assertThat(content).contains("SONATYPE_USERNAME=test-user")
             assertThat(content).contains("SONATYPE_PASSWORD=test-password")
             assertThat(content).contains("SIGNING_KEY=test-key")
             assertThat(content).contains("SIGNING_PASSWORD=test-key-password")
-            
         } finally {
             // Restore original content
             if (originalContent != null) {
@@ -142,16 +141,16 @@ class DefaultWizardFileGeneratorTest {
     @Test
     fun `should always generate build gradle kts file`() {
         // Given - any context
-        
+
         // When
         val generatedFiles = generator.generateFiles(context, config)
 
         // Then - should always include build.gradle.kts
         assertThat(generatedFiles).contains("build.gradle.kts")
-        
+
         val buildFile = File(tempDir.toFile(), "build.gradle.kts")
         assertThat(buildFile).exists()
-        
+
         val content = buildFile.readText()
         assertThat(content).contains("centralPublisher {")
         assertThat(content).contains("credentials {")
@@ -164,7 +163,8 @@ class DefaultWizardFileGeneratorTest {
     fun `should update existing build gradle kts without destroying content`() {
         // Given - existing build.gradle.kts with content
         val buildFile = File(tempDir.toFile(), "build.gradle.kts")
-        buildFile.writeText("""
+        buildFile.writeText(
+            """
             plugins {
                 kotlin("jvm") version "1.9.20"
                 id("com.tddworks.central-publisher")
@@ -177,14 +177,16 @@ class DefaultWizardFileGeneratorTest {
             tasks.test {
                 useJUnitPlatform()
             }
-        """.trimIndent())
+        """
+                .trimIndent()
+        )
 
         // When
         val generatedFiles = generator.generateFiles(context, config)
 
         // Then - should preserve existing content and add centralPublisher block
         assertThat(generatedFiles).contains("build.gradle.kts")
-        
+
         val content = buildFile.readText()
         assertThat(content).contains("kotlin(\"jvm\") version \"1.9.20\"") // Preserved
         assertThat(content).contains("implementation(\"some:dependency:1.0\")") // Preserved
@@ -197,7 +199,8 @@ class DefaultWizardFileGeneratorTest {
     fun `should replace existing centralPublisher block in build gradle kts`() {
         // Given - existing build.gradle.kts with old centralPublisher block
         val buildFile = File(tempDir.toFile(), "build.gradle.kts")
-        buildFile.writeText("""
+        buildFile.writeText(
+            """
             plugins {
                 kotlin("jvm") version "1.9.20"
                 id("com.tddworks.central-publisher")
@@ -217,14 +220,16 @@ class DefaultWizardFileGeneratorTest {
             dependencies {
                 implementation("some:dependency:1.0")
             }
-        """.trimIndent())
+        """
+                .trimIndent()
+        )
 
         // When
         val generatedFiles = generator.generateFiles(context, config)
 
         // Then - should replace old centralPublisher block with new one
         assertThat(generatedFiles).contains("build.gradle.kts")
-        
+
         val content = buildFile.readText()
         assertThat(content).contains("kotlin(\"jvm\") version \"1.9.20\"") // Preserved
         assertThat(content).contains("implementation(\"some:dependency:1.0\")") // Preserved

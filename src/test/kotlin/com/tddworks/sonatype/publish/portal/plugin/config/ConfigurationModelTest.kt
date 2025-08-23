@@ -1,9 +1,9 @@
 package com.tddworks.sonatype.publish.portal.plugin.config
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeEach
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class ConfigurationModelTest {
 
@@ -21,7 +21,7 @@ class ConfigurationModelTest {
 
         // Then
         assertThat(config.publishing.autoPublish).isFalse
-        assertThat(config.publishing.dryRun).isFalse  
+        assertThat(config.publishing.dryRun).isFalse
         assertThat(config.publishing.aggregation).isTrue // Default to aggregation
         assertThat(config.validation.enabled).isTrue
         assertThat(config.validation.strictMode).isFalse
@@ -30,13 +30,14 @@ class ConfigurationModelTest {
     @Test
     fun `should configure credentials section`() {
         // Given
-        val config = configBuilder
-            .credentials {
-                username = "test-user"
-                password = "test-password"
-                loadFromEnvironment = true
-            }
-            .build()
+        val config =
+            configBuilder
+                .credentials {
+                    username = "test-user"
+                    password = "test-password"
+                    loadFromEnvironment = true
+                }
+                .build()
 
         // Then
         assertThat(config.credentials.username).isEqualTo("test-user")
@@ -47,44 +48,46 @@ class ConfigurationModelTest {
     @Test
     fun `should configure project information section`() {
         // Given
-        val config = configBuilder
-            .projectInfo {
-                name = "my-library"
-                description = "An awesome library"
-                url = "https://github.com/user/my-library"
-                scm {
+        val config =
+            configBuilder
+                .projectInfo {
+                    name = "my-library"
+                    description = "An awesome library"
                     url = "https://github.com/user/my-library"
-                    connection = "scm:git:git://github.com/user/my-library.git"
-                    developerConnection = "scm:git:ssh://github.com/user/my-library.git"
+                    scm {
+                        url = "https://github.com/user/my-library"
+                        connection = "scm:git:git://github.com/user/my-library.git"
+                        developerConnection = "scm:git:ssh://github.com/user/my-library.git"
+                    }
+                    license {
+                        name = "MIT License"
+                        url = "https://opensource.org/licenses/MIT"
+                        distribution = "repo"
+                    }
+                    developer {
+                        id = "johndoe"
+                        name = "John Doe"
+                        email = "john@example.com"
+                        organization = "Example Org"
+                        organizationUrl = "https://example.com"
+                    }
                 }
-                license {
-                    name = "MIT License"
-                    url = "https://opensource.org/licenses/MIT"
-                    distribution = "repo"
-                }
-                developer {
-                    id = "johndoe"
-                    name = "John Doe"
-                    email = "john@example.com"
-                    organization = "Example Org"
-                    organizationUrl = "https://example.com"
-                }
-            }
-            .build()
+                .build()
 
         // Then
         assertThat(config.projectInfo.name).isEqualTo("my-library")
         assertThat(config.projectInfo.description).isEqualTo("An awesome library")
         assertThat(config.projectInfo.url).isEqualTo("https://github.com/user/my-library")
-        
+
         // SCM info
         assertThat(config.projectInfo.scm.url).isEqualTo("https://github.com/user/my-library")
-        assertThat(config.projectInfo.scm.connection).isEqualTo("scm:git:git://github.com/user/my-library.git")
-        
+        assertThat(config.projectInfo.scm.connection)
+            .isEqualTo("scm:git:git://github.com/user/my-library.git")
+
         // License info
         assertThat(config.projectInfo.license.name).isEqualTo("MIT License")
         assertThat(config.projectInfo.license.url).isEqualTo("https://opensource.org/licenses/MIT")
-        
+
         // Developer info
         assertThat(config.projectInfo.developers).hasSize(1)
         assertThat(config.projectInfo.developers[0].name).isEqualTo("John Doe")
@@ -94,15 +97,16 @@ class ConfigurationModelTest {
     @Test
     fun `should configure signing section`() {
         // Given
-        val config = configBuilder
-            .signing {
-                keyId = "ABCD1234"
-                password = "signing-password"
-                secretKeyRingFile = "/path/to/key"
-                useGpgAgent = false
-                autoDetect = true
-            }
-            .build()
+        val config =
+            configBuilder
+                .signing {
+                    keyId = "ABCD1234"
+                    password = "signing-password"
+                    secretKeyRingFile = "/path/to/key"
+                    useGpgAgent = false
+                    autoDetect = true
+                }
+                .build()
 
         // Then
         assertThat(config.signing.keyId).isEqualTo("ABCD1234")
@@ -115,15 +119,16 @@ class ConfigurationModelTest {
     @Test
     fun `should configure publishing section`() {
         // Given
-        val config = configBuilder
-            .publishing {
-                autoPublish = true
-                dryRun = false
-                aggregation = false
-                publications = listOf("maven", "kotlinMultiplatform") 
-                excludeModules = listOf("test-module")
-            }
-            .build()
+        val config =
+            configBuilder
+                .publishing {
+                    autoPublish = true
+                    dryRun = false
+                    aggregation = false
+                    publications = listOf("maven", "kotlinMultiplatform")
+                    excludeModules = listOf("test-module")
+                }
+                .build()
 
         // Then
         assertThat(config.publishing.autoPublish).isTrue
@@ -136,12 +141,13 @@ class ConfigurationModelTest {
     @Test
     fun `should validate required configuration`() {
         // Given
-        val invalidConfig = configBuilder
-            .credentials {
-                username = ""  // Invalid: empty username
-                password = "test-password"
-            }
-            .build()
+        val invalidConfig =
+            configBuilder
+                .credentials {
+                    username = "" // Invalid: empty username
+                    password = "test-password"
+                }
+                .build()
 
         // When/Then
         assertThatThrownBy { invalidConfig.validate() }
@@ -152,16 +158,17 @@ class ConfigurationModelTest {
     @Test
     fun `should support configuration serialization`() {
         // Given
-        val originalConfig = configBuilder
-            .credentials {
-                username = "test-user"
-                password = "test-password"
-            }
-            .projectInfo {
-                name = "test-project"
-                description = "Test description"
-            }
-            .build()
+        val originalConfig =
+            configBuilder
+                .credentials {
+                    username = "test-user"
+                    password = "test-password"
+                }
+                .projectInfo {
+                    name = "test-project"
+                    description = "Test description"
+                }
+                .build()
 
         // When
         val serialized = originalConfig.serialize()
@@ -176,26 +183,26 @@ class ConfigurationModelTest {
     @Test
     fun `should support configuration merging`() {
         // Given
-        val baseConfig = configBuilder
-            .credentials {
-                username = "base-user"
-                password = "base-password"
-            }
-            .publishing {
-                autoPublish = false
-            }
-            .build()
+        val baseConfig =
+            configBuilder
+                .credentials {
+                    username = "base-user"
+                    password = "base-password"
+                }
+                .publishing { autoPublish = false }
+                .build()
 
-        val overrideConfig = configBuilder
-            .credentials {
-                username = "override-user"
-                // password not specified - should keep base value
-            }
-            .publishing {
-                autoPublish = true
-                dryRun = true
-            }
-            .build()
+        val overrideConfig =
+            configBuilder
+                .credentials {
+                    username = "override-user"
+                    // password not specified - should keep base value
+                }
+                .publishing {
+                    autoPublish = true
+                    dryRun = true
+                }
+                .build()
 
         // When
         val mergedConfig = baseConfig.mergeWith(overrideConfig)
@@ -210,13 +217,14 @@ class ConfigurationModelTest {
     @Test
     fun `should track configuration sources`() {
         // Given
-        val config = configBuilder
-            .credentials {
-                username = "test-user"
-                password = "test-password"
-            }
-            .withSource(ConfigurationSource.DSL)
-            .build()
+        val config =
+            configBuilder
+                .credentials {
+                    username = "test-user"
+                    password = "test-password"
+                }
+                .withSource(ConfigurationSource.DSL)
+                .build()
 
         // Then
         assertThat(config.metadata.sources).contains(ConfigurationSource.DSL)
@@ -227,14 +235,15 @@ class ConfigurationModelTest {
     @Test
     fun `should support auto-detection settings`() {
         // Given
-        val config = configBuilder
-            .autoDetection {
-                projectInfo = true
-                credentials = false
-                signing = true
-                gitInfo = true
-            }
-            .build()
+        val config =
+            configBuilder
+                .autoDetection {
+                    projectInfo = true
+                    credentials = false
+                    signing = true
+                    gitInfo = true
+                }
+                .build()
 
         // Then
         assertThat(config.autoDetection.projectInfo).isTrue

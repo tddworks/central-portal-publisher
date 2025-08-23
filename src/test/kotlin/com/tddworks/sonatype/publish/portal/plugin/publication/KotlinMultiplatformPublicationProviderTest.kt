@@ -15,7 +15,6 @@ import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-
 class KotlinMultiplatformPublicationProviderTest {
 
     private lateinit var project: Project
@@ -24,35 +23,42 @@ class KotlinMultiplatformPublicationProviderTest {
     @BeforeEach
     fun setup() {
         project = ProjectBuilder.builder().build()
-        config = CentralPublisherConfig(
-            projectInfo = ProjectInfoConfig(
-                name = "kmp-library",
-                description = "A Kotlin Multiplatform library",
-                url = "https://github.com/example/kmp-library",
-                scm = ScmConfig(
-                    url = "https://github.com/example/kmp-library",
-                    connection = "scm:git:git://github.com/example/kmp-library.git",
-                    developerConnection = "scm:git:ssh://github.com/example/kmp-library.git"
-                ),
-                license = LicenseConfig(
-                    name = "MIT License",
-                    url = "https://opensource.org/licenses/MIT",
-                    distribution = "repo"
-                ),
-                developers = listOf(
-                    DeveloperConfig(
-                        id = "kmp-dev",
-                        name = "KMP Developer",
-                        email = "kmp@example.com"
-                    )
-                )
-            ),
-            signing = SigningConfig(
-                keyId = "kmp-key-id",
-                password = "kmp-password",
-                secretKeyRingFile = "/path/to/kmp-secring.gpg"
+        config =
+            CentralPublisherConfig(
+                projectInfo =
+                    ProjectInfoConfig(
+                        name = "kmp-library",
+                        description = "A Kotlin Multiplatform library",
+                        url = "https://github.com/example/kmp-library",
+                        scm =
+                            ScmConfig(
+                                url = "https://github.com/example/kmp-library",
+                                connection = "scm:git:git://github.com/example/kmp-library.git",
+                                developerConnection =
+                                    "scm:git:ssh://github.com/example/kmp-library.git",
+                            ),
+                        license =
+                            LicenseConfig(
+                                name = "MIT License",
+                                url = "https://opensource.org/licenses/MIT",
+                                distribution = "repo",
+                            ),
+                        developers =
+                            listOf(
+                                DeveloperConfig(
+                                    id = "kmp-dev",
+                                    name = "KMP Developer",
+                                    email = "kmp@example.com",
+                                )
+                            ),
+                    ),
+                signing =
+                    SigningConfig(
+                        keyId = "kmp-key-id",
+                        password = "kmp-password",
+                        secretKeyRingFile = "/path/to/kmp-secring.gpg",
+                    ),
             )
-        )
     }
 
     @Test
@@ -73,10 +79,10 @@ class KotlinMultiplatformPublicationProviderTest {
     fun `should configure POM for existing Maven publications`() {
         // Given: A project with maven-publish and a pre-existing publication
         project.plugins.apply("maven-publish")
-        
+
         // Create a mock KMP plugin to trigger the provider
         project.plugins.apply("base") // Use base plugin as placeholder
-        
+
         val publishing = project.extensions.getByType<PublishingExtension>()
         publishing.publications.register("kotlinMultiplatform", MavenPublication::class.java) {
             // Simulate a KMP-created publication
@@ -120,9 +126,7 @@ class KotlinMultiplatformPublicationProviderTest {
         // Given: A project with maven-publish but no signing info
         project.plugins.apply("maven-publish")
 
-        val configWithoutSigning = config.copy(
-            signing = SigningConfig()
-        )
+        val configWithoutSigning = config.copy(signing = SigningConfig())
 
         val provider = KotlinMultiplatformPublicationProvider()
 

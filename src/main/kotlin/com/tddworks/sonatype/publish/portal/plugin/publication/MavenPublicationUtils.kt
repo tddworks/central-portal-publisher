@@ -8,7 +8,7 @@ import org.gradle.plugins.signing.SigningExtension
 
 /**
  * Configures POM metadata for Maven publications using the provided configuration.
- * 
+ *
  * @param project The Gradle project
  * @param config The Central Publisher configuration containing metadata
  */
@@ -17,7 +17,7 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
         name.set(config.projectInfo.name.ifBlank { project.name })
         description.set(config.projectInfo.description)
         url.set(config.projectInfo.url)
-        
+
         // Configure license
         licenses {
             license {
@@ -26,7 +26,7 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
                 distribution.set(config.projectInfo.license.distribution)
             }
         }
-        
+
         // Configure developers
         developers {
             config.projectInfo.developers.forEach { dev ->
@@ -39,7 +39,7 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
                 }
             }
         }
-        
+
         // Configure SCM
         scm {
             connection.set(config.projectInfo.scm.connection)
@@ -51,32 +51,36 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
 
 /**
  * Configures signing for this Maven publication if signing credentials are available.
- * 
- * This is the simplest and most intuitive approach - signing happens right where the publication is created.
- * 
+ *
+ * This is the simplest and most intuitive approach - signing happens right where the publication is
+ * created.
+ *
  * @param project The Gradle project
  * @param config The Central Publisher configuration containing signing credentials
  */
 fun MavenPublication.configureSigningIfAvailable(project: Project, config: CentralPublisherConfig) {
     // Check for in-memory keys first
     val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
-    val signingPassword = project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
-    
+    val signingPassword =
+        project.findProperty("SIGNING_PASSWORD")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+
     // Check if any signing credentials are available
-    val hasSigningCredentials = when {
-        !signingKey.isNullOrBlank() -> true
-        config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() -> true
-        config.signing.keyId.isNotBlank() -> true
-        else -> false
-    }
-    
+    val hasSigningCredentials =
+        when {
+            !signingKey.isNullOrBlank() -> true
+            config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() ->
+                true
+            config.signing.keyId.isNotBlank() -> true
+            else -> false
+        }
+
     // Only apply and configure signing if we have credentials
     if (hasSigningCredentials) {
         // Apply signing plugin if not already applied
         if (!project.plugins.hasPlugin("signing")) {
             project.plugins.apply("signing")
         }
-        
+
         when {
             !signingKey.isNullOrBlank() -> {
                 project.logger.quiet("🔐 Using in-memory GPG keys for signing")
@@ -87,7 +91,9 @@ fun MavenPublication.configureSigningIfAvailable(project: Project, config: Centr
                 signing.sign(this@configureSigningIfAvailable)
             }
             config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() -> {
-                project.logger.quiet("🔐 Using file-based signing with keyId: ${config.signing.keyId}")
+                project.logger.quiet(
+                    "🔐 Using file-based signing with keyId: ${config.signing.keyId}"
+                )
                 val signing = project.extensions.getByType(SigningExtension::class.java)
                 signing.sign(this@configureSigningIfAvailable)
             }
@@ -97,7 +103,9 @@ fun MavenPublication.configureSigningIfAvailable(project: Project, config: Centr
                 signing.sign(this@configureSigningIfAvailable)
             }
             else -> {
-                project.logger.quiet("⚠️ No signing configuration found - artifacts will be unsigned")
+                project.logger.quiet(
+                    "⚠️ No signing configuration found - artifacts will be unsigned"
+                )
             }
         }
     }

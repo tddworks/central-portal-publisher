@@ -6,7 +6,6 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.HasConfigurableAttributes
 import org.gradle.api.attributes.Usage
 
-
 internal const val ZIP_CONFIGURATION_CONSUMER = "zipConfigurationConsumer"
 internal const val ZIP_CONFIGURATION_PRODUCER = "zipConfigurationProducer"
 
@@ -18,11 +17,8 @@ internal fun HasConfigurableAttributes<*>.configureAttributes(project: Project) 
     attributes {
         attribute(
             Attribute.of(ATTRIBUTE, Named::class.java),
-            project.objects.named(Named::class.java, ATTRIBUTE_VALUE)
+            project.objects.named(Named::class.java, ATTRIBUTE_VALUE),
         )
-        attribute(
-            Usage.USAGE_ATTRIBUTE,
-            project.objects.named(Usage::class.java, USAGE_VALUE)
-        )
+        attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, USAGE_VALUE))
     }
 }

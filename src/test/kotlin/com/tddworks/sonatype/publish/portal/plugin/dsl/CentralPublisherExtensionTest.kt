@@ -1,26 +1,26 @@
 package com.tddworks.sonatype.publish.portal.plugin.dsl
 
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Path
 
 class CentralPublisherExtensionTest {
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     private lateinit var extension: CentralPublisherExtension
 
     @BeforeEach
     fun setup() {
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
-            
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
+
         extension = CentralPublisherExtension(project)
     }
 
@@ -35,7 +35,7 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should return true after configuring credentials`() {
         // Given - extension with credentials configuration
-        
+
         // When
         extension.credentials {
             username = "test-user"
@@ -49,7 +49,7 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should return true after configuring project info`() {
         // Given - extension with project info configuration
-        
+
         // When
         extension.projectInfo {
             name = "test-project"
@@ -64,7 +64,7 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should return true after configuring signing`() {
         // Given - extension with signing configuration
-        
+
         // When
         extension.signing {
             keyId = "test-key"
@@ -79,7 +79,7 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should return true after configuring publishing`() {
         // Given - extension with publishing configuration
-        
+
         // When
         extension.publishing {
             autoPublish = false
@@ -94,25 +94,21 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should return true after any configuration method is called`() {
         // Given - extension with any configuration
-        
+
         // When - configure credentials first
         extension.credentials {
             username = "user1"
             password = "pass1"
         }
-        
+
         // Then
         assertThat(extension.hasExplicitConfiguration()).isTrue()
-        
+
         // When - configure additional sections
-        extension.projectInfo {
-            name = "project"
-        }
-        
-        extension.signing {
-            keyId = "key"
-        }
-        
+        extension.projectInfo { name = "project" }
+
+        extension.signing { keyId = "key" }
+
         // Then - still true
         assertThat(extension.hasExplicitConfiguration()).isTrue()
     }
@@ -124,36 +120,36 @@ class CentralPublisherExtensionTest {
             username = "test-user"
             password = "test-password"
         }
-        
+
         extension.projectInfo {
             name = "my-project"
             description = "My Project Description"
             url = "https://github.com/me/my-project"
-            
+
             license {
                 name = "MIT License"
                 url = "https://opensource.org/licenses/MIT"
             }
-            
+
             developer {
                 id = "devid"
                 name = "Developer Name"
                 email = "dev@example.com"
             }
-            
+
             scm {
                 url = "https://github.com/me/my-project"
                 connection = "scm:git:git://github.com/me/my-project.git"
                 developerConnection = "scm:git:ssh://github.com/me/my-project.git"
             }
         }
-        
+
         extension.signing {
             keyId = "signing-key"
             password = "signing-password"
             secretKeyRingFile = "/path/to/keyring"
         }
-        
+
         extension.publishing {
             autoPublish = true
             aggregation = false
@@ -165,7 +161,7 @@ class CentralPublisherExtensionTest {
 
         // Then - explicit configuration should be present
         assertThat(extension.hasExplicitConfiguration()).isTrue()
-        
+
         // And configuration should contain explicit values
         assertThat(config.credentials.username).isEqualTo("test-user")
         assertThat(config.credentials.password).isEqualTo("test-password")
@@ -188,7 +184,7 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should work with empty configuration blocks`() {
         // Given - extension with empty configuration blocks
-        
+
         // When
         extension.credentials {
             // Empty block, no properties set
@@ -196,7 +192,7 @@ class CentralPublisherExtensionTest {
 
         // Then - should still be considered explicit configuration
         assertThat(extension.hasExplicitConfiguration()).isTrue()
-        
+
         // And configuration should still build successfully
         val config = extension.build()
         assertThat(config).isNotNull
@@ -205,7 +201,7 @@ class CentralPublisherExtensionTest {
     @Test
     fun `should work with partial configuration`() {
         // Given - extension with partial configuration
-        
+
         // When
         extension.projectInfo {
             name = "partial-project"
@@ -214,7 +210,7 @@ class CentralPublisherExtensionTest {
 
         // Then
         assertThat(extension.hasExplicitConfiguration()).isTrue()
-        
+
         val config = extension.build()
         assertThat(config.projectInfo.name).isEqualTo("partial-project")
         // Other fields should have default values

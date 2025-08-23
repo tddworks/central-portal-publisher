@@ -9,34 +9,29 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 
 /**
- * Extension for the Sonatype Portal Publisher plugin.
- * This extension is used to configure the Sonatype Portal Publisher plugin.
- * The extension can be configured in the build.gradle file.
- * The extension can be used to configure the authentication, auto publish and modules.
- * The authentication is used to authenticate the user to the Sonatype Portal.
- * The auto publish is used to publish the modules automatically.
- * The modules are used to specify the modules to be published.
- * The modules are specified as a list of projects.
+ * Extension for the Sonatype Portal Publisher plugin. This extension is used to configure the
+ * Sonatype Portal Publisher plugin. The extension can be configured in the build.gradle file. The
+ * extension can be used to configure the authentication, auto publish and modules. The
+ * authentication is used to authenticate the user to the Sonatype Portal. The auto publish is used
+ * to publish the modules automatically. The modules are used to specify the modules to be
+ * published. The modules are specified as a list of projects.
  */
 open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
     /**
-     * The authentication property.
-     * This property is used to authenticate the user to the Sonatype Portal.
+     * The authentication property. This property is used to authenticate the user to the Sonatype
+     * Portal.
      */
-    private val authentication: Property<Authentication> = objects.property(Authentication::class.java)
+    private val authentication: Property<Authentication> =
+        objects.property(Authentication::class.java)
 
-
-    /**
-     * The settings property.
-     * This property is used to configure the settings.
-     */
+    /** The settings property. This property is used to configure the settings. */
     private val sonatypePublisherSettings: Property<SonatypePublisherSettings> =
         objects.property(SonatypePublisherSettings::class.java)
 
     /**
-     * Configures the authentication.
-     * This method is used to configure the authentication.
-     * The authentication is used to authenticate the user to the Sonatype Portal.
+     * Configures the authentication. This method is used to configure the authentication. The
+     * authentication is used to authenticate the user to the Sonatype Portal.
+     *
      * @param authentication The authentication configuration.
      */
     fun Project.authentication(authentication: AuthenticationBuilder.() -> Unit) {
@@ -46,24 +41,25 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
     }
 
     fun getAuthentication(project: Project): Authentication? {
-        return return authentication.orNull ?: AuthenticationBuilder().apply {
-            username = project.get("SONATYPE_USERNAME")
-            password = project.get("SONATYPE_PASSWORD")
-        }.build()
+        return return authentication.orNull
+            ?: AuthenticationBuilder()
+                .apply {
+                    username = project.get("SONATYPE_USERNAME")
+                    password = project.get("SONATYPE_PASSWORD")
+                }
+                .build()
     }
 
     /**
-     * Configures the settings.
-     * This method is used to configure the settings.
-     * The settings are used to configure the Sonatype Portal Publisher plugin.
+     * Configures the settings. This method is used to configure the settings. The settings are used
+     * to configure the Sonatype Portal Publisher plugin.
+     *
      * @param settings The settings configuration.
      * @see SonatypePublisherSettings
      */
     fun Project.settings(settings: SonatypePublisherSettingsBuilder.() -> Unit) {
         this@SonatypePortalPublisherExtension.sonatypePublisherSettings.setAndFinalize(
-            SonatypePublisherSettingsBuilder().apply(
-                settings
-            ).build()
+            SonatypePublisherSettingsBuilder().apply(settings).build()
         )
     }
 
@@ -71,11 +67,8 @@ open class SonatypePortalPublisherExtension(objects: ObjectFactory) {
         return sonatypePublisherSettings.orNull
     }
 
-
-    /**
-     * Extension for the set and finalize method for the property.
-     */
-    private fun <T> Property<T>.setAndFinalize(value: T) {
+    /** Extension for the set and finalize method for the property. */
+    private fun <T : Any> Property<T>.setAndFinalize(value: T) {
         this.set(value)
         this.finalizeValue()
     }

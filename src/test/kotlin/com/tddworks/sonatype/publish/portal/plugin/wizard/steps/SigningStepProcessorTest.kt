@@ -1,6 +1,8 @@
 package com.tddworks.sonatype.publish.portal.plugin.wizard.steps
 
 import com.tddworks.sonatype.publish.portal.plugin.wizard.*
+import java.io.File
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
@@ -9,27 +11,22 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.argThat
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 import uk.org.webcompere.systemstubs.jupiter.SystemStub
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension
-import java.io.File
-import java.nio.file.Path
 
 @ExtendWith(SystemStubsExtension::class, MockitoExtension::class)
 class SigningStepProcessorTest {
 
-    @SystemStub
-    private lateinit var environmentVariables: EnvironmentVariables
+    @SystemStub private lateinit var environmentVariables: EnvironmentVariables
 
-    @Mock
-    private lateinit var mockPromptSystem: PromptSystem
+    @Mock private lateinit var mockPromptSystem: PromptSystem
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     private lateinit var processor: SigningStepProcessor
     private lateinit var context: WizardContext
@@ -37,18 +34,20 @@ class SigningStepProcessorTest {
     @BeforeEach
     fun setup() {
         processor = SigningStepProcessor()
-        
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
-            
-        context = WizardContext(
-            project = project,
-            detectedInfo = DetectedProjectInfo("test-project"),
-            wizardConfig = TestConfigBuilder.createConfig(),
-            enableGlobalGradlePropsDetection = false
-        )
+
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
+
+        context =
+            WizardContext(
+                project = project,
+                detectedInfo = DetectedProjectInfo("test-project"),
+                wizardConfig = TestConfigBuilder.createConfig(),
+                enableGlobalGradlePropsDetection = false,
+            )
     }
 
     @Test
@@ -56,7 +55,7 @@ class SigningStepProcessorTest {
         // Given
         environmentVariables.set("SIGNING_KEY", "test-signing-key")
         environmentVariables.set("SIGNING_PASSWORD", "test-signing-password")
-        
+
         // Mock user saying yes to auto-detected signing
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
@@ -65,8 +64,10 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("test-signing-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("test-signing-password")
+        assertThat(result.updatedContext?.wizardConfig?.signing?.keyId)
+            .isEqualTo("test-signing-key")
+        assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+            .isEqualTo("test-signing-password")
         assertThat(result.updatedContext?.hasAutoDetectedSigning).isTrue()
     }
 
@@ -75,7 +76,7 @@ class SigningStepProcessorTest {
         // Given
         environmentVariables.set("SIGNING_KEY", "auto-detected-key")
         environmentVariables.set("SIGNING_PASSWORD", "auto-detected-password")
-        
+
         // Mock user saying no to auto-detected, then providing manual input
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
@@ -86,7 +87,8 @@ class SigningStepProcessorTest {
         // Then
         assertThat(result.isValid).isTrue()
         assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+            .isEqualTo("manual-password")
         assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
     }
 
@@ -101,7 +103,8 @@ class SigningStepProcessorTest {
         // Then
         assertThat(result.isValid).isTrue()
         assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+            .isEqualTo("manual-password")
         assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
     }
 
@@ -122,16 +125,19 @@ class SigningStepProcessorTest {
     fun `should handle global gradle properties detection when enabled`() {
         // Given
         val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
-        
+
         // Create mock gradle.properties file
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SIGNING_KEY=global-key
             SIGNING_PASSWORD=global-password
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             // Mock user confirming use of global properties
             `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
@@ -142,7 +148,8 @@ class SigningStepProcessorTest {
             // Then
             assertThat(result.isValid).isTrue()
             assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("global-key")
-            assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("global-password")
+            assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+                .isEqualTo("global-password")
             assertThat(result.updatedContext?.hasAutoDetectedSigning).isTrue()
         } finally {
             gradleProps.delete()
@@ -154,7 +161,7 @@ class SigningStepProcessorTest {
         // Given
         environmentVariables.set("SIGNING_KEY", "very-long-signing-key-that-should-be-masked")
         environmentVariables.set("SIGNING_PASSWORD", "test-password")
-        
+
         // Mock user saying yes
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
@@ -179,9 +186,12 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).confirm(argThat { message ->
-            message.contains("SIGNING SETUP - AUTO-DETECTED! (Step 4 of 6)")
-        })
+        verify(mockPromptSystem)
+            .confirm(
+                argThat { message ->
+                    message.contains("SIGNING SETUP - AUTO-DETECTED! (Step 4 of 6)")
+                }
+            )
     }
 
     @Test
@@ -196,15 +206,17 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).confirm(argThat { message ->
-            message.contains("• SIGNING_KEY: ********")
-        })
+        verify(mockPromptSystem)
+            .confirm(argThat { message -> message.contains("• SIGNING_KEY: ********") })
     }
 
     @Test
     fun `should mask long keys with first and last 4 characters visible`() {
         // Given
-        environmentVariables.set("SIGNING_KEY", "very-long-signing-key-that-should-be-partially-masked")
+        environmentVariables.set(
+            "SIGNING_KEY",
+            "very-long-signing-key-that-should-be-partially-masked",
+        )
         environmentVariables.set("SIGNING_PASSWORD", "test-password")
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
@@ -213,9 +225,14 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).confirm(argThat { message ->
-            message.contains("• SIGNING_KEY: very*********************************************sked")
-        })
+        verify(mockPromptSystem)
+            .confirm(
+                argThat { message ->
+                    message.contains(
+                        "• SIGNING_KEY: very*********************************************sked"
+                    )
+                }
+            )
     }
 
     @Test
@@ -223,16 +240,19 @@ class SigningStepProcessorTest {
         // Given
         environmentVariables.set("SIGNING_KEY", "env-key")
         environmentVariables.set("SIGNING_PASSWORD", "env-password")
-        
+
         val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SIGNING_KEY=global-key
             SIGNING_PASSWORD=global-password
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
@@ -242,11 +262,13 @@ class SigningStepProcessorTest {
             // Then
             assertThat(result.isValid).isTrue()
             assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("env-key")
-            assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("env-password")
+            assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+                .isEqualTo("env-password")
             // Should show environment variables prompt, not global properties
-            verify(mockPromptSystem).confirm(argThat { message ->
-                message.contains("Found existing environment variables:")
-            })
+            verify(mockPromptSystem)
+                .confirm(
+                    argThat { message -> message.contains("Found existing environment variables:") }
+                )
         } finally {
             gradleProps.delete()
         }
@@ -279,9 +301,12 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).display(argThat { message ->
-            message.contains("You chose to configure signing credentials manually.")
-        })
+        verify(mockPromptSystem)
+            .display(
+                argThat { message ->
+                    message.contains("You chose to configure signing credentials manually.")
+                }
+            )
     }
 
     @Test
@@ -294,9 +319,14 @@ class SigningStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).display(argThat { message ->
-            message.contains("No signing credentials detected. Manual configuration needed.")
-        })
+        verify(mockPromptSystem)
+            .display(
+                argThat { message ->
+                    message.contains(
+                        "No signing credentials detected. Manual configuration needed."
+                    )
+                }
+            )
     }
 
     @Test
@@ -308,7 +338,7 @@ class SigningStepProcessorTest {
         if (gradleProps.exists()) {
             gradleProps.delete()
         }
-        
+
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
 
         // When
@@ -317,7 +347,8 @@ class SigningStepProcessorTest {
         // Then
         assertThat(result.isValid).isTrue()
         assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
-        assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+            .isEqualTo("manual-password")
         assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
     }
 
@@ -328,12 +359,15 @@ class SigningStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             # Missing SIGNING_KEY
             SIGNING_PASSWORD=global-password
             OTHER_PROPERTY=value
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
 
@@ -356,12 +390,15 @@ class SigningStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SIGNING_KEY=global-key
             # Missing SIGNING_PASSWORD
             OTHER_PROPERTY=value
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
 
@@ -384,11 +421,14 @@ class SigningStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SIGNING_KEY=
             SIGNING_PASSWORD=
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-key", "manual-password")
 
@@ -411,11 +451,14 @@ class SigningStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SIGNING_KEY=global-key
             SIGNING_PASSWORD=global-password
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             // Mock user rejecting global properties, then providing manual input
             `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
@@ -427,11 +470,15 @@ class SigningStepProcessorTest {
             // Then
             assertThat(result.isValid).isTrue()
             assertThat(result.updatedContext?.wizardConfig?.signing?.keyId).isEqualTo("manual-key")
-            assertThat(result.updatedContext?.wizardConfig?.signing?.password).isEqualTo("manual-password")
+            assertThat(result.updatedContext?.wizardConfig?.signing?.password)
+                .isEqualTo("manual-password")
             assertThat(result.updatedContext?.hasAutoDetectedSigning).isFalse()
-            verify(mockPromptSystem).display(argThat { message ->
-                message.contains("You chose to configure signing credentials manually.")
-            })
+            verify(mockPromptSystem)
+                .display(
+                    argThat { message ->
+                        message.contains("You chose to configure signing credentials manually.")
+                    }
+                )
         } finally {
             gradleProps.delete()
         }

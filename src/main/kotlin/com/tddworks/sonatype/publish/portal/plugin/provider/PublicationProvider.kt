@@ -29,18 +29,16 @@ class JvmPublicationProvider : PublicationProvider {
 
         // central.sonatype.com - Sources must be provided but not found in entries
         project.plugins.withId("java") {
-            project.configureIfExists<JavaPluginExtension> {
-                withSourcesJar()
-            }
+            project.configureIfExists<JavaPluginExtension> { withSourcesJar() }
         }
 
-
         project.plugins.withId("org.jetbrains.kotlin.jvm") {
-            val javadocJar by project.tasks.registering(Jar::class) {
-                archiveClassifier.set("javadoc")
-                duplicatesStrategy = DuplicatesStrategy.WARN
-                // contents are deliberately left empty
-            }
+            val javadocJar by
+                project.tasks.registering(Jar::class) {
+                    archiveClassifier.set("javadoc")
+                    duplicatesStrategy = DuplicatesStrategy.WARN
+                    // contents are deliberately left empty
+                }
 
             val publishing = project.publishingExtension
 
@@ -61,20 +59,14 @@ fun MavenPublication.configurePom(project: Project) {
     // Provide artifacts information required by Maven Central
     pom {
         name = project.get("POM_NAME", "Kotlin Multiplatform library template")
-        description = project.get(
-            "POM_DESCRIPTION",
-            "Dummy library to test deployment to Maven Central"
-        )
-        url = project.get(
-            "POM_URL",
-            "https://github.com/Kotlin/multiplatform-library-template"
-        )
+        description =
+            project.get("POM_DESCRIPTION", "Dummy library to test deployment to Maven Central")
+        url = project.get("POM_URL", "https://github.com/Kotlin/multiplatform-library-template")
 
         licenses {
             license {
                 name = project.get("POM_LICENCE_NAME", "MIT")
-                url =
-                    project.get("POM_LICENCE_URL", "https://opensource.org/licenses/MIT")
+                url = project.get("POM_LICENCE_URL", "https://opensource.org/licenses/MIT")
                 distribution = project.get("POM_LICENCE_DIST", "repo")
             }
         }
@@ -84,34 +76,35 @@ fun MavenPublication.configurePom(project: Project) {
                 name = project.get("POM_DEVELOPER_NAME", "JetBrains Team")
                 email = project.get("POM_DEVELOPER_EMAIL", "")
                 organization = project.get("POM_DEVELOPER_ORGANIZATION", "JetBrains")
-                organizationUrl = project.get(
-                    "POM_DEVELOPER_ORGANIZATION_URL",
-                    "https://www.jetbrains.com"
-                )
+                organizationUrl =
+                    project.get("POM_DEVELOPER_ORGANIZATION_URL", "https://www.jetbrains.com")
             }
         }
         scm {
-            url = project.get(
-                "POM_SCM_URL",
-                "https://github.com/Kotlin/multiplatform-library-template"
-            )
+            url =
+                project.get(
+                    "POM_SCM_URL",
+                    "https://github.com/Kotlin/multiplatform-library-template",
+                )
             connection =
                 project.get(
                     "POM_SCM_CONNECTION",
-                    "scm:git:git://github.com/Kotlin/multiplatform-library-template.git"
+                    "scm:git:git://github.com/Kotlin/multiplatform-library-template.git",
                 )
-            developerConnection = project.get(
-                "POM_SCM_DEV_CONNECTION",
-                "scm:git:git://github.com/Kotlin/multiplatform-library-template.git"
-            )
+            developerConnection =
+                project.get(
+                    "POM_SCM_DEV_CONNECTION",
+                    "scm:git:git://github.com/Kotlin/multiplatform-library-template.git",
+                )
         }
 
         issueManagement {
             system = project.get("POM_ISSUE_SYSTEM", "GitHub")
-            url = project.get(
-                "POM_ISSUE_URL",
-                "https://github.com/Kotlin/multiplatform-library-template/issues"
-            )
+            url =
+                project.get(
+                    "POM_ISSUE_URL",
+                    "https://github.com/Kotlin/multiplatform-library-template/issues",
+                )
         }
     }
 }

@@ -4,37 +4,31 @@ import com.tddworks.sonatype.publish.portal.plugin.PublishingBuildRepositoryMana
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.kotlin.dsl.extra
 
 interface PublishPublicationToMavenRepositoryTaskFactory {
-    fun createTask(
-        project: Project,
-        publicationName: String,
-    ): TaskProvider<Task>
+    fun createTask(project: Project, publicationName: String): TaskProvider<Task>
 }
 
 class SonatypePublishPublicationToMavenRepositoryTaskFactory(
-    private val publishingBuildRepositoryManager: PublishingBuildRepositoryManager,
+    private val publishingBuildRepositoryManager: PublishingBuildRepositoryManager
 ) : PublishPublicationToMavenRepositoryTaskFactory {
 
     companion object {
         const val SONATYPE_BUILD_REPOSITORY_DIRECTORY = "sonatypeBuildRepositoryDirectory"
     }
 
-    override fun createTask(
-        project: Project,
-        publicationName: String,
-    ): TaskProvider<Task> {
-
+    override fun createTask(project: Project, publicationName: String): TaskProvider<Task> {
 
         // Capitalize the publication name
         // e.g. maven -> Maven
         // e.g. kotlinMultiplatform -> KotlinMultiplatform
-        val repoName = "Build${publicationName.capitalized()}"
+        val repoName = "Build${publicationName.replaceFirstChar { it.uppercase() }}"
 
         // create a directory to store the build repository
-        // e.g will create publishMavenPublicationToMavenRepository task and save the publication to the destination path
+        // e.g will create publishMavenPublicationToMavenRepository task and save the publication to
+        // the
+        // destination path
         val sonatypeBuildRepositoryDirectory =
             publishingBuildRepositoryManager.createBuildRepository(repoName, project)
 
@@ -53,13 +47,12 @@ class SonatypePublishPublicationToMavenRepositoryTaskFactory(
             extra.set(SONATYPE_BUILD_REPOSITORY_DIRECTORY, sonatypeBuildRepositoryDirectory)
         }
 
-
         return publishToTask
     }
 
     private fun taskName(publicationName: String): String {
-        //publicationName would be like
+        // publicationName would be like
         // maven, kotlinMultiplatform, jvm,  etc.
-        return "publish${publicationName.capitalized()}PublicationToBuild${publicationName.capitalized()}Repository"
+        return "publish${publicationName.replaceFirstChar { it.uppercase() }}PublicationToBuild${publicationName.replaceFirstChar { it.uppercase() }}Repository"
     }
 }

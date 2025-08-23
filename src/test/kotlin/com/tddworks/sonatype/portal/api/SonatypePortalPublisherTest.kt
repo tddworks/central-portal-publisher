@@ -6,13 +6,13 @@ import com.tddworks.sonatype.publish.portal.api.PublicationType
 import com.tddworks.sonatype.publish.portal.api.SonatypePortalPublisher
 import com.tddworks.sonatype.publish.portal.api.internal.api.FileUploader
 import com.tddworks.sonatype.publish.portal.api.internal.api.HttpRequestBuilder
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
 
 class SonatypePortalPublisherTest {
     private val uploader: FileUploader = mock()
@@ -31,20 +31,14 @@ class SonatypePortalPublisherTest {
         val httpRequestCaptor = argumentCaptor<HttpRequestBuilder.() -> Unit>()
 
         whenever(
-            uploader.uploadFile(
-                file = argThat<File> {
-                    this == file
-                },
-                builder = httpRequestCaptor.capture()
+                uploader.uploadFile(
+                    file = argThat<File> { this == file },
+                    builder = httpRequestCaptor.capture(),
+                )
             )
-        ).thenReturn("some-deployment-id")
+            .thenReturn("some-deployment-id")
 
-        val deploymentId = target.deploy(
-            authentication, DeploymentBundle(
-                file,
-                publicationType
-            )
-        )
+        val deploymentId = target.deploy(authentication, DeploymentBundle(file, publicationType))
 
         assertEquals("some-deployment-id", deploymentId)
     }

@@ -17,8 +17,7 @@ import org.gradle.plugins.signing.SigningExtension
 
 interface PublishingTaskManager {
     /**
-     * Register the publishing task for the project
-     * e.g
+     * Register the publishing task for the project e.g
      * - publishMavenPublicationToMavenRepository
      * - publishKotlinMultiplatformPublicationToMavenRepository
      * - publishAllPublicationsToSonatypePortalRepository
@@ -29,7 +28,8 @@ interface PublishingTaskManager {
 internal const val PUBLISHING_GROUP = "publishing"
 
 class SonatypePortalPublishingTaskManager(
-    private val publishPublicationToMavenRepositoryTaskFactory: PublishPublicationToMavenRepositoryTaskFactory,
+    private val publishPublicationToMavenRepositoryTaskFactory:
+        PublishPublicationToMavenRepositoryTaskFactory,
     private val zipPublicationTaskFactory: ZipPublicationTaskFactory,
     private val developmentBundlePublishTaskFactory: DevelopmentBundlePublishTaskFactory,
     private val publicationProvider: PublicationProvider,
@@ -41,32 +41,30 @@ class SonatypePortalPublishingTaskManager(
 
     override fun registerPublishingTasks(project: Project) {
         // Create a task to zip all publications
-        val zipAllPublications = project.tasks.register(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS)
+        val zipAllPublications =
+            project.tasks.register(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS)
 
         // Create a task to publish all publications to Sonatype Portal
-        project.tasks.register(SonatypePortalPublisherPlugin.PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY) {
+        project.tasks.register(
+            SonatypePortalPublisherPlugin.PUBLISH_ALL_PUBLICATIONS_TO_SONATYPE_PORTAL_REPOSITORY
+        ) {
             group = PUBLISHING_GROUP
             // publish all publications depends on zipAllPublications
             dependsOn(zipAllPublications)
         }
 
-        settings?.aggregation?.let {
-            registerAggregationPublications(project)
-        }
+        settings?.aggregation?.let { registerAggregationPublications(project) }
 
         project.allprojects.forEach { pj ->
             project.addProjectAsRootProjectDependencyIfNecessary(settings?.aggregation, pj)
 
-            pj.pluginManager.withPlugin("maven-publish") {
-                registerPublications(pj)
-            }
+            pj.pluginManager.withPlugin("maven-publish") { registerPublications(pj) }
         }
     }
 
     fun registerPublications(project: Project) {
         // register the zip configuration producer
         project.createZipConfigurationProducer
-
 
         // need config this before loop through all publications
         preparePublications(project)
@@ -102,43 +100,37 @@ class SonatypePortalPublishingTaskManager(
                 sign(publishing.publications)
                 // use the in-memory PGP keys if available
                 if (project.get("SIGNING_KEY") != "SIGNING_KEY not found") {
-                    useInMemoryPgpKeys(
-                        project.get("SIGNING_KEY"),
-                        project.get("SIGNING_PASSWORD")
-                    )
+                    useInMemoryPgpKeys(project.get("SIGNING_KEY"), project.get("SIGNING_PASSWORD"))
                 }
             }
         }
     }
 
     private fun registerAggregationPublications(project: Project) {
-        val zipProvider = project.enableZipAggregationPublicationsTaskIfNecessary(settings?.aggregation)
+        val zipProvider =
+            project.enableZipAggregationPublicationsTaskIfNecessary(settings?.aggregation)
         project.enablePublishAggregationPublicationsTaskIfNecessary(
             settings?.aggregation,
             zipProvider,
             authentication,
-            autoPublish
+            autoPublish,
         )
     }
 
-    fun registerTasksForPublication(
-        project: Project,
-        publicationName: String,
-    ) {
+    fun registerTasksForPublication(project: Project, publicationName: String) {
 
         // create a task to publish the publication to the repository
         // e.g create publishMavenPublicationToMavenRepository
-        val publishPublicationToTask = publishPublicationToMavenRepositoryTaskFactory.createTask(
-            project,
-            publicationName
-        )
+        val publishPublicationToTask =
+            publishPublicationToMavenRepositoryTaskFactory.createTask(project, publicationName)
 
         // create a task to zip the publication
-        val zipTask = zipPublicationTaskFactory.createZipTask(
-            project,
-            publicationName,
-            publishPublicationToTask
-        )
+        val zipTask =
+            zipPublicationTaskFactory.createZipTask(
+                project,
+                publicationName,
+                publishPublicationToTask,
+            )
 
         // create a task to publish the publication to Sonatype Portal
         developmentBundlePublishTaskFactory.createTask(
@@ -146,15 +138,15 @@ class SonatypePortalPublishingTaskManager(
             publicationName,
             zipTask,
             authentication,
-            autoPublish
+            autoPublish,
         )
 
         // Add the zip task to the zipAllPublications task
         // zipAllPublications will execute all the zip tasks
         // e.g zipMavenPublication, zipKotlinMultiplatformPublication, etc.
-        project.rootProject.tasks.named(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS).configure {
-            dependsOn(zipTask)
-        }
+        project.rootProject.tasks
+            .named(SonatypePortalPublisherPlugin.ZIP_ALL_PUBLICATIONS)
+            .configure { dependsOn(zipTask) }
     }
 
     private fun Project.enablePublishAggregationPublicationsTaskIfNecessary(
@@ -164,30 +156,41 @@ class SonatypePortalPublishingTaskManager(
         autoPublish: Boolean? = null,
     ) {
         if (isAggregation == true) {
-            logger.quiet("Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path")
+            logger.quiet(
+                "Enabling publishAggregationPublicationsToSonatypePortalRepository task for project: $path"
+            )
 
-            //TODO unit test for this
+            // TODO unit test for this
             developmentBundlePublishTaskFactory.createAggregationTask(
                 project,
                 zipProvider!!,
                 authentication,
-                autoPublish
+                autoPublish,
             )
         }
     }
 
-    private fun Project.addProjectAsRootProjectDependencyIfNecessary(isAggregation: Boolean?, pj: Project) {
+    private fun Project.addProjectAsRootProjectDependencyIfNecessary(
+        isAggregation: Boolean?,
+        pj: Project,
+    ) {
         if (isAggregation == true) {
             logger.quiet("Adding project: ${pj.path} as a dependency to the root project: $path")
-            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER configuration
-            dependencies.add(ZIP_CONFIGURATION_CONSUMER, project.dependencies.project(mapOf("path" to pj.path)))
+            // add the root project as a dependency project to the ZIP_CONFIGURATION_CONSUMER
+            // configuration
+            dependencies.add(
+                ZIP_CONFIGURATION_CONSUMER,
+                project.dependencies.project(mapOf("path" to pj.path)),
+            )
         }
     }
 
-    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(aggregation: Boolean?): TaskProvider<Zip>? {
+    private fun Project.enableZipAggregationPublicationsTaskIfNecessary(
+        aggregation: Boolean?
+    ): TaskProvider<Zip>? {
         if (aggregation == true) {
             createZipConfigurationProducer
-            //TODO refactor unit test for this
+            // TODO refactor unit test for this
             return zipPublicationTaskFactory.createZipAggregationPublicationsTask(this)
         }
         return null

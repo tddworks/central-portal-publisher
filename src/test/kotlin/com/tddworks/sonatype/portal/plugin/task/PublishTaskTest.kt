@@ -20,9 +20,7 @@ class PublishTaskTest {
 
         task.inputFile.set(project.file("testFile.txt"))
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            task.taskAction()
-        }
+        val exception = assertThrows(IllegalStateException::class.java) { task.taskAction() }
 
         assertEquals("SonatypePortal: username must not be empty", exception.message)
     }
@@ -38,12 +36,8 @@ class PublishTaskTest {
 
         task.inputFile.set(project.file("testFile.txt"))
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            task.taskAction()
-        }
+        val exception = assertThrows(IllegalStateException::class.java) { task.taskAction() }
 
         assertEquals("SonatypePortal: password must not be empty", exception.message)
     }
-
 }
-

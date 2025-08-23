@@ -1,13 +1,13 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
+import kotlin.test.assertEquals
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.internal.publication.DefaultMavenPom
-import org.gradle.internal.impldep.junit.framework.TestCase.assertEquals
-import org.gradle.internal.impldep.junit.framework.TestCase.assertNotNull
 import org.gradle.jvm.tasks.Jar
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertNotNull
 
 class ProjectExtensionsTest {
 
@@ -20,7 +20,6 @@ class ProjectExtensionsTest {
         project.configureMavenPublication()
 
         val task = project.tasks.findByName("mavenJavadocJar")!! as Jar
-
 
         assertEquals("javadoc", task.archiveClassifier.get())
         assertEquals("maven", task.archiveAppendix.get())
@@ -51,7 +50,10 @@ class ProjectExtensionsTest {
             assertEquals("Dummy library to test deployment to Maven Central", pom.description.get())
             assertEquals("https://github.com/Kotlin/multiplatform-library-template", pom.url.get())
             assertEquals("https://github.com/Kotlin/multiplatform-library-template", scm.url.get())
-            assertEquals("scm:git:git://github.com/Kotlin/multiplatform-library-template.git", scm.connection.get())
+            assertEquals(
+                "scm:git:git://github.com/Kotlin/multiplatform-library-template.git",
+                scm.connection.get(),
+            )
         }
     }
 }
