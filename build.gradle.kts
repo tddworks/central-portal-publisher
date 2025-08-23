@@ -47,7 +47,7 @@ dependencies {
 
 group = "com.tddworks"
 
-version = "0.2.1-alpha"
+version = project.findProperty("version") ?: "0.2.0-alpha.1"
 
 repositories { mavenCentral() }
 
