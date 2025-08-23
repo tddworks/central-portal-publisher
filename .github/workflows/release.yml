@@ -24,12 +24,14 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -62,14 +64,13 @@ jobs:
           git push origin "v${{ inputs.version }}"
           
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ inputs.version }}
-          release_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
           draft: false
           prerelease: ${{ contains(inputs.version, '-') }}
+          generate_release_notes: true
           
       - name: Publish plugin to Gradle Plugin Portal
         run: ./gradlew publishPlugins -Pversion=${{ inputs.version }}
