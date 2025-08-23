@@ -1,5 +1,16 @@
 name: CI
 
+# Continuous Integration workflow for the Central Portal Publisher Gradle plugin
+# 
+# Triggers:
+# - Push to main branch: Runs build + automatic publish
+# - Pull requests: Runs build only for validation
+# - Manual trigger: Runs build + optional publish (user checkbox)
+#
+# Jobs:
+# - build: Validates code quality, runs tests, generates coverage
+# - publish: Deploys plugin to Gradle Plugin Portal (conditional)
+
 on:
   workflow_dispatch:
     inputs:
@@ -16,6 +27,7 @@ on:
       - main
 
 jobs:
+  # Build and test the plugin with code quality checks
   build:
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +58,8 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  # Publish plugin to Gradle Plugin Portal
+  # Only runs on main branch pushes or manual triggers with publish=true
   publish:
     runs-on: ubuntu-latest
     needs: build
