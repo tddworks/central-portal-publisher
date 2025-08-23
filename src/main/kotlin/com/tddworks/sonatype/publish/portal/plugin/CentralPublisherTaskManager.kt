@@ -23,9 +23,7 @@ class CentralPublisherTaskManager(private val project: Project) {
         const val TASK_SETUP_PUBLISHING = "setupPublishing"
     }
 
-    /**
-     * Creates all publishing tasks. Simple and direct.
-     */
+    /** Creates all publishing tasks. Simple and direct. */
     fun createTasks(config: CentralPublisherConfig) {
         if (project.tasks.findByName(TASK_PUBLISH_TO_CENTRAL) != null) {
             return // Tasks already created
@@ -62,7 +60,7 @@ class CentralPublisherTaskManager(private val project: Project) {
         project.tasks.register(TASK_BUNDLE_ARTIFACTS) {
             group = PLUGIN_GROUP
             description = "📦 Prepare your artifacts for publishing (signs, validates, bundles)"
-            
+
             // Depend on publishing all artifacts to LocalRepo
             setupBundleTaskDependencies()
 
@@ -94,7 +92,10 @@ class CentralPublisherTaskManager(private val project: Project) {
                 try {
                     project.logger.quiet("🧙 Starting setup wizard...")
 
-                    val wizard = com.tddworks.sonatype.publish.portal.plugin.wizard.RefactoredSetupWizard(project)
+                    val wizard =
+                        com.tddworks.sonatype.publish.portal.plugin.wizard.RefactoredSetupWizard(
+                            project
+                        )
                     val result = wizard.runComplete()
 
                     if (result.isComplete) {
@@ -103,8 +104,12 @@ class CentralPublisherTaskManager(private val project: Project) {
                         result.filesGenerated.forEach { file -> project.logger.quiet("   - $file") }
                         project.logger.quiet("💡 Next steps:")
                         project.logger.quiet("   1. Review the generated configuration")
-                        project.logger.quiet("   2. Run './gradlew validatePublishing' to check your setup")
-                        project.logger.quiet("   3. Run './gradlew publishToCentral' when ready to publish")
+                        project.logger.quiet(
+                            "   2. Run './gradlew validatePublishing' to check your setup"
+                        )
+                        project.logger.quiet(
+                            "   3. Run './gradlew publishToCentral' when ready to publish"
+                        )
                     } else {
                         project.logger.warn("⚠️ Setup was not completed successfully")
                     }
@@ -132,9 +137,7 @@ class CentralPublisherTaskManager(private val project: Project) {
         }
     }
 
-    /**
-     * Bundle task depends on all artifacts being published to LocalRepo first.
-     */
+    /** Bundle task depends on all artifacts being published to LocalRepo first. */
     private fun org.gradle.api.Task.setupBundleTaskDependencies() {
         // Root project: depend on its publish task if it has publications
         if (project.plugins.hasPlugin("maven-publish")) {
@@ -154,15 +157,14 @@ class CentralPublisherTaskManager(private val project: Project) {
         setupSigningDependencies()
     }
 
-    /**
-     * Make sure signing happens before publishing.
-     */
+    /** Make sure signing happens before publishing. */
     private fun org.gradle.api.Task.setupSigningDependencies() {
         // Root project signing
         if (project.plugins.hasPlugin("signing")) {
-            val rootSigningTasks = project.tasks.matching { task ->
-                task.name.startsWith("sign") && task.name.endsWith("Publication")
-            }
+            val rootSigningTasks =
+                project.tasks.matching { task ->
+                    task.name.startsWith("sign") && task.name.endsWith("Publication")
+                }
             if (rootSigningTasks.isNotEmpty()) {
                 dependsOn(rootSigningTasks)
                 project.logger.quiet("🔐 Bundle will wait for root project signing")
@@ -172,9 +174,10 @@ class CentralPublisherTaskManager(private val project: Project) {
         // Subproject signing
         project.subprojects.forEach { subproject ->
             if (subproject.plugins.hasPlugin("signing")) {
-                val signingTasks = subproject.tasks.matching { task ->
-                    task.name.startsWith("sign") && task.name.endsWith("Publication")
-                }
+                val signingTasks =
+                    subproject.tasks.matching { task ->
+                        task.name.startsWith("sign") && task.name.endsWith("Publication")
+                    }
                 if (signingTasks.isNotEmpty()) {
                     dependsOn(signingTasks)
                     project.logger.quiet("🔐 Bundle will wait for ${subproject.name} signing")

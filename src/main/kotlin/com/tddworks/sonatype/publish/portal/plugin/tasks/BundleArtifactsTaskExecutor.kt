@@ -32,9 +32,7 @@ class BundleArtifactsTaskExecutor(
             // Look for local repository artifacts - check current project and all submodules
             val localRepoDir =
                 findLocalRepositoryWithArtifacts()
-                    ?: throw GradleException(
-                        "No artifacts found to bundle."
-                    )
+                    ?: throw GradleException("No artifacts found to bundle.")
 
             // Create bundle directory
             val bundleDir = File(project.buildDir, "central-portal")

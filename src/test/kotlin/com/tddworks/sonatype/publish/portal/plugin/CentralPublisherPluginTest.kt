@@ -163,7 +163,7 @@ class CentralPublisherPluginTest {
                 password = "test-token"
             }
         }
-        
+
         // Trigger afterEvaluate to create tasks
         evaluateProject()
 
