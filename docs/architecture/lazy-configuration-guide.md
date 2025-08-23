@@ -227,6 +227,118 @@ $ ./gradlew validatePublishing
 - Shows "ready for publishing" message indicating configuration is active
 - Task executes with full feedback and validation results
 
+## Complete Message Flow Explanation
+
+Understanding when and where different types of messages appear is crucial for maintaining the lazy configuration architecture.
+
+### Two Types of Messages
+
+**1. Configuration Messages** (Controlled by lazy configuration)
+```
+🔧 Central Publisher ready for publishing
+Configured Kotlin JVM project for publishing using kotlin-jvm strategy  
+✅ Auto-configured for kotlin-jvm project
+```
+
+**2. Task Execution Messages** (Always appear during task execution)  
+```
+🚀 Publishing to Maven Central...
+📤 Uploading bundle to Sonatype Central Portal...
+📦 Bundle: /path/to/bundle.zip
+📊 Bundle size: 24550 bytes
+🎯 Target: https://central.sonatype.com/
+🔐 Authenticating with Sonatype Central Portal...
+✅ Upload successful with deployment ID: 2c0ad7cf-9623-4a79-ba55-8ab489665346
+✅ Upload completed successfully!
+```
+
+### Timeline: What Messages Appear When
+
+```
+1. Configuration Phase (./gradlew publishToCentral starts)
+   ├── Publications configured silently (no messages)
+   ├── Tasks created silently (no messages)  
+   └── taskGraph.whenReady callback registered (no messages)
+
+2. Task Graph Ready (End of Configuration Phase)
+   ├── gradle.taskGraph.whenReady executes
+   ├── Detects "publishToCentral" in task graph
+   └── 🔧 Central Publisher ready for publishing  ← CONFIGURATION MESSAGE
+
+3. Task Execution Phase  
+   ├── > Task :publishToCentral
+   ├── PublishToCentralTaskExecutor.execute() runs
+   ├── 🚀 Publishing to Maven Central...          ← TASK EXECUTION MESSAGE
+   ├── 📤 Uploading bundle to Sonatype Central Portal... ← TASK EXECUTION MESSAGE
+   ├── 📦 Bundle: /path/to/bundle.zip             ← TASK EXECUTION MESSAGE
+   ├── 📊 Bundle size: 24550 bytes                ← TASK EXECUTION MESSAGE
+   ├── 🎯 Target: https://central.sonatype.com/   ← TASK EXECUTION MESSAGE
+   ├── ... (upload happens) ...
+   └── ✅ Upload completed successfully!          ← TASK EXECUTION MESSAGE
+```
+
+### Source Code Locations
+
+**Configuration Messages** (controlled by `taskGraph.whenReady`):
+```kotlin
+// File: CentralPublisherPlugin.kt
+project.gradle.taskGraph.whenReady {
+    if (willPublish) {
+        project.logger.quiet("🔧 Central Publisher ready for publishing") // ← Configuration message
+    }
+}
+```
+
+**Task Execution Messages** (in task executors):
+```kotlin  
+// File: PublishToCentralTaskExecutor.kt
+fun execute() {
+    project.logger.quiet("🚀 Publishing to Maven Central...")           // ← Task execution message
+    project.logger.quiet("📤 Uploading bundle to Sonatype Central Portal...") // ← Task execution message
+    project.logger.quiet("📦 Bundle: ${bundleFile.absolutePath}")              // ← Task execution message
+    project.logger.quiet("📊 Bundle size: ${bundleFile.length()} bytes")       // ← Task execution message
+    // ... actual upload logic with more messages ...
+    project.logger.quiet("✅ Upload completed successfully!")                  // ← Task execution message
+}
+```
+
+### Key Distinction
+
+| Message Type | When | Where | Purpose | Controlled by lazy config? |
+|-------------|------|-------|---------|---------------------------|
+| **Configuration** | Before task execution | `taskGraph.whenReady` | "I'm ready to publish" | ✅ YES |
+| **Task Execution** | During task execution | Task executors | "I'm publishing now" | ❌ NO |
+
+### Why Task Execution Messages Always Show
+
+Task execution messages (🚀, 📤, 📦, etc.) **always** appear when publishing tasks run because:
+
+1. **They run during task execution** - not during configuration
+2. **They're part of the task logic** - they tell you what the task is doing  
+3. **They should always show** - you want to see upload progress when actually publishing
+
+**This is the correct behavior!** When you run `./gradlew publishToCentral`, you **want** to see:
+- Configuration message: "🔧 Ready for publishing" 
+- Execution messages: "🚀 Publishing...", "📤 Uploading...", "✅ Upload completed!"
+
+### Testing Both Message Types
+
+**Development (Silent):**
+```bash
+./gradlew test
+# ✅ No configuration messages (taskGraph.whenReady doesn't trigger)
+# ✅ No task execution messages (no publishing tasks run)
+# Result: Complete silence ✅
+```
+
+**Publishing (Verbose):**
+```bash
+./gradlew publishToCentral
+# ✅ Configuration message: "🔧 Ready for publishing" (from taskGraph.whenReady)
+# ✅ Task execution messages: "🚀 Publishing...", "📤 Uploading...", etc. (from task executors)
+# Result: Full feedback during publishing ✅
+```
+
 ## Key Benefits Achieved
 
 ### 1. **Perfect User Experience**
