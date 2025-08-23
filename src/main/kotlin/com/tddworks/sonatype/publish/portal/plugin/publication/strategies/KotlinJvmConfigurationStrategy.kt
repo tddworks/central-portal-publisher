@@ -29,7 +29,11 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
         return project.plugins.hasPlugin("org.jetbrains.kotlin.jvm")
     }
 
-    override fun configure(project: Project, config: CentralPublisherConfig) {
+    override fun configure(
+        project: Project,
+        config: CentralPublisherConfig,
+        showMessages: Boolean,
+    ) {
         try {
             // Apply required plugins
             project.plugins.apply("maven-publish")
@@ -55,14 +59,16 @@ class KotlinJvmConfigurationStrategy : PluginConfigurationStrategy {
                         configurePom(project, config)
 
                         // Configure signing right here inside the publication - perfect!
-                        configureSigningIfAvailable(project, config)
+                        configureSigningIfAvailable(project, config, showMessages)
                     }
                 }
             }
 
-            project.logger.quiet(
-                "Configured Kotlin JVM project for publishing using ${getPluginType()} strategy"
-            )
+            if (showMessages) {
+                project.logger.quiet(
+                    "Configured Kotlin JVM project for publishing using ${getPluginType()} strategy"
+                )
+            }
         } catch (e: Exception) {
             project.logger.error("Failed to configure Kotlin JVM project: ${e.message}", e)
             throw e

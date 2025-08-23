@@ -26,7 +26,11 @@ class JavaLibraryConfigurationStrategy : PluginConfigurationStrategy {
         return project.plugins.hasPlugin("java-library") || project.plugins.hasPlugin("java")
     }
 
-    override fun configure(project: Project, config: CentralPublisherConfig) {
+    override fun configure(
+        project: Project,
+        config: CentralPublisherConfig,
+        showMessages: Boolean,
+    ) {
         try {
             // Apply required plugins
             project.plugins.apply("maven-publish")
@@ -46,14 +50,16 @@ class JavaLibraryConfigurationStrategy : PluginConfigurationStrategy {
                         configurePom(project, config)
 
                         // Configure signing right here inside the publication - perfect!
-                        configureSigningIfAvailable(project, config)
+                        configureSigningIfAvailable(project, config, showMessages)
                     }
                 }
             }
 
-            project.logger.quiet(
-                "Configured Java Library project for publishing using ${getPluginType()} strategy"
-            )
+            if (showMessages) {
+                project.logger.quiet(
+                    "Configured Java Library project for publishing using ${getPluginType()} strategy"
+                )
+            }
         } catch (e: Exception) {
             project.logger.error("Failed to configure Java Library project: ${e.message}", e)
             throw e

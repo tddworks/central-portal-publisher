@@ -27,6 +27,12 @@ class CentralPublisherPluginTest {
         System.setOut(PrintStream(outputStream))
     }
 
+    /** Helper method to simulate requesting publishing tasks, which triggers plugin activation */
+    private fun simulatePublishingTaskRequest() {
+        // Set test mode property so plugin activates during tests
+        project.extensions.extraProperties.set("testingPublishingTask", true)
+    }
+
     @Test
     fun `should register centralPublisher extension when plugin is applied`() {
         // When
@@ -43,6 +49,9 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should register all publishing tasks`() {
+        // Given - simulate publishing task request
+        simulatePublishingTaskRequest()
+
         // When
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
@@ -67,6 +76,9 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should set correct task group and descriptions`() {
+        // Given - simulate publishing task request
+        simulatePublishingTaskRequest()
+
         // When
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
@@ -209,7 +221,9 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should configure local repository for bundle creation`() {
-        // Given
+        // Given - simulate publishing task request
+        simulatePublishingTaskRequest()
+
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
 
@@ -240,7 +254,9 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should create bundleArtifacts task with correct dependencies`() {
-        // Given
+        // Given - simulate publishing task request
+        simulatePublishingTaskRequest()
+
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
 

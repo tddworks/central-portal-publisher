@@ -33,8 +33,9 @@ interface PluginConfigurationStrategy {
      *
      * @param project The Gradle project to configure
      * @param config The Central Publisher configuration
+     * @param showMessages whether to show configuration messages
      */
-    fun configure(project: Project, config: CentralPublisherConfig)
+    fun configure(project: Project, config: CentralPublisherConfig, showMessages: Boolean = true)
 
     /**
      * Returns a human-readable identifier for the plugin type this strategy handles.

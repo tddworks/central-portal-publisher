@@ -24,9 +24,17 @@ class CentralPublisherPluginBundleTest {
         project = ProjectBuilder.builder().withProjectDir(tempDir).build()
     }
 
+    /** Helper method to simulate requesting publishing tasks, which triggers plugin activation */
+    private fun simulatePublishingTaskRequest() {
+        // Set test mode property so plugin activates during tests
+        project.extensions.extraProperties.set("testingPublishingTask", true)
+    }
+
     @Test
     fun `should create bundle creation logic`() {
-        // Given
+        // Given - simulate publishing task request
+        simulatePublishingTaskRequest()
+
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
         project.pluginManager.apply("maven-publish")
@@ -85,7 +93,9 @@ class CentralPublisherPluginBundleTest {
 
     @Test
     fun `should configure tasks in correct dependency order`() {
-        // Given
+        // Given - simulate publishing task request
+        simulatePublishingTaskRequest()
+
         project.group = "com.tddworks.test"
         project.version = "1.0.0"
         project.pluginManager.apply("maven-publish")

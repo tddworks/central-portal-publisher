@@ -34,7 +34,11 @@ class KotlinMultiplatformConfigurationStrategy : PluginConfigurationStrategy {
         return project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
     }
 
-    override fun configure(project: Project, config: CentralPublisherConfig) {
+    override fun configure(
+        project: Project,
+        config: CentralPublisherConfig,
+        showMessages: Boolean,
+    ) {
         try {
             // Apply required plugins (though KMP usually applies maven-publish)
             project.plugins.apply("maven-publish")
@@ -74,14 +78,16 @@ class KotlinMultiplatformConfigurationStrategy : PluginConfigurationStrategy {
 
                     // Configure signing for each KMP publication individually - lower cognitive
                     // load!
-                    configureSigningIfAvailable(project, config)
+                    configureSigningIfAvailable(project, config, showMessages)
                 }
             }
 
             // TODO: Configure dokka for multiplatform documentation
-            project.logger.quiet(
-                "Configured Kotlin Multiplatform project for publishing using ${getPluginType()} strategy"
-            )
+            if (showMessages) {
+                project.logger.quiet(
+                    "Configured Kotlin Multiplatform project for publishing using ${getPluginType()} strategy"
+                )
+            }
         } catch (e: Exception) {
             project.logger.error(
                 "Failed to configure Kotlin Multiplatform project: ${e.message}",

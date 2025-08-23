@@ -27,21 +27,30 @@ class CentralPublisherPublicationManager(private val project: Project) {
      * Developer mental model: "Set up what gets published based on my project type"
      *
      * @param config the resolved configuration to use for publication setup
+     * @param showMessages whether to show configuration messages
      * @return configuration result indicating success/failure and detected plugin type
      */
-    fun configurePublications(config: CentralPublisherConfig): ConfigurationResult {
+    fun configurePublications(
+        config: CentralPublisherConfig,
+        showMessages: Boolean = true,
+    ): ConfigurationResult {
         // Use the existing OCP-compliant plugin detection system
         val pluginConfigurator = PluginConfigurationRegistry.createWithStandardStrategies()
-        val configurationResult = pluginConfigurator.configureBasedOnAppliedPlugins(project, config)
+        val configurationResult =
+            pluginConfigurator.configureBasedOnAppliedPlugins(project, config, showMessages)
 
-        if (configurationResult.isConfigured) {
-            project.logger.quiet(
-                "✅ Auto-configured for ${configurationResult.detectedPluginType} project"
-            )
-        } else {
-            project.logger.warn("⚠️ ${configurationResult.reason}")
-            project.logger.warn("   Using fallback publication configuration")
+        if (showMessages) {
+            if (configurationResult.isConfigured) {
+                project.logger.quiet(
+                    "✅ Auto-configured for ${configurationResult.detectedPluginType} project"
+                )
+            } else {
+                project.logger.warn("⚠️ ${configurationResult.reason}")
+                project.logger.warn("   Using fallback publication configuration")
+            }
+        }
 
+        if (!configurationResult.isConfigured) {
             // Fallback to existing system for compatibility
             val publicationRegistry = PublicationProviderRegistry()
             publicationRegistry.configurePublications(project, config)

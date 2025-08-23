@@ -58,7 +58,11 @@ fun MavenPublication.configurePom(project: Project, config: CentralPublisherConf
  * @param project The Gradle project
  * @param config The Central Publisher configuration containing signing credentials
  */
-fun MavenPublication.configureSigningIfAvailable(project: Project, config: CentralPublisherConfig) {
+fun MavenPublication.configureSigningIfAvailable(
+    project: Project,
+    config: CentralPublisherConfig,
+    showMessages: Boolean = true,
+) {
     // Check for in-memory keys first
     val signingKey = project.findProperty("SIGNING_KEY")?.toString() ?: System.getenv("SIGNING_KEY")
     val signingPassword =
@@ -83,7 +87,9 @@ fun MavenPublication.configureSigningIfAvailable(project: Project, config: Centr
 
         when {
             !signingKey.isNullOrBlank() -> {
-                project.logger.quiet("🔐 Using in-memory GPG keys for signing")
+                if (showMessages) {
+                    project.logger.quiet("🔐 Using in-memory GPG keys for signing")
+                }
                 project.configure<SigningExtension> {
                     useInMemoryPgpKeys(signingKey, signingPassword ?: "")
                 }
@@ -91,21 +97,27 @@ fun MavenPublication.configureSigningIfAvailable(project: Project, config: Centr
                 signing.sign(this@configureSigningIfAvailable)
             }
             config.signing.keyId.isNotBlank() && config.signing.secretKeyRingFile.isNotBlank() -> {
-                project.logger.quiet(
-                    "🔐 Using file-based signing with keyId: ${config.signing.keyId}"
-                )
+                if (showMessages) {
+                    project.logger.quiet(
+                        "🔐 Using file-based signing with keyId: ${config.signing.keyId}"
+                    )
+                }
                 val signing = project.extensions.getByType(SigningExtension::class.java)
                 signing.sign(this@configureSigningIfAvailable)
             }
             config.signing.keyId.isNotBlank() -> {
-                project.logger.quiet("🔐 Using keyId-based signing: ${config.signing.keyId}")
+                if (showMessages) {
+                    project.logger.quiet("🔐 Using keyId-based signing: ${config.signing.keyId}")
+                }
                 val signing = project.extensions.getByType(SigningExtension::class.java)
                 signing.sign(this@configureSigningIfAvailable)
             }
             else -> {
-                project.logger.quiet(
-                    "⚠️ No signing configuration found - artifacts will be unsigned"
-                )
+                if (showMessages) {
+                    project.logger.quiet(
+                        "⚠️ No signing configuration found - artifacts will be unsigned"
+                    )
+                }
             }
         }
     }

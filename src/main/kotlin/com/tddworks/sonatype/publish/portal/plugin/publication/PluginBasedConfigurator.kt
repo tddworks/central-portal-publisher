@@ -43,11 +43,13 @@ class PluginBasedConfigurator {
      *
      * @param project The Gradle project to configure
      * @param config The Central Publisher configuration
+     * @param showMessages whether to show configuration messages
      * @return Configuration result indicating success/failure and details
      */
     fun configureBasedOnAppliedPlugins(
         project: Project,
         config: CentralPublisherConfig,
+        showMessages: Boolean = true,
     ): ConfigurationResult {
 
         // Find the first strategy that can handle this project
@@ -55,7 +57,7 @@ class PluginBasedConfigurator {
 
         return if (applicableStrategy != null) {
             try {
-                applicableStrategy.configure(project, config)
+                applicableStrategy.configure(project, config, showMessages)
                 ConfigurationResult.success(
                     detectedPluginType = applicableStrategy.getPluginType(),
                     appliedStrategy = applicableStrategy,
