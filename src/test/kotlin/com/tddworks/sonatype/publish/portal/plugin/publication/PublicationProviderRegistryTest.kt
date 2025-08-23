@@ -5,7 +5,6 @@ import com.tddworks.sonatype.publish.portal.plugin.config.ProjectInfoConfig
 import org.assertj.core.api.Assertions
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
@@ -19,13 +18,15 @@ class PublicationProviderRegistryTest {
     @BeforeEach
     fun setup() {
         project = ProjectBuilder.builder().build()
-        config = CentralPublisherConfig(
-            projectInfo = ProjectInfoConfig(
-                name = "test-registry-library",
-                description = "A test library for registry",
-                url = "https://github.com/example/test-registry-library"
+        config =
+            CentralPublisherConfig(
+                projectInfo =
+                    ProjectInfoConfig(
+                        name = "test-registry-library",
+                        description = "A test library for registry",
+                        url = "https://github.com/example/test-registry-library",
+                    )
             )
-        )
     }
 
     @Test
@@ -42,7 +43,7 @@ class PublicationProviderRegistryTest {
         // Then: Publications should be configured by applicable providers
         Assertions.assertThat(project.plugins.hasPlugin("maven-publish")).isEqualTo(true)
         val publishing = project.extensions.getByType<PublishingExtension>()
-        
+
         // Should create at least one publication (may create sources jar as second publication)
         Assertions.assertThat(publishing.publications.size).isGreaterThanOrEqualTo(1)
         // Should have a maven publication configured

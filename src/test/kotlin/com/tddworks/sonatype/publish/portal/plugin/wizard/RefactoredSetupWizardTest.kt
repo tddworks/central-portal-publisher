@@ -1,5 +1,9 @@
 package com.tddworks.sonatype.publish.portal.plugin.wizard
 
+import java.io.File
+import java.nio.file.Path
+import kotlin.collections.set
+import kotlin.text.contains
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Test
@@ -12,31 +16,24 @@ import org.mockito.junit.jupiter.MockitoExtension
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 import uk.org.webcompere.systemstubs.jupiter.SystemStub
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension
-import java.io.File
-import java.nio.file.Path
-import kotlin.collections.set
-import kotlin.text.contains
-
 
 @ExtendWith(SystemStubsExtension::class, MockitoExtension::class)
 class RefactoredSetupWizardTest {
 
-    @SystemStub
-    private lateinit var environmentVariables: EnvironmentVariables
+    @SystemStub private lateinit var environmentVariables: EnvironmentVariables
 
-    @Mock
-    private lateinit var mockPromptSystem: PromptSystem
+    @Mock private lateinit var mockPromptSystem: PromptSystem
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     @Test
     fun `should follow SOLID principles - Open Closed Principle`() {
         // Given - Create wizard with default processors
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         val wizard = RefactoredSetupWizard(project, enableGlobalGradlePropsDetection = false)
 
@@ -45,23 +42,25 @@ class RefactoredSetupWizardTest {
 
         // Then - Should have all expected processors
         assertThat(processors).hasSize(6)
-        assertThat(processors.map { it.step }).containsExactly(
-            WizardStep.WELCOME,
-            WizardStep.PROJECT_INFO,
-            WizardStep.CREDENTIALS,
-            WizardStep.SIGNING,
-            WizardStep.REVIEW,
-            WizardStep.TEST
-        )
+        assertThat(processors.map { it.step })
+            .containsExactly(
+                WizardStep.WELCOME,
+                WizardStep.PROJECT_INFO,
+                WizardStep.CREDENTIALS,
+                WizardStep.SIGNING,
+                WizardStep.REVIEW,
+                WizardStep.TEST,
+            )
     }
 
     @Test
     fun `should start wizard and detect project information`() {
         // Given
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         val wizard = RefactoredSetupWizard(project, enableGlobalGradlePropsDetection = false)
 
@@ -78,20 +77,22 @@ class RefactoredSetupWizardTest {
     @Test
     fun `should process individual steps using appropriate processors`() {
         // Given
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         // Mock confirm method to return true for project info confirmation
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("test-description")
 
-        val wizard = RefactoredSetupWizard(
-            project = project,
-            promptSystem = mockPromptSystem,
-            enableGlobalGradlePropsDetection = false
-        )
+        val wizard =
+            RefactoredSetupWizard(
+                project = project,
+                promptSystem = mockPromptSystem,
+                enableGlobalGradlePropsDetection = false,
+            )
 
         wizard.start()
 
@@ -118,21 +119,23 @@ class RefactoredSetupWizardTest {
         environmentVariables.set("SIGNING_KEY", "test-key")
         environmentVariables.set("SIGNING_PASSWORD", "test-key-password")
 
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         // Mock all necessary interactions for ALL steps including PROJECT_INFO
         // PROJECT_INFO step needs both confirm() and prompt() calls
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("test-description")
 
-        val wizard = RefactoredSetupWizard(
-            project = project,
-            promptSystem = mockPromptSystem,
-            enableGlobalGradlePropsDetection = false
-        )
+        val wizard =
+            RefactoredSetupWizard(
+                project = project,
+                promptSystem = mockPromptSystem,
+                enableGlobalGradlePropsDetection = false,
+            )
 
         // When
         val result = wizard.runComplete()
@@ -140,16 +143,18 @@ class RefactoredSetupWizardTest {
         // Then
         assertThat(result.isComplete).isTrue()
         assertThat(result.stepsCompleted).hasSize(6)
-        assertThat(result.stepsCompleted).containsExactly(
-            WizardStep.WELCOME,
-            WizardStep.PROJECT_INFO,
-            WizardStep.CREDENTIALS,
-            WizardStep.SIGNING,
-            WizardStep.REVIEW,
-            WizardStep.TEST
-        )
+        assertThat(result.stepsCompleted)
+            .containsExactly(
+                WizardStep.WELCOME,
+                WizardStep.PROJECT_INFO,
+                WizardStep.CREDENTIALS,
+                WizardStep.SIGNING,
+                WizardStep.REVIEW,
+                WizardStep.TEST,
+            )
         assertThat(result.filesGenerated).contains("build.gradle.kts")
-        assertThat(result.filesGenerated).doesNotContain("gradle.properties") // Auto-detected, so not generated
+        assertThat(result.filesGenerated)
+            .doesNotContain("gradle.properties") // Auto-detected, so not generated
         assertThat(wizard.isComplete).isTrue()
 
         // Verify files were actually generated
@@ -163,10 +168,11 @@ class RefactoredSetupWizardTest {
     @Test
     fun `should navigate between steps`() {
         // Given
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         val wizard = RefactoredSetupWizard(project, enableGlobalGradlePropsDetection = false)
         wizard.start()
@@ -191,17 +197,19 @@ class RefactoredSetupWizardTest {
     @Test
     fun `should throw exception for unknown step processor`() {
         // Given
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         // Create wizard with empty processors list
-        val wizard = RefactoredSetupWizard(
-            project = project,
-            stepProcessors = emptyList(),
-            enableGlobalGradlePropsDetection = false
-        )
+        val wizard =
+            RefactoredSetupWizard(
+                project = project,
+                stepProcessors = emptyList(),
+                enableGlobalGradlePropsDetection = false,
+            )
         wizard.start()
 
         // When/Then - Should throw exception for missing processor
@@ -218,19 +226,21 @@ class RefactoredSetupWizardTest {
         environmentVariables.set("SIGNING_KEY", "env-key")
         environmentVariables.set("SIGNING_PASSWORD", "env-key-password")
 
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         // Mock user saying yes to auto-detected credentials and signing
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
-        val wizard = RefactoredSetupWizard(
-            project = project,
-            promptSystem = mockPromptSystem,
-            enableGlobalGradlePropsDetection = false
-        )
+        val wizard =
+            RefactoredSetupWizard(
+                project = project,
+                promptSystem = mockPromptSystem,
+                enableGlobalGradlePropsDetection = false,
+            )
 
         // When
         wizard.start()
@@ -247,19 +257,21 @@ class RefactoredSetupWizardTest {
     @Test
     fun `should validate input at each step`() {
         // Given
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         // Mock empty key response
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("")
 
-        val wizard = RefactoredSetupWizard(
-            project = project,
-            promptSystem = mockPromptSystem,
-            enableGlobalGradlePropsDetection = false
-        )
+        val wizard =
+            RefactoredSetupWizard(
+                project = project,
+                promptSystem = mockPromptSystem,
+                enableGlobalGradlePropsDetection = false,
+            )
 
         wizard.start()
 
@@ -274,39 +286,40 @@ class RefactoredSetupWizardTest {
     @Test
     fun `should generate extended file list including gitignore and CI workflow`() {
         // Given
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
 
         val extendedFileGenerator = DefaultWizardFileGeneratorWithExtras()
 
-        val wizard = RefactoredSetupWizard(
-            project = project,
-            promptSystem = mockPromptSystem,
-            fileGenerator = extendedFileGenerator,
-            enableGlobalGradlePropsDetection = false
-        )
+        val wizard =
+            RefactoredSetupWizard(
+                project = project,
+                promptSystem = mockPromptSystem,
+                fileGenerator = extendedFileGenerator,
+                enableGlobalGradlePropsDetection = false,
+            )
 
         val detectedInfo = DetectedProjectInfo("test-project")
-        val context = WizardContext(
-            project = project,
-            detectedInfo = detectedInfo,
-            wizardConfig = TestConfigBuilder.createConfig(),
-            enableGlobalGradlePropsDetection = false,
-            hasAutoDetectedCredentials = true,
-            hasAutoDetectedSigning = true
-        )
+        val context =
+            WizardContext(
+                project = project,
+                detectedInfo = detectedInfo,
+                wizardConfig = TestConfigBuilder.createConfig(),
+                enableGlobalGradlePropsDetection = false,
+                hasAutoDetectedCredentials = true,
+                hasAutoDetectedSigning = true,
+            )
 
         // When
-        val generatedFiles = extendedFileGenerator.generateFiles(context, TestConfigBuilder.createConfig())
+        val generatedFiles =
+            extendedFileGenerator.generateFiles(context, TestConfigBuilder.createConfig())
 
         // Then - Should include additional files
-        assertThat(generatedFiles).containsExactly(
-            "build.gradle.kts",
-            ".gitignore",
-            ".github/workflows/publish.yml"
-        )
+        assertThat(generatedFiles)
+            .containsExactly("build.gradle.kts", ".gitignore", ".github/workflows/publish.yml")
 
         // Verify files were actually created
         assertThat(File(tempDir.toFile(), ".gitignore")).exists()

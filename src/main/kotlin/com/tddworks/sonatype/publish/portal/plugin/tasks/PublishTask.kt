@@ -16,17 +16,11 @@ abstract class PublishTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputFile: RegularFileProperty
 
-    @get:Input
-    abstract val username: Property<String>
+    @get:Input abstract val username: Property<String>
 
-    @get:Input
-    abstract val password: Property<String>
+    @get:Input abstract val password: Property<String>
 
-    @get:Input
-    @get:Optional
-    abstract val publicationType: Property<PublicationType>
-
-
+    @get:Input @get:Optional abstract val publicationType: Property<PublicationType>
 
     @TaskAction
     fun taskAction() {
@@ -35,26 +29,20 @@ abstract class PublishTask : DefaultTask() {
         val username = username.get()
         val password = password.get()
 
-        check(username.isNotBlank()) {
-            "SonatypePortal: username must not be empty"
-        }
-        check(password.isNotBlank()) {
-            "SonatypePortal: password must not be empty"
-        }
+        check(username.isNotBlank()) { "SonatypePortal: username must not be empty" }
+        check(password.isNotBlank()) { "SonatypePortal: password must not be empty" }
 
-        //TODO - inject the SonatypePortalPublisher instead of using the default
-        val deploymentId = SonatypePortalPublisher.default().deploy(
-            Authentication(
-                username,
-                password
-            ),
-            DeploymentBundle(
-                inputFile.get().asFile,
-                publicationType.orNull?.let { it } ?: PublicationType.USER_MANAGED
-            )
-        )
+        // TODO - inject the SonatypePortalPublisher instead of using the default
+        val deploymentId =
+            SonatypePortalPublisher.default()
+                .deploy(
+                    Authentication(username, password),
+                    DeploymentBundle(
+                        inputFile.get().asFile,
+                        publicationType.orNull?.let { it } ?: PublicationType.USER_MANAGED,
+                    ),
+                )
 
         logger.quiet("Deployment ID: $deploymentId")
     }
-
 }

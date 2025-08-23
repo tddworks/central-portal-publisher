@@ -2,8 +2,11 @@ rootProject.name = "multi-module-example"
 
 // Include submodules
 include("core")
+
 include("api")
+
 include("client")
+
 include("test-utils") // Non-publishable module for internal testing
 
 pluginManagement {

@@ -1,33 +1,38 @@
-name: GitHub Actions - CI
+name: CI
 
 on:
-  workflow_dispatch:      # Start a workflow
+  workflow_dispatch:
   push:
     branches:
       - "main"
   pull_request:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout sources
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/cache@v3
+          
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: 21
+          java-version: 17
           distribution: 'temurin'
-      - name: Build with Gradle
+          
+      - name: Build and test
         run: ./gradlew clean build koverVerify koverXmlReport
+        
+      - name: Code quality checks
+        run: ./gradlew spotlessCheck buildHealth
+        
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:

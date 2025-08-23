@@ -1,6 +1,5 @@
 package com.tddworks.sonatype.publish.portal.api
 
-
 enum class PublicationType {
     USER_MANAGED,
     AUTOMATIC;

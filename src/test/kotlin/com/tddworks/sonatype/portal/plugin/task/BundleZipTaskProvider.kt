@@ -1,19 +1,19 @@
-//package com.tddworks.sonatype.portal.plugin.task
+// package com.tddworks.sonatype.portal.plugin.task
 //
 //
-//import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationConsumer
-//import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
-//import org.gradle.api.Project
-//import org.gradle.api.Task
-//import org.gradle.api.file.Directory
-//import org.gradle.api.provider.Provider
-//import org.gradle.api.tasks.TaskProvider
-//import org.gradle.api.tasks.bundling.Zip
-//import org.gradle.testfixtures.ProjectBuilder
-//import org.junit.jupiter.api.Assertions.*
-//import org.junit.jupiter.api.Test
+// import com.tddworks.sonatype.publish.portal.plugin.createZipConfigurationConsumer
+// import com.tddworks.sonatype.publish.portal.plugin.tasks.BundleZipTaskProvider
+// import org.gradle.api.Project
+// import org.gradle.api.Task
+// import org.gradle.api.file.Directory
+// import org.gradle.api.provider.Provider
+// import org.gradle.api.tasks.TaskProvider
+// import org.gradle.api.tasks.bundling.Zip
+// import org.gradle.testfixtures.ProjectBuilder
+// import org.junit.jupiter.api.Assertions.*
+// import org.junit.jupiter.api.Test
 //
-//class BundleZipTaskProviderTest {
+// class BundleZipTaskProviderTest {
 //
 //    @Test
 //    fun `should create a zip aggregation task provider`() {
@@ -53,6 +53,6 @@
 //        assertEquals("zipTestPublication", zipTaskProvider.name)
 //        assertTrue(zipTaskProvider.get() is Zip)
 //    }
-//}
+// }
 //
 //

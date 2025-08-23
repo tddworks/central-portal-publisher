@@ -1,6 +1,8 @@
 package com.tddworks.sonatype.publish.portal.plugin.wizard.steps
 
 import com.tddworks.sonatype.publish.portal.plugin.wizard.*
+import java.io.File
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.BeforeEach
@@ -9,27 +11,22 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.argThat
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 import uk.org.webcompere.systemstubs.jupiter.SystemStub
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension
-import java.io.File
-import java.nio.file.Path
 
 @ExtendWith(SystemStubsExtension::class, MockitoExtension::class)
 class CredentialsStepProcessorTest {
 
-    @SystemStub
-    private lateinit var environmentVariables: EnvironmentVariables
+    @SystemStub private lateinit var environmentVariables: EnvironmentVariables
 
-    @Mock
-    private lateinit var mockPromptSystem: PromptSystem
+    @Mock private lateinit var mockPromptSystem: PromptSystem
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     private lateinit var processor: CredentialsStepProcessor
     private lateinit var context: WizardContext
@@ -37,18 +34,20 @@ class CredentialsStepProcessorTest {
     @BeforeEach
     fun setup() {
         processor = CredentialsStepProcessor()
-        
-        val project = ProjectBuilder.builder()
-            .withProjectDir(tempDir.toFile())
-            .withName("test-project")
-            .build()
-            
-        context = WizardContext(
-            project = project,
-            detectedInfo = DetectedProjectInfo("test-project"),
-            wizardConfig = TestConfigBuilder.createConfig(),
-            enableGlobalGradlePropsDetection = false
-        )
+
+        val project =
+            ProjectBuilder.builder()
+                .withProjectDir(tempDir.toFile())
+                .withName("test-project")
+                .build()
+
+        context =
+            WizardContext(
+                project = project,
+                detectedInfo = DetectedProjectInfo("test-project"),
+                wizardConfig = TestConfigBuilder.createConfig(),
+                enableGlobalGradlePropsDetection = false,
+            )
     }
 
     @Test
@@ -56,7 +55,7 @@ class CredentialsStepProcessorTest {
         // Given
         environmentVariables.set("SONATYPE_USERNAME", "test-user")
         environmentVariables.set("SONATYPE_PASSWORD", "test-password")
-        
+
         // Mock user saying yes to auto-detected credentials
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
@@ -65,8 +64,10 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("test-user")
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("test-password")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+            .isEqualTo("test-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+            .isEqualTo("test-password")
         assertThat(result.updatedContext?.hasAutoDetectedCredentials).isTrue()
     }
 
@@ -75,7 +76,7 @@ class CredentialsStepProcessorTest {
         // Given
         environmentVariables.set("SONATYPE_USERNAME", "auto-detected-user")
         environmentVariables.set("SONATYPE_PASSWORD", "auto-detected-password")
-        
+
         // Mock user saying no to auto-detected, then providing manual input
         `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
@@ -85,8 +86,10 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+            .isEqualTo("manual-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+            .isEqualTo("manual-password")
         assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
     }
 
@@ -100,8 +103,10 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+            .isEqualTo("manual-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+            .isEqualTo("manual-password")
         assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
     }
 
@@ -122,16 +127,19 @@ class CredentialsStepProcessorTest {
     fun `should handle global gradle properties detection when enabled`() {
         // Given
         val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
-        
+
         // Create mock gradle.properties file
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SONATYPE_USERNAME=global-user
             SONATYPE_PASSWORD=global-password
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             // Mock user confirming use of global properties
             `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
@@ -141,8 +149,10 @@ class CredentialsStepProcessorTest {
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("global-user")
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("global-password")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+                .isEqualTo("global-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+                .isEqualTo("global-password")
             assertThat(result.updatedContext?.hasAutoDetectedCredentials).isTrue()
         } finally {
             gradleProps.delete()
@@ -161,9 +171,12 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).confirm(argThat { message ->
-            message.contains("CREDENTIALS SETUP - AUTO-DETECTED! (Step 3 of 6)")
-        })
+        verify(mockPromptSystem)
+            .confirm(
+                argThat { message ->
+                    message.contains("CREDENTIALS SETUP - AUTO-DETECTED! (Step 3 of 6)")
+                }
+            )
     }
 
     @Test
@@ -178,9 +191,8 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).confirm(argThat { message ->
-            message.contains("• SONATYPE_PASSWORD: ********")
-        })
+        verify(mockPromptSystem)
+            .confirm(argThat { message -> message.contains("• SONATYPE_PASSWORD: ********") })
     }
 
     @Test
@@ -188,16 +200,19 @@ class CredentialsStepProcessorTest {
         // Given
         environmentVariables.set("SONATYPE_USERNAME", "env-user")
         environmentVariables.set("SONATYPE_PASSWORD", "env-password")
-        
+
         val contextWithGlobal = context.copy(enableGlobalGradlePropsDetection = true)
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SONATYPE_USERNAME=global-user
             SONATYPE_PASSWORD=global-password
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             `when`(mockPromptSystem.confirm(anyString())).thenReturn(true)
 
@@ -206,12 +221,15 @@ class CredentialsStepProcessorTest {
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("env-user")
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("env-password")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+                .isEqualTo("env-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+                .isEqualTo("env-password")
             // Should show environment variables prompt, not global properties
-            verify(mockPromptSystem).confirm(argThat { message ->
-                message.contains("Found existing environment variables:")
-            })
+            verify(mockPromptSystem)
+                .confirm(
+                    argThat { message -> message.contains("Found existing environment variables:") }
+                )
         } finally {
             gradleProps.delete()
         }
@@ -227,7 +245,8 @@ class CredentialsStepProcessorTest {
 
         // Then - should still be valid (password can be empty)
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("test-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+            .isEqualTo("test-user")
         assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("")
     }
 
@@ -244,9 +263,12 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        verify(mockPromptSystem).display(argThat { message ->
-            message.contains("You chose to configure credentials manually.")
-        })
+        verify(mockPromptSystem)
+            .display(
+                argThat { message ->
+                    message.contains("You chose to configure credentials manually.")
+                }
+            )
     }
 
     @Test
@@ -258,7 +280,7 @@ class CredentialsStepProcessorTest {
         if (gradleProps.exists()) {
             gradleProps.delete()
         }
-        
+
         `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
 
         // When
@@ -266,8 +288,10 @@ class CredentialsStepProcessorTest {
 
         // Then
         assertThat(result.isValid).isTrue()
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
-        assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+            .isEqualTo("manual-user")
+        assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+            .isEqualTo("manual-password")
         assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
     }
 
@@ -278,21 +302,26 @@ class CredentialsStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             # Missing SONATYPE_USERNAME
             SONATYPE_PASSWORD=global-password
             OTHER_PROPERTY=value
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
-            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+            `when`(mockPromptSystem.prompt(anyString()))
+                .thenReturn("manual-user", "manual-password")
 
             // When
             val result = processor.process(contextWithGlobal, mockPromptSystem)
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+                .isEqualTo("manual-user")
             assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
         } finally {
             gradleProps.delete()
@@ -306,21 +335,26 @@ class CredentialsStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SONATYPE_USERNAME=global-user
             # Missing SONATYPE_PASSWORD
             OTHER_PROPERTY=value
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
-            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+            `when`(mockPromptSystem.prompt(anyString()))
+                .thenReturn("manual-user", "manual-password")
 
             // When
             val result = processor.process(contextWithGlobal, mockPromptSystem)
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+                .isEqualTo("manual-user")
             assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
         } finally {
             gradleProps.delete()
@@ -334,20 +368,25 @@ class CredentialsStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SONATYPE_USERNAME=
             SONATYPE_PASSWORD=
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
-            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+            `when`(mockPromptSystem.prompt(anyString()))
+                .thenReturn("manual-user", "manual-password")
 
             // When
             val result = processor.process(contextWithGlobal, mockPromptSystem)
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+                .isEqualTo("manual-user")
             assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
         } finally {
             gradleProps.delete()
@@ -361,27 +400,36 @@ class CredentialsStepProcessorTest {
         val gradleDir = File(System.getProperty("user.home"), ".gradle")
         gradleDir.mkdirs()
         val gradleProps = File(gradleDir, "gradle.properties")
-        gradleProps.writeText("""
+        gradleProps.writeText(
+            """
             SONATYPE_USERNAME=global-user
             SONATYPE_PASSWORD=global-password
-        """.trimIndent())
-        
+        """
+                .trimIndent()
+        )
+
         try {
             // Mock user rejecting global properties, then providing manual input
             `when`(mockPromptSystem.confirm(anyString())).thenReturn(false)
-            `when`(mockPromptSystem.prompt(anyString())).thenReturn("manual-user", "manual-password")
+            `when`(mockPromptSystem.prompt(anyString()))
+                .thenReturn("manual-user", "manual-password")
 
             // When
             val result = processor.process(contextWithGlobal, mockPromptSystem)
 
             // Then
             assertThat(result.isValid).isTrue()
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.username).isEqualTo("manual-user")
-            assertThat(result.updatedContext?.wizardConfig?.credentials?.password).isEqualTo("manual-password")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.username)
+                .isEqualTo("manual-user")
+            assertThat(result.updatedContext?.wizardConfig?.credentials?.password)
+                .isEqualTo("manual-password")
             assertThat(result.updatedContext?.hasAutoDetectedCredentials).isFalse()
-            verify(mockPromptSystem).display(argThat { message ->
-                message.contains("You chose to configure credentials manually.")
-            })
+            verify(mockPromptSystem)
+                .display(
+                    argThat { message ->
+                        message.contains("You chose to configure credentials manually.")
+                    }
+                )
         } finally {
             gradleProps.delete()
         }

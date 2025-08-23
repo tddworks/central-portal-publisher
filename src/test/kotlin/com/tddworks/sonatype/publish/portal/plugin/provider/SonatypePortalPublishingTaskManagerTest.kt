@@ -20,29 +20,24 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-
 @ExtendWith(MockitoExtension::class)
 class SonatypePortalPublishingTaskManagerTest {
-    @InjectMocks
-    lateinit var target: SonatypePortalPublishingTaskManager
+    @InjectMocks lateinit var target: SonatypePortalPublishingTaskManager
 
     @Mock
-    lateinit var publishPublicationToMavenRepositoryTaskFactory: PublishPublicationToMavenRepositoryTaskFactory
+    lateinit var publishPublicationToMavenRepositoryTaskFactory:
+        PublishPublicationToMavenRepositoryTaskFactory
 
-    @Mock
-    lateinit var zipPublicationTaskFactory: ZipPublicationTaskFactory
+    @Mock lateinit var zipPublicationTaskFactory: ZipPublicationTaskFactory
 
-    @Mock
-    lateinit var developmentBundlePublishTaskFactory: DevelopmentBundlePublishTaskFactory
+    @Mock lateinit var developmentBundlePublishTaskFactory: DevelopmentBundlePublishTaskFactory
 
-    @Mock
-    lateinit var publicationProvider: PublicationProvider
-
+    @Mock lateinit var publicationProvider: PublicationProvider
 
     private val project = ProjectBuilder.builder().build()
 
     init {
-//        project.plugins.apply("kotlin-multiplatform")
+        //        project.plugins.apply("kotlin-multiplatform")
         project.plugins.apply("maven-publish")
     }
 
@@ -53,7 +48,8 @@ class SonatypePortalPublishingTaskManagerTest {
         project.createZipConfigurationConsumer
 
         val zipTaskProvider = mock<TaskProvider<Zip>>()
-        whenever(zipPublicationTaskFactory.createZipAggregationPublicationsTask(project)).thenReturn(zipTaskProvider)
+        whenever(zipPublicationTaskFactory.createZipAggregationPublicationsTask(project))
+            .thenReturn(zipTaskProvider)
 
         target.registerPublishingTasks(project)
 
@@ -61,7 +57,8 @@ class SonatypePortalPublishingTaskManagerTest {
 
         assertNotNull(zipConfigurationProducer)
 
-        verify(developmentBundlePublishTaskFactory).createAggregationTask(project, zipTaskProvider, null, null)
+        verify(developmentBundlePublishTaskFactory)
+            .createAggregationTask(project, zipTaskProvider, null, null)
     }
 
     @Test
@@ -80,17 +77,16 @@ class SonatypePortalPublishingTaskManagerTest {
             authentication = auth
         }
 
-        whenever(publishPublicationToMavenRepositoryTaskFactory.createTask(project, "maven")).thenReturn(
-            taskTaskProvider
-        )
+        whenever(publishPublicationToMavenRepositoryTaskFactory.createTask(project, "maven"))
+            .thenReturn(taskTaskProvider)
 
-        whenever(zipPublicationTaskFactory.createZipTask(project, "maven", taskTaskProvider)).thenReturn(
-            zipTaskTaskProvider
-        )
+        whenever(zipPublicationTaskFactory.createZipTask(project, "maven", taskTaskProvider))
+            .thenReturn(zipTaskTaskProvider)
 
         target.registerTasksForPublication(project, "maven")
 
-        verify(developmentBundlePublishTaskFactory).createTask(project, "maven", zipTaskTaskProvider, auth, true)
+        verify(developmentBundlePublishTaskFactory)
+            .createTask(project, "maven", zipTaskTaskProvider, auth, true)
     }
 
     @Test
@@ -111,25 +107,30 @@ class SonatypePortalPublishingTaskManagerTest {
         assertNotNull(project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository"))
     }
 
-//    @Nested
-//    @DisplayName("Register Publish Task For Single Project")
-//    inner class RegisterPublishTaskForSingleProject {
-//        @Test
-//        fun `should register publish all task with zip all publications task as dependency`() {
-//            val project = ProjectBuilder.builder().build()
-//
-//            val publishingTaskManager = SonatypePortalPublishingTaskManager()
-//
-//            publishingTaskManager.registerPublishingTask(project)
-//            val publishAllTask = project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository")
-//
-//            val zipAllTask = project.tasks.findByName("zipAllPublications")
-//
-//            assertNotNull(zipAllTask)
-//            assertNotNull(publishAllTask)
-//
-//            // make sure publish all publications depends on zipAllPublications
-//            assertNotNull(publishAllTask?.taskDependencies?.getDependencies(publishAllTask)?.find { it.name == "zipAllPublications" })
-//        }
-//    }
+    //    @Nested
+    //    @DisplayName("Register Publish Task For Single Project")
+    //    inner class RegisterPublishTaskForSingleProject {
+    //        @Test
+    //        fun `should register publish all task with zip all publications task as dependency`()
+    // {
+    //            val project = ProjectBuilder.builder().build()
+    //
+    //            val publishingTaskManager = SonatypePortalPublishingTaskManager()
+    //
+    //            publishingTaskManager.registerPublishingTask(project)
+    //            val publishAllTask =
+    // project.tasks.findByName("publishAllPublicationsToSonatypePortalRepository")
+    //
+    //            val zipAllTask = project.tasks.findByName("zipAllPublications")
+    //
+    //            assertNotNull(zipAllTask)
+    //            assertNotNull(publishAllTask)
+    //
+    //            // make sure publish all publications depends on zipAllPublications
+    //
+    // assertNotNull(publishAllTask?.taskDependencies?.getDependencies(publishAllTask)?.find {
+    // it.name
+    // == "zipAllPublications" })
+    //        }
+    //    }
 }

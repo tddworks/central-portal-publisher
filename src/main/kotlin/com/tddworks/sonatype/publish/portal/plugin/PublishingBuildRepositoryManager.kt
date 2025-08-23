@@ -1,14 +1,10 @@
 package com.tddworks.sonatype.publish.portal.plugin
 
-import org.gradle.api.Project
-import org.gradle.configurationcache.extensions.capitalized
 import java.io.File
+import org.gradle.api.Project
 
 interface PublishingBuildRepositoryManager {
-    fun createBuildRepository(
-        repoName: String,
-        project: Project,
-    ): File
+    fun createBuildRepository(repoName: String, project: Project): File
 }
 
 class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepositoryManager {
@@ -19,8 +15,10 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
         // publications are the different artifacts that can be published
         // e.g. maven, kotlinMultiplatform, etc.
         // https://kotlinlang.org/docs/multiplatform-publish-lib.html#host-requirements
-        // This kotlinMultiplatform publication includes metadata artifacts and references the other publications as its variants.
-        val sonatypeDestinationPath = project.layout.buildDirectory.dir("sonatype/${repoName}-bundle")
+        // This kotlinMultiplatform publication includes metadata artifacts and references the other
+        // publications as its variants.
+        val sonatypeDestinationPath =
+            project.layout.buildDirectory.dir("sonatype/${repoName}-bundle")
 
         // Add the Sonatype repository to the publishing block
         // each publication has a task to publish it to a repository
@@ -30,7 +28,8 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
         publishing.apply {
             repositories.apply {
                 // default task name will be - publishMavenPublicationToMavenRepository
-                // because the publication name could be different, e.g. maven, kotlinMultiplatform, etc.
+                // because the publication name could be different, e.g. maven, kotlinMultiplatform,
+                // etc.
                 // so we need rename the task to ${capitalized}
                 // here we use maven as the repository type and save it to the build folder
                 // save to example-multi-modules/module-b/build/sonatype/maven-bundle/
@@ -43,5 +42,4 @@ class SonatypePortalPublishingBuildRepositoryManager : PublishingBuildRepository
 
         return sonatypeDestinationPath.get().asFile
     }
-
 }

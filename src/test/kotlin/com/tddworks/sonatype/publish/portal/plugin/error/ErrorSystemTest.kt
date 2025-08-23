@@ -1,8 +1,8 @@
 package com.tddworks.sonatype.publish.portal.plugin.error
 
-import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class ErrorSystemTest {
 
@@ -16,10 +16,8 @@ class ErrorSystemTest {
     @Test
     fun `should create error with code and message`() {
         // Given/When
-        val error = errorSystem.createError(
-            ErrorCode.MISSING_CREDENTIALS,
-            "Username is not configured"
-        )
+        val error =
+            errorSystem.createError(ErrorCode.MISSING_CREDENTIALS, "Username is not configured")
 
         // Then
         assertThat(error.code).isEqualTo(ErrorCode.MISSING_CREDENTIALS)
@@ -31,10 +29,8 @@ class ErrorSystemTest {
     @Test
     fun `should provide fix suggestions for errors`() {
         // Given
-        val error = errorSystem.createError(
-            ErrorCode.MISSING_CREDENTIALS,
-            "Username is not configured"
-        )
+        val error =
+            errorSystem.createError(ErrorCode.MISSING_CREDENTIALS, "Username is not configured")
 
         // When
         val suggestions = errorSystem.getSuggestionsFor(error)
@@ -50,10 +46,11 @@ class ErrorSystemTest {
     @Test
     fun `should format error for display`() {
         // Given
-        val error = errorSystem.createError(
-            ErrorCode.MISSING_SIGNING_KEY,
-            "GPG signing key is not configured"
-        )
+        val error =
+            errorSystem.createError(
+                ErrorCode.MISSING_SIGNING_KEY,
+                "GPG signing key is not configured",
+            )
 
         // When
         val formatted = errorSystem.formatError(error)
@@ -69,10 +66,11 @@ class ErrorSystemTest {
     @Test
     fun `should create error report with multiple errors`() {
         // Given
-        val errors = listOf(
-            errorSystem.createError(ErrorCode.MISSING_CREDENTIALS, "No username"),
-            errorSystem.createError(ErrorCode.MISSING_SIGNING_KEY, "No signing key")
-        )
+        val errors =
+            listOf(
+                errorSystem.createError(ErrorCode.MISSING_CREDENTIALS, "No username"),
+                errorSystem.createError(ErrorCode.MISSING_SIGNING_KEY, "No signing key"),
+            )
 
         // When
         val report = errorSystem.createErrorReport(errors)
@@ -113,18 +111,15 @@ class ErrorSystemTest {
     @Test
     fun `should provide contextual information for errors`() {
         // Given
-        val context = ErrorContext(
-            projectPath = ":example-project",
-            taskName = "publishToCentral",
-            additionalInfo = mapOf("publication" to "maven")
-        )
+        val context =
+            ErrorContext(
+                projectPath = ":example-project",
+                taskName = "publishToCentral",
+                additionalInfo = mapOf("publication" to "maven"),
+            )
 
         // When
-        val error = errorSystem.createError(
-            ErrorCode.UPLOAD_FAILED,
-            "Upload failed",
-            context
-        )
+        val error = errorSystem.createError(ErrorCode.UPLOAD_FAILED, "Upload failed", context)
 
         // Then
         assertThat(error.context?.projectPath).isEqualTo(":example-project")
@@ -150,12 +145,13 @@ class ErrorSystemTest {
     @Test
     fun `should handle unknown errors gracefully`() {
         // Given
-        val unknownError = PublishingError(
-            code = ErrorCode.UNKNOWN,
-            message = "Something went wrong",
-            category = ErrorCategory.UNKNOWN,
-            severity = ErrorSeverity.ERROR
-        )
+        val unknownError =
+            PublishingError(
+                code = ErrorCode.UNKNOWN,
+                message = "Something went wrong",
+                category = ErrorCategory.UNKNOWN,
+                severity = ErrorSeverity.ERROR,
+            )
 
         // When
         val suggestions = errorSystem.getSuggestionsFor(unknownError)
@@ -173,7 +169,7 @@ class ErrorSystemTest {
         // Given/When/Then
         val codes = ErrorCode.values()
         val codeValues = codes.map { it.code }
-        
+
         assertThat(codeValues).doesNotHaveDuplicates()
         codes.forEach { code ->
             assertThat(code.code).startsWith("PUB-")

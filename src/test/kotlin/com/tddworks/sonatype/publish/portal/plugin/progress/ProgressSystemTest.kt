@@ -1,12 +1,12 @@
 package com.tddworks.sonatype.publish.portal.plugin.progress
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeEach
-import org.assertj.core.api.Assertions.assertThat
-import org.gradle.api.logging.Logger
-import org.mockito.kotlin.*
 import java.io.PrintWriter
 import java.io.StringWriter
+import org.assertj.core.api.Assertions.assertThat
+import org.gradle.api.logging.Logger
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.*
 
 class ProgressSystemTest {
 
@@ -24,15 +24,17 @@ class ProgressSystemTest {
     @Test
     fun `should create progress tracker with steps`() {
         // Given/When
-        val tracker = progressSystem.createTracker(
-            taskName = "publishToCentral",
-            steps = listOf(
-                "Validating configuration",
-                "Creating deployment bundle", 
-                "Uploading to Sonatype",
-                "Finalizing publication"
+        val tracker =
+            progressSystem.createTracker(
+                taskName = "publishToCentral",
+                steps =
+                    listOf(
+                        "Validating configuration",
+                        "Creating deployment bundle",
+                        "Uploading to Sonatype",
+                        "Finalizing publication",
+                    ),
             )
-        )
 
         // Then
         assertThat(tracker.totalSteps).isEqualTo(4)
@@ -44,10 +46,11 @@ class ProgressSystemTest {
     @Test
     fun `should update progress and show percentage`() {
         // Given
-        val tracker = progressSystem.createTracker(
-            taskName = "publishToCentral",
-            steps = listOf("Step 1", "Step 2", "Step 3", "Step 4")
-        )
+        val tracker =
+            progressSystem.createTracker(
+                taskName = "publishToCentral",
+                steps = listOf("Step 1", "Step 2", "Step 3", "Step 4"),
+            )
 
         // When
         tracker.nextStep("Working on step 1...")
@@ -62,10 +65,11 @@ class ProgressSystemTest {
     @Test
     fun `should show progress bar in console output`() {
         // Given
-        val tracker = progressSystem.createTracker(
-            taskName = "publishToCentral",
-            steps = listOf("Step 1", "Step 2", "Step 3", "Step 4")
-        )
+        val tracker =
+            progressSystem.createTracker(
+                taskName = "publishToCentral",
+                steps = listOf("Step 1", "Step 2", "Step 3", "Step 4"),
+            )
 
         // When
         tracker.nextStep("Processing...")
@@ -73,17 +77,19 @@ class ProgressSystemTest {
         // Then
         verify(mockLogger).lifecycle(argThat { this.contains("publishToCentral") })
         verify(mockLogger).lifecycle(argThat { this.contains("25%") }) // 1/4 = 25%
-        verify(mockLogger).lifecycle(argThat { this.contains("█") }) // Should contain progress bar characters
+        verify(mockLogger)
+            .lifecycle(argThat { this.contains("█") }) // Should contain progress bar characters
     }
 
     @Test
     fun `should estimate time remaining`() {
         // Given
-        val tracker = progressSystem.createTracker(
-            taskName = "upload",
-            steps = listOf("Step 1", "Step 2", "Step 3", "Step 4")
-        )
-        
+        val tracker =
+            progressSystem.createTracker(
+                taskName = "upload",
+                steps = listOf("Step 1", "Step 2", "Step 3", "Step 4"),
+            )
+
         // When
         Thread.sleep(100) // Simulate some work
         tracker.nextStep("First step done")
@@ -98,14 +104,12 @@ class ProgressSystemTest {
     @Test
     fun `should handle completion properly`() {
         // Given
-        val tracker = progressSystem.createTracker(
-            taskName = "test",
-            steps = listOf("Step 1", "Step 2")
-        )
+        val tracker =
+            progressSystem.createTracker(taskName = "test", steps = listOf("Step 1", "Step 2"))
 
         // When
         tracker.nextStep("Step 1 done")
-        tracker.nextStep("Step 2 done") 
+        tracker.nextStep("Step 2 done")
         tracker.complete("All done!")
 
         // Then
@@ -118,10 +122,11 @@ class ProgressSystemTest {
     @Test
     fun `should handle errors during progress`() {
         // Given
-        val tracker = progressSystem.createTracker(
-            taskName = "failing-task",
-            steps = listOf("Step 1", "Step 2", "Step 3")
-        )
+        val tracker =
+            progressSystem.createTracker(
+                taskName = "failing-task",
+                steps = listOf("Step 1", "Step 2", "Step 3"),
+            )
 
         // When
         tracker.nextStep("Step 1 done")
@@ -136,11 +141,12 @@ class ProgressSystemTest {
     @Test
     fun `should support verbose mode with detailed output`() {
         // Given
-        val verboseTracker = progressSystem.createTracker(
-            taskName = "verbose-task",
-            steps = listOf("Step 1", "Step 2"),
-            verbose = true
-        )
+        val verboseTracker =
+            progressSystem.createTracker(
+                taskName = "verbose-task",
+                steps = listOf("Step 1", "Step 2"),
+                verbose = true,
+            )
 
         // When
         verboseTracker.nextStep("Detailed step info...")
@@ -169,20 +175,21 @@ class ProgressSystemTest {
         assertThat(simpleBar).contains("=")
         assertThat(blockBar).contains("█")
         assertThat(dotsBar).contains("●")
-        
+
         // All should show percentage
         assertThat(simpleBar).contains("50%")
-        assertThat(blockBar).contains("75%") 
+        assertThat(blockBar).contains("75%")
         assertThat(dotsBar).contains("25%")
     }
 
     @Test
     fun `should track file upload progress`() {
         // Given
-        val uploadTracker = progressSystem.createFileUploadTracker(
-            fileName = "deployment-bundle.zip",
-            totalBytes = 1000000L // 1MB
-        )
+        val uploadTracker =
+            progressSystem.createFileUploadTracker(
+                fileName = "deployment-bundle.zip",
+                totalBytes = 1000000L, // 1MB
+            )
 
         // When
         uploadTracker.updateProgress(250000L) // 25% uploaded
@@ -190,7 +197,8 @@ class ProgressSystemTest {
 
         // Then
         assertThat(uploadTracker.progressPercentage).isEqualTo(50)
-        assertThat(uploadTracker.uploadSpeed).isGreaterThanOrEqualTo(0) // Speed can be 0 for very fast operations
+        assertThat(uploadTracker.uploadSpeed)
+            .isGreaterThanOrEqualTo(0) // Speed can be 0 for very fast operations
         verify(mockLogger, atLeast(1)).lifecycle(argThat { this.contains("deployment-bundle.zip") })
         verify(mockLogger, atLeast(1)).lifecycle(argThat { this.contains("50%") })
     }
@@ -198,10 +206,8 @@ class ProgressSystemTest {
     @Test
     fun `should handle zero-length files gracefully`() {
         // Given
-        val uploadTracker = progressSystem.createFileUploadTracker(
-            fileName = "empty.zip", 
-            totalBytes = 0L
-        )
+        val uploadTracker =
+            progressSystem.createFileUploadTracker(fileName = "empty.zip", totalBytes = 0L)
 
         // When
         uploadTracker.complete("Upload complete")

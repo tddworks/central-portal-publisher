@@ -1,13 +1,10 @@
 package com.tddworks.sonatype.publish.portal.api.internal.api
 
-import okio.Buffer
 import java.io.File
+import okio.Buffer
 
 interface FileUploader {
-    fun uploadFile(
-        file: File,
-        builder: HttpRequestBuilder.() -> Unit,
-    ): String
+    fun uploadFile(file: File, builder: HttpRequestBuilder.() -> Unit): String
 
     companion object
 }
@@ -17,9 +14,7 @@ class HttpRequestBuilder {
     private val parameters = mutableMapOf<String, String>()
 
     fun addAuthorization(username: String, password: String) {
-        val token = "$username:$password".let {
-            Buffer().writeUtf8(it).readByteString().base64()
-        }
+        val token = "$username:$password".let { Buffer().writeUtf8(it).readByteString().base64() }
         addHeader("Authorization", "UserToken $token")
     }
 

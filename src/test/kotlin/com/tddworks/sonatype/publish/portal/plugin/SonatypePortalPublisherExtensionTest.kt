@@ -8,11 +8,9 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 import uk.org.webcompere.systemstubs.jupiter.SystemStub
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension
 
-
 @ExtendWith(SystemStubsExtension::class)
 class SonatypePortalPublisherExtensionTest {
-    @SystemStub
-    lateinit var environmentVariables: EnvironmentVariables
+    @SystemStub lateinit var environmentVariables: EnvironmentVariables
 
     @Test
     fun `should create a sonatype portal publisher extension with authentication from system env`() {
@@ -23,7 +21,6 @@ class SonatypePortalPublisherExtensionTest {
         environmentVariables.set("SONATYPE_PASSWORD", "some-password")
 
         val authentication = extension.getAuthentication(project)
-
 
         assertNotNull(authentication)
 
@@ -69,7 +66,6 @@ class SonatypePortalPublisherExtensionTest {
 
         assertNull(extension.getSettings())
     }
-
 
     @Test
     fun `should create a sonatype portal publisher extension with default not found values`() {

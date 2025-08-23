@@ -14,7 +14,7 @@ The easiest way to get started is with the interactive setup wizard:
 
 ```kotlin
 plugins {
-    id("com.tddworks.central-publisher") version "0.2.0-alpha"
+    id("com.tddworks.central-publisher") version "0.2.1-alpha"
 }
 ```
 
@@ -63,7 +63,7 @@ If you prefer manual setup, you can configure the plugin directly:
 #### build.gradle.kts
 ```kotlin
 plugins {
-    id("com.tddworks.central-publisher") version "0.2.0-alpha"
+    id("com.tddworks.central-publisher") version "0.2.1-alpha"
 }
 
 centralPublisher {
@@ -334,6 +334,52 @@ jobs:
 
 The setup wizard can generate this workflow file for you automatically!
 
+## Development Tools
+
+This project uses modern Gradle tooling for maintainability:
+
+### Version Catalog
+All dependencies are managed through Gradle's version catalog (`gradle/libs.versions.toml`):
+
+```bash
+# Update dependency versions automatically
+./gradlew versionCatalogUpdate
+
+# Apply the updates
+./gradlew versionCatalogApplyUpdates
+```
+
+### Code Formatting with Spotless
+Automatic code formatting with ktlint:
+
+```bash
+# Check code formatting
+./gradlew spotlessCheck
+
+# Fix formatting issues
+./gradlew spotlessApply
+```
+
+### Dependency Analysis
+Analyze and optimize your dependencies:
+
+```bash
+# Analyze dependency health
+./gradlew buildHealth
+```
+
+This helps identify:
+- Unused dependencies
+- Dependencies declared in wrong configurations
+- Dependencies that should be declared but aren't
+
+### All Quality Checks
+Run all code quality tools together:
+
+```bash
+# Run tests, coverage, formatting, and dependency analysis
+./gradlew check
+```
 
 # Maven Repository Layout
 
