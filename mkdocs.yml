@@ -71,8 +71,6 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/tddworks/central-portal-publisher
-    - icon: fontawesome/brands/gradle
-      link: https://plugins.gradle.org/plugin/com.tddworks.central-portal-publisher
   analytics:
     provider: google
     property: !ENV GOOGLE_ANALYTICS_KEY
