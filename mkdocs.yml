@@ -1,0 +1,78 @@
+site_name: Central Portal Publisher Plugin
+site_description: A Gradle plugin that simplifies publishing to Sonatype Central Portal
+site_url: https://tddworks.github.io/central-portal-publisher/
+repo_url: https://github.com/tddworks/central-portal-publisher
+repo_name: tddworks/central-portal-publisher
+
+copyright: 'Copyright &copy; 2024 tddworks'
+
+theme:
+  name: 'material'
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: 'indigo'
+      accent: 'indigo'
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: 'indigo'
+      accent: 'indigo'
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.tracking
+    - navigation.tabs
+    - content.tabs.link
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+    - search.share
+
+nav:
+  - Home: index.md
+  - Quick Start: quick-start.md
+  - Configuration: configuration.md
+  - Examples:
+      - Single Module: examples/single-module.md
+      - Multi Module: examples/multi-module.md
+      - Kotlin Multiplatform: examples/kmp.md
+  - Advanced:
+      - Task Reference: advanced/tasks.md
+      - Troubleshooting: advanced/troubleshooting.md
+      - Migration Guide: advanced/migration.md
+  - API Reference: api/index.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - codehilite:
+      guess_lang: false
+  - tables
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/tddworks/central-portal-publisher
+    - icon: fontawesome/brands/gradle
+      link: https://plugins.gradle.org/plugin/com.tddworks.central-portal-publisher
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
