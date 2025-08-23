@@ -27,10 +27,10 @@ class CentralPublisherPluginTest {
         System.setOut(PrintStream(outputStream))
     }
 
-    /** Helper method to simulate requesting publishing tasks, which triggers plugin activation */
-    private fun simulatePublishingTaskRequest() {
-        // Set test mode property so plugin activates during tests
-        project.extensions.extraProperties.set("testingPublishingTask", true)
+    /** Helper method to trigger project evaluation for tests */
+    private fun evaluateProject() {
+        // Trigger project evaluation to run afterEvaluate blocks
+        project.getTasksByName("tasks", false) // This forces project evaluation
     }
 
     @Test
@@ -49,9 +49,6 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should register all publishing tasks`() {
-        // Given - simulate publishing task request
-        simulatePublishingTaskRequest()
-
         // When
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
@@ -65,7 +62,7 @@ class CentralPublisherPluginTest {
         }
 
         // Trigger afterEvaluate to simulate actual plugin behavior
-        project.getTasksByName("tasks", false) // This triggers project evaluation
+        evaluateProject()
 
         // Then - All main tasks should be registered
         assertThat(project.tasks.findByName("publishToCentral")).isNotNull()
@@ -76,9 +73,6 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should set correct task group and descriptions`() {
-        // Given - simulate publishing task request
-        simulatePublishingTaskRequest()
-
         // When
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
@@ -92,7 +86,7 @@ class CentralPublisherPluginTest {
         }
 
         // Trigger afterEvaluate to simulate actual plugin behavior
-        project.getTasksByName("tasks", false) // This triggers project evaluation
+        evaluateProject()
 
         // Then
         val publishTask = project.tasks.findByName("publishToCentral")!!
@@ -162,12 +156,16 @@ class CentralPublisherPluginTest {
             }
         }
 
-        // Manually create tasks using the managers directly (test-friendly approach)
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val configurationManager = CentralPublisherConfigurationManager(project, extension)
-        val config = configurationManager.resolveConfiguration()
-        val taskManager = CentralPublisherTaskManager(project)
-        taskManager.createPublishingTasks(config)
+        // Configure extension to trigger task creation
+        project.extensions.configure(CentralPublisherExtension::class.java) {
+            credentials {
+                username = "test-user"
+                password = "test-token"
+            }
+        }
+        
+        // Trigger afterEvaluate to create tasks
+        evaluateProject()
 
         // Then - Should have simple, memorable task names
         assertThat(project.tasks.names)
@@ -221,9 +219,6 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should configure local repository for bundle creation`() {
-        // Given - simulate publishing task request
-        simulatePublishingTaskRequest()
-
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
 
@@ -236,7 +231,7 @@ class CentralPublisherPluginTest {
         }
 
         // Trigger afterEvaluate to simulate actual plugin behavior
-        project.getTasksByName("tasks", false) // This triggers project evaluation
+        evaluateProject()
 
         // Then - Should have configured publishing extension with local repository
         val publishing =
@@ -254,9 +249,6 @@ class CentralPublisherPluginTest {
 
     @Test
     fun `should create bundleArtifacts task with correct dependencies`() {
-        // Given - simulate publishing task request
-        simulatePublishingTaskRequest()
-
         project.pluginManager.apply("maven-publish")
         project.pluginManager.apply("com.tddworks.central-publisher")
 
@@ -269,7 +261,7 @@ class CentralPublisherPluginTest {
         }
 
         // Trigger afterEvaluate to simulate actual plugin behavior
-        project.getTasksByName("tasks", false) // This triggers project evaluation
+        evaluateProject()
 
         // Then - bundleArtifacts should depend on publishToLocalRepo
         val bundleTask = project.tasks.findByName("bundleArtifacts")
@@ -294,12 +286,8 @@ class CentralPublisherPluginTest {
             }
         }
 
-        // Manually create tasks and publications using managers directly (test-friendly approach)
-        val extension = project.extensions.getByType(CentralPublisherExtension::class.java)
-        val configurationManager = CentralPublisherConfigurationManager(project, extension)
-        val config = configurationManager.resolveConfiguration()
-        val publicationManager = CentralPublisherPublicationManager(project)
-        publicationManager.configurePublications(config)
+        // Trigger afterEvaluate to create publications
+        evaluateProject()
 
         // Then - maven-publish plugin should be applied
         assertThat(project.plugins.hasPlugin("maven-publish")).isTrue()

@@ -55,7 +55,7 @@ class CentralPublisherTaskExecutionTest {
     @Test
     fun `validatePublishing should validate configuration and report results`() {
         // Given - Tasks are created
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
         val validateTask = project.tasks.getByName("validatePublishing")
 
         // When/Then - Task should execute successfully
@@ -83,7 +83,7 @@ class CentralPublisherTaskExecutionTest {
                 }
                 .build()
 
-        manager.createPublishingTasks(invalidConfig)
+        manager.createTasks(invalidConfig)
         val validateTask = project.tasks.getByName("validatePublishing")
 
         // When/Then - Task should fail validation
@@ -111,7 +111,7 @@ class CentralPublisherTaskExecutionTest {
         artifactFile.parentFile.mkdirs()
         artifactFile.writeText("mock artifact content")
 
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
         val bundleTask = project.tasks.getByName("bundleArtifacts")
 
         // When - Task is executed
@@ -130,7 +130,7 @@ class CentralPublisherTaskExecutionTest {
     fun `bundleArtifacts should fail when no artifacts are available`() {
         // Given - Maven-publish plugin applied but no artifacts are configured
         project.plugins.apply("maven-publish")
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
         val bundleTask = project.tasks.getByName("bundleArtifacts")
 
         // When/Then - Task should fail when no artifacts exist
@@ -181,7 +181,7 @@ class CentralPublisherTaskExecutionTest {
 
         // Create mock bundle file
         project.plugins.apply("maven-publish")
-        manager.createPublishingTasks(mockConfig)
+        manager.createTasks(mockConfig)
 
         val bundleDir = File(project.layout.buildDirectory.get().asFile, "central-portal")
         bundleDir.mkdirs()
@@ -227,7 +227,7 @@ class CentralPublisherTaskExecutionTest {
         val bundleFile = File(bundleDir, "${project.name}-${project.version}-bundle.zip")
         bundleFile.writeText("dummy bundle content")
 
-        manager.createPublishingTasks(dryRunConfig)
+        manager.createTasks(dryRunConfig)
         val publishTask = project.tasks.getByName("publishToCentral")
 
         // When/Then - Task should execute in dry run mode without actual upload

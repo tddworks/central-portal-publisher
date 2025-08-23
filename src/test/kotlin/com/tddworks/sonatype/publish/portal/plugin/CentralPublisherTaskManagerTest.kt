@@ -38,7 +38,7 @@ class CentralPublisherTaskManagerTest {
     @Test
     fun `should create all required publishing tasks`() {
         // When
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
 
         // Then - Should create all the expected tasks
         assertThat(project.tasks.findByName("publishToCentral")).isNotNull()
@@ -50,7 +50,7 @@ class CentralPublisherTaskManagerTest {
     @Test
     fun `should set correct task groups`() {
         // When
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
 
         // Then - All tasks should be in the Central Publishing group
         val publishTask = project.tasks.getByName("publishToCentral")
@@ -67,7 +67,7 @@ class CentralPublisherTaskManagerTest {
     @Test
     fun `should set correct task descriptions`() {
         // When
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
 
         // Then - Tasks should have meaningful descriptions
         val publishTask = project.tasks.getByName("publishToCentral")
@@ -88,7 +88,7 @@ class CentralPublisherTaskManagerTest {
     @Test
     fun `should set up correct task dependencies`() {
         // When
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
 
         // Then - publishToCentral should depend on bundleArtifacts
         val publishTask = project.tasks.getByName("publishToCentral")
@@ -115,7 +115,7 @@ class CentralPublisherTaskManagerTest {
                 .build()
 
         // When
-        manager.createPublishingTasks(dryRunConfig)
+        manager.createTasks(dryRunConfig)
 
         // Then - Tasks should be created (dry run is handled in task execution, not creation)
         assertThat(project.tasks.findByName("publishToCentral")).isNotNull()
@@ -124,11 +124,11 @@ class CentralPublisherTaskManagerTest {
     @Test
     fun `should not create duplicate tasks when called multiple times`() {
         // Given - Tasks already created
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
         val initialTaskCount = project.tasks.size
 
         // When - Called again
-        manager.createPublishingTasks(config)
+        manager.createTasks(config)
 
         // Then - Should not create duplicate tasks
         assertThat(project.tasks.size).isEqualTo(initialTaskCount)
