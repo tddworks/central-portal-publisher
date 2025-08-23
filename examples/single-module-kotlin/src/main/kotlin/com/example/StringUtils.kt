@@ -13,7 +13,9 @@ object StringUtils {
      * @return The string with each word capitalized
      */
     fun capitalizeWords(input: String): String {
-        return input.split(" ").joinToString(" ") { word -> word.lowercase().replaceFirstChar { it.uppercase() } }
+        return input.split(" ").joinToString(" ") { word ->
+            word.lowercase().replaceFirstChar { it.uppercase() }
+        }
     }
 
     /**
