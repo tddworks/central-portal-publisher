@@ -1,0 +1,6 @@
+# MkDocs and Material theme
+mkdocs>=1.5.0
+mkdocs-material>=9.4.0
+
+# Extensions for enhanced functionality
+pymdown-extensions>=10.3.0
