@@ -7,7 +7,7 @@ import com.tddworks.sonatype.publish.portal.api.validation.DeploymentBundleValid
 
 /**
  * Publisher for deploying artifacts to Sonatype Central Portal.
- * 
+ *
  * Refactored following Chicago School TDD principles:
  * - Uses dedicated validators for separation of concerns
  * - Provides clear state-based validation results
@@ -17,12 +17,12 @@ import com.tddworks.sonatype.publish.portal.api.validation.DeploymentBundleValid
 class SonatypePortalPublisher(
     private val uploader: FileUploader = FileUploader.okHttpClient(),
     private val authenticationValidator: AuthenticationValidator = AuthenticationValidator(),
-    private val deploymentBundleValidator: DeploymentBundleValidator = DeploymentBundleValidator()
+    private val deploymentBundleValidator: DeploymentBundleValidator = DeploymentBundleValidator(),
 ) {
-    
+
     /**
      * Deploys an authenticated deployment bundle to Sonatype Central Portal.
-     * 
+     *
      * @param authentication The credentials for Sonatype access
      * @param deploymentBundle The bundle containing artifacts to deploy
      * @return The deployment ID from Sonatype Portal
@@ -35,17 +35,19 @@ class SonatypePortalPublisher(
         if (!authValidation.isValid) {
             throw IllegalArgumentException(authValidation.getFirstError()!!)
         }
-        
+
         val bundleValidation = deploymentBundleValidator.validate(deploymentBundle)
         if (!bundleValidation.isValid) {
             throw IllegalArgumentException(bundleValidation.getFirstError()!!)
         }
-        
+
         // Perform upload with proper error wrapping
         return try {
             uploader.uploadFile(deploymentBundle.file) {
                 authentication.username?.let { username ->
-                    authentication.password?.let { password -> addAuthorization(username, password) }
+                    authentication.password?.let { password ->
+                        addAuthorization(username, password)
+                    }
                 }
                 addParameter("publishingType", deploymentBundle.publicationType.name)
             }
@@ -53,12 +55,15 @@ class SonatypePortalPublisher(
             throw RuntimeException("Failed to upload deployment bundle: ${e.message}", e)
         }
     }
-    
+
     /**
-     * Alternative method that returns a structured result instead of throwing exceptions.
-     * More suitable for functional programming patterns.
+     * Alternative method that returns a structured result instead of throwing exceptions. More
+     * suitable for functional programming patterns.
      */
-    fun deployWithResult(authentication: Authentication, deploymentBundle: DeploymentBundle): DeploymentResult {
+    fun deployWithResult(
+        authentication: Authentication,
+        deploymentBundle: DeploymentBundle,
+    ): DeploymentResult {
         return try {
             val deploymentId = deploy(authentication, deploymentBundle)
             DeploymentResult.Success(deploymentId)
