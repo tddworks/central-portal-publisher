@@ -11,7 +11,6 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 
-
 internal val Project.layoutBuildDir
     get() = layout.buildDirectory.get().asFile
 internal val Project.layoutBuildDirectory
