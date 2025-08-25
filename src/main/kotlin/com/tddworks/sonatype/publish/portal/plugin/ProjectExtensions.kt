@@ -5,10 +5,12 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.assign
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 
-internal const val EXTENSION_NAME = "sonatypePortalPublisher"
 
 internal val Project.layoutBuildDir
     get() = layout.buildDirectory.get().asFile
@@ -16,24 +18,6 @@ internal val Project.layoutBuildDirectory
     get() = layout.buildDirectory
 internal val Project.publishingExtension
     get() = extensions.getByType<PublishingExtension>()
-internal val Project.sonatypePortalPublisherExtension
-    get() = extensions.getByType<SonatypePortalPublisherExtension>()
-
-internal val Project.createZipConfigurationConsumer
-    get() =
-        configurations.maybeCreate(ZIP_CONFIGURATION_CONSUMER).apply {
-            isCanBeResolved = true
-            isCanBeConsumed = false
-            configureAttributes(project)
-        }
-
-internal val Project.createZipConfigurationProducer
-    get() =
-        configurations.maybeCreate(ZIP_CONFIGURATION_PRODUCER).apply {
-            isCanBeConsumed = true
-            isCanBeResolved = false
-            configureAttributes(project)
-        }
 
 fun Project.configureMavenPublication() {
     extensions.configure<PublishingExtension> {
