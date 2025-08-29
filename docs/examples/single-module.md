@@ -117,7 +117,7 @@ rootProject.name = "my-awesome-library"
 The easiest way to configure everything is with the setup wizard:
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 This will:

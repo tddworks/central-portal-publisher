@@ -35,7 +35,7 @@ This project publishes artifacts for:
 ### 1. Run Setup Wizard (Recommended)
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard will:
@@ -158,7 +158,7 @@ build/central-portal/kmp-example-1.0.0-bundle.zip
 
 ## Available Tasks
 
-- `./gradlew setupPublishing` - Interactive setup wizard
+- `./gradlew setupPublishing --console=plain` - Interactive setup wizard
 - `./gradlew validatePublishing` - Validate configuration
 - `./gradlew bundleArtifacts` - Create deployment bundle 
 - `./gradlew publishToCentral` - Publish all targets to Maven Central

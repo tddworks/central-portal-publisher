@@ -17,7 +17,7 @@ plugins {
 The easiest way to configure the plugin is with the interactive setup wizard:
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 ### What the Wizard Does

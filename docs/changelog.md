@@ -124,7 +124,7 @@ The 0.2.x release introduces breaking changes for improved usability and type sa
 
 3. **Run the migration wizard:**
    ```bash
-   ./gradlew setupPublishing
+   ./gradlew setupPublishing --console=plain
    ```
    
    This will automatically detect and migrate your existing configuration.

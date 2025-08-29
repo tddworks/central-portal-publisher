@@ -186,7 +186,7 @@ centralPublisher {
 Run the setup wizard from the root project:
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard will:

@@ -30,7 +30,7 @@ plugins {
 
 Then run the setup wizard:
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard will:

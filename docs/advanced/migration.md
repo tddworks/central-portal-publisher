@@ -121,7 +121,7 @@ centralPublisher {
 1. **Get Central Portal account** at [central.sonatype.com](https://central.sonatype.com/)
 2. **Verify your namespace** (same as your group ID)
 3. **Generate user token** for authentication
-4. **Run setup wizard**: `./gradlew setupPublishing`
+4. **Run setup wizard**: `./gradlew setupPublishing --console=plain`
 5. **Remove old configuration** (publishing, signing blocks)
 6. **Update CI/CD** with new credentials and tasks
 
@@ -246,7 +246,7 @@ centralPublisher {
 
 2. **Run migration wizard:**
    ```bash
-   ./gradlew setupPublishing
+   ./gradlew setupPublishing --console=plain
    ```
    This will automatically migrate your old configuration.
 
@@ -433,7 +433,7 @@ After migration, validate everything works:
 
 If you encounter issues during migration:
 
-1. **Run the setup wizard**: `./gradlew setupPublishing`
+1. **Run the setup wizard**: `./gradlew setupPublishing --console=plain`
 2. **Check troubleshooting guide**: [troubleshooting.md](troubleshooting.md)
 3. **Search existing issues**: [GitHub Issues](https://github.com/tddworks/central-portal-publisher/issues)
 4. **Ask for help**: Create a new issue with migration details

@@ -21,7 +21,7 @@ single-module-kotlin/
 ### 1. Run Setup Wizard (Recommended)
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard will guide you through:
@@ -132,7 +132,7 @@ The setup wizard automatically detects:
 
 ## Available Tasks
 
-- `./gradlew setupPublishing` - Interactive setup wizard
+- `./gradlew setupPublishing --console=plain` - Interactive setup wizard
 - `./gradlew validatePublishing` - Validate configuration
 - `./gradlew bundleArtifacts` - Create deployment bundle
 - `./gradlew publishToCentral` - Publish to Maven Central
@@ -175,7 +175,7 @@ version = "1.0.0"
 ### Missing Credentials
 
 If you see credential errors:
-1. Run the setup wizard: `./gradlew setupPublishing`
+1. Run the setup wizard: `./gradlew setupPublishing --console=plain`
 2. Ensure credentials are in `~/.gradle/gradle.properties` or environment variables
 3. Never commit credentials to git
 

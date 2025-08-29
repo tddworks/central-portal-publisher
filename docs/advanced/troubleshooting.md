@@ -36,7 +36,7 @@ Configuration validation failed:
 
 3. **Run the setup wizard:**
    ```bash
-   ./gradlew setupPublishing
+   ./gradlew setupPublishing --console=plain
    ```
 
 ### "No publications found"

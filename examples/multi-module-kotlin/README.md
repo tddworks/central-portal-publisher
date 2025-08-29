@@ -22,7 +22,7 @@ multi-module-kotlin/
 ### 1. Run Setup Wizard (Recommended)
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard will guide you through:
@@ -118,7 +118,7 @@ For each module with `maven-publish` plugin:
 
 ## Available Tasks
 
-- `./gradlew setupPublishing` - Interactive setup wizard
+- `./gradlew setupPublishing --console=plain` - Interactive setup wizard
 - `./gradlew validatePublishing` - Validate configuration  
 - `./gradlew bundleArtifacts` - Create deployment bundle
 - `./gradlew publishToCentral` - Publish to Maven Central

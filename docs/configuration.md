@@ -294,5 +294,5 @@ centralPublisher {
 
 The setup wizard can help migrate your configuration:
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```

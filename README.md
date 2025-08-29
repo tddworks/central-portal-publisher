@@ -29,7 +29,7 @@ plugins {
 
 Then run the setup wizard:
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard will:
@@ -134,7 +134,7 @@ Once configured, the plugin provides these tasks:
 Example workflow:
 ```bash
 # First-time setup
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 
 # Validate your configuration
 ./gradlew validatePublishing  
@@ -197,7 +197,7 @@ SIGNING_PASSWORD=your-gpg-password
 
 For existing projects, you can migrate by running:
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 ## Project Types Supported

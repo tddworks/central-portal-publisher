@@ -9,7 +9,7 @@ This page provides a comprehensive reference for all tasks provided by the Centr
 **Interactive setup wizard for first-time configuration.**
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 **What it does:**
@@ -26,7 +26,7 @@ This page provides a comprehensive reference for all tasks provided by the Centr
 **Example:**
 ```bash
 # Interactive mode (default)
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 
 # Non-interactive with defaults
 ./gradlew setupPublishing --non-interactive

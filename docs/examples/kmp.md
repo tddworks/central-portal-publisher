@@ -346,7 +346,7 @@ sourceSets {
 ### 1. Setup with Interactive Wizard
 
 ```bash
-./gradlew setupPublishing
+./gradlew setupPublishing --console=plain
 ```
 
 The wizard automatically detects your KMP setup and configures all targets.
