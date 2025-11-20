@@ -23,7 +23,7 @@ The easiest way to get started is with the interactive setup wizard:
 
 ```kotlin
 plugins {
-    id("com.tddworks.central-publisher") version "0.2.1-alpha"
+    id("com.tddworks.central-publisher") version "0.2.0-alpha.1"
 }
 ```
 
