@@ -72,7 +72,7 @@ If you prefer manual setup, you can configure the plugin directly:
 #### build.gradle.kts
 ```kotlin
 plugins {
-    id("com.tddworks.central-publisher") version "0.2.1-alpha"
+    id("com.tddworks.central-publisher") version "0.2.0-alpha.1"
 }
 
 centralPublisher {
